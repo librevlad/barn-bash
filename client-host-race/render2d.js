@@ -108,13 +108,11 @@ const Render2D = (() => {
     // Clear
     ctx.clearRect(0, 0, W, H);
 
-    // Render scene with camera
-    scene.render(ctx, camera);
+    // Render scene (draw functions use camera.worldToScreen internally, no double transform)
+    scene.render(ctx, null);
 
-    // Particles (world space)
-    camera.applyTransform(ctx);
+    // Particles (screen space — positions already converted by draw functions)
     particles.draw(ctx);
-    camera.resetTransform(ctx);
 
     // Post-processing (screen space)
     if (typeof FX !== 'undefined') FX.drawAfter(ctx);
