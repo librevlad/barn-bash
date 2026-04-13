@@ -22,9 +22,8 @@ ws.onmessage = (e) => {
     case 'state':
       window._lastPlayers = msg.gameState ? msg.gameState.players : {};
       if (msg.gameId && msg.gameId !== 'escapeFox') {
-        if (msg.gameId === 'hillKing') window.location.href = '/host-hill/';
-        else if (msg.gameId === 'meteor') window.location.href = '/host-meteor/';
-        else (typeof Transitions !== 'undefined' ? Transitions.navigateTo('/host/') : window.location.href = '/host/');
+        const urls = { hillKing: '/host-hill/', meteor: '/host-meteor/', race: '/host-race/' };
+        window.location.href = urls[msg.gameId] || '/host/';
         return;
       }
       state = msg.gameState;

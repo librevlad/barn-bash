@@ -162,11 +162,12 @@ const FX = (() => {
   }
 
   function drawScreenEffects(ctx) {
-    // Vignette
+    // Vignette (supports custom color — e.g., red for danger)
     if (vignetteIntensity > 0.01) {
+      const vc = vignetteColor || '0,0,0';
       const grad = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.75);
       grad.addColorStop(0, 'transparent');
-      grad.addColorStop(1, `rgba(0,0,0,${vignetteIntensity * 0.7})`);
+      grad.addColorStop(1, `rgba(${vc},${vignetteIntensity * 0.7})`);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
     }

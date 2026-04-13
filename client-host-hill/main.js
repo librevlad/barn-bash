@@ -22,9 +22,8 @@ ws.onmessage = (e) => {
     case 'state':
       window._lastPlayers = msg.gameState ? msg.gameState.players : {};
       if (msg.gameId && msg.gameId !== 'hillKing') {
-        if (msg.gameId === 'escapeFox') window.location.href = '/host-escape/';
-        else if (msg.gameId === 'meteor') window.location.href = '/host-meteor/';
-        else window.location.href = '/host/';
+        const urls = { escapeFox: '/host-escape/', meteor: '/host-meteor/', race: '/host-race/' };
+        window.location.href = urls[msg.gameId] || '/host/';
         return;
       }
       state = msg.gameState;
@@ -54,7 +53,7 @@ ws.onmessage = (e) => {
     case 'bump':
       Sound.play('bump');
       if (typeof FX !== 'undefined') { FX.shake(8); FX.screenFlash('#fff', 0.2); FX.burst(640, 360, 15, { color: '#B070FF', speed: 4, life: 0.3, glow: true }); }
-      showMsg('Player ' + msg.from + ' bumped Player ' + msg.to + '!', 1200);
+      showMsg(pname(msg.from) + ' bumped ' + pname(msg.to) + '!', 1200);
       break;
     case 'shieldBlock':
       Narrator.shieldBlock(pname(msg.playerId));
@@ -186,6 +185,7 @@ function showMsg(text, ms) {
 
 function showWinner(winnerId) {
   $hud.style.display = 'none';
+  $message.classList.remove('show');
   const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
   const p = winnerId ? state.players[winnerId] : null;
   if (p) {

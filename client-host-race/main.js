@@ -74,13 +74,14 @@ ws.onmessage = (e) => {
       if (typeof FX !== 'undefined') FX.textPopup(640, 340, 'DRIFT BOOST!', '#44ff44');
       break;
 
-    case 'player_stunned':
+    case 'player_stunned': {
       Sound.play('stumble');
       Render2D.triggerElim();
       if (typeof FX !== 'undefined') { FX.shake(8); FX.screenFlash('#ff4400', 0.2); }
       const reason = msg.reason === 'oil' ? 'slipped on oil!' : msg.reason === 'missile' ? 'got hit by a missile!' : 'crashed!';
       showMsg(pname(msg.playerId) + ' ' + reason, 1500);
       break;
+    }
 
     case 'bump':
       Sound.play('bump');
@@ -116,7 +117,7 @@ function runCountdown() {
   let i = 0;
   $countdown.style.display = 'block';
   function next() {
-    if (i >= steps.length) { $countdown.style.display = 'none'; $hud.style.display = ''; return; }
+    if (i >= steps.length) { $countdown.style.display = 'none'; if (typeof HUD === 'undefined') $hud.style.display = ''; return; }
     $countdown.textContent = steps[i];
     $countdown.style.transform = 'translate(-50%, -50%) scale(1.6)';
     $countdown.style.opacity = '1';

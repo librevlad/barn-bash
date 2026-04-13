@@ -478,7 +478,7 @@ const Render2D = (() => {
     // FX overlay (particles, popups, screen effects)
     if (typeof FX !== 'undefined') {
       FX.drawAfter(ctx);
-      FX.setVignette(foxProx * 0.6, 'rgba(180,20,0,');
+      FX.setVignette(foxProx * 0.6, '180,20,0');
     }
     // Professional post-processing
     if (typeof Visual !== 'undefined') {

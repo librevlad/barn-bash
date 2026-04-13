@@ -29,7 +29,7 @@ const Sound = (() => {
 
   // Auto-unlock on first interaction
   ['click', 'touchstart', 'pointerdown'].forEach(evt => {
-    document.addEventListener(evt, unlock, { once: false, passive: true });
+    document.addEventListener(evt, unlock, { once: true, passive: true });
   });
 
   // --- Primitives ---
