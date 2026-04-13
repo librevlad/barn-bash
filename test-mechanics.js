@@ -211,7 +211,7 @@ async function main() {
   const mtStates = total(players, 'state');
   ok(mtStates > 30, `Got ${mtStates} state updates (>30)`);
   warn(anyGot(players, 'singed'), `Singed events: ${total(players, 'singed')}`);
-  warn(anyGot(players, 'push_hit'), `Push hit events: ${total(players, 'push_hit')}`);
+  warn(anyGot(players, 'push'), `Push events: ${total(players, 'push')}`);
 
   if (players[0].state && players[0].state.gameState) {
     const s = players[0].state.gameState;
@@ -220,7 +220,7 @@ async function main() {
   }
 
   console.log(`  Events: states=${mtStates}, singed=${total(players, 'singed')}, ` +
-    `push_hit=${total(players, 'push_hit')}, elim=${total(players, 'elimination')}, ` +
+    `push=${total(players, 'push')}, elim=${total(players, 'elimination')}, ` +
     `game_over=${total(players, 'game_over')}\n`);
 
   // =========================================================================
@@ -231,16 +231,19 @@ async function main() {
 
   ok(anyGot(players, 'state'), 'Race sends states');
 
-  // P0: steer alternating + boost
+  // P0: steer alternating + boost (direction-based, matching controller)
   const rcI = [];
-  rcI.push(setInterval(() => input(players[0], 'steer', { value: -0.3 }), 700));
-  rcI.push(setInterval(() => input(players[0], 'steer', { value: 0.3 }), 1400));
+  let p0dir = 'right';
+  rcI.push(setInterval(() => {
+    input(players[0], 'steer', { direction: p0dir });
+    p0dir = p0dir === 'right' ? 'left' : 'right';
+  }, 700));
   rcI.push(setInterval(() => input(players[0], 'boost'), 5000));
-  // P1: steer right
-  rcI.push(setInterval(() => input(players[1], 'steer', { value: 0.2 }), 600));
+  // P1: steer right mostly
+  rcI.push(setInterval(() => input(players[1], 'steer', { direction: 'right' }), 600));
   rcI.push(setInterval(() => input(players[1], 'boost'), 4000));
   // P2: steer left + items
-  rcI.push(setInterval(() => input(players[2], 'steer', { value: -0.2 }), 500));
+  rcI.push(setInterval(() => input(players[2], 'steer', { direction: 'left' }), 500));
   rcI.push(setInterval(() => input(players[2], 'useItem'), 3000));
 
   await sleep(20000);
@@ -248,7 +251,7 @@ async function main() {
 
   const rcStates = total(players, 'state');
   ok(rcStates > 40, `Got ${rcStates} state updates (>40)`);
-  warn(anyGot(players, 'lap'), `Lap events: ${total(players, 'lap')}`);
+  warn(anyGot(players, 'lap_complete'), `Lap events: ${total(players, 'lap_complete')}`);
   warn(anyGot(players, 'item_pickup'), `Item pickup: ${total(players, 'item_pickup')}`);
 
   if (players[0].state && players[0].state.gameState) {
@@ -263,8 +266,8 @@ async function main() {
     ok(Array.isArray(s.items), 'State has items array');
   }
 
-  console.log(`  Events: states=${rcStates}, lap=${total(players, 'lap')}, ` +
-    `item_pickup=${total(players, 'item_pickup')}, item_use=${total(players, 'item_use')}, ` +
+  console.log(`  Events: states=${rcStates}, lap=${total(players, 'lap_complete')}, ` +
+    `item_pickup=${total(players, 'item_pickup')}, item_used=${total(players, 'item_used')}, ` +
     `finished=${total(players, 'finished')}, game_over=${total(players, 'game_over')}\n`);
 
   // =========================================================================
