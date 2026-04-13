@@ -1,23 +1,32 @@
 // ============================================================
-// King of the Hill — 2D Top-Down Arena (Canvas2D)
+// King of the Hill — 2D Renderer (Engine-powered)
+// Uses: Camera2D, Scene, ParticleSystem, TweenManager, EntityManager
 // ============================================================
 
 const Render2D = (() => {
   let canvas, ctx;
-  let W, H, CX, CY, SCALE;
-  let clock = 0, shakeX = 0, shakeY = 0, shakeI = 0;
+  let W, H;
+
+  // Engine instances
+  const camera = new Camera2D(1280, 720);
+  const scene = new Scene();
+  const particles = new ParticleSystem(400);
+  const entities = new EntityManager();
+  let renderLoop;
+
+  // Game state
   let targetPlatR = 5, renderPlatR = 5;
   let kingZoneR = 1.5;
 
-  const players = {};
-  const trails = []; // dash trails
-
-  // Stars
+  // Stars (pre-generated, same count & distribution as original)
   const stars = [];
   for (let i = 0; i < 80; i++) {
     stars.push({ x: Math.random(), y: Math.random(), s: 0.5 + Math.random() * 1.5, b: Math.random() });
   }
 
+  // ============================================================
+  // INIT
+  // ============================================================
   function init() {
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
@@ -25,36 +34,101 @@ const Render2D = (() => {
     window.addEventListener('resize', resize);
     if (typeof FX !== 'undefined') FX.init(W, H);
     if (typeof Visual !== 'undefined') Visual.init(W, H);
+
+    // Setup scene layers
+    // 'ui' layer name is special in Scene — it skips camera transform (screen-space).
+    // Background stars/nebula use screen-space coords, so we draw them before scene.render().
+    scene.createLayer('arena', 5);
+    scene.createLayer('kingzone', 8);
+    scene.createLayer('players', 20);
+    scene.createLayer('effects', 30);
+    scene.createLayer('ui', 40);
+
+    // Register render functions per layer
+    scene.getLayer('arena').addFn(drawArena);
+    scene.getLayer('kingzone').addFn(drawKingZone);
+    scene.getLayer('players').addFn(drawPlayers);
+    scene.getLayer('effects').addFn(drawEffects);
+
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
-    let last = performance.now();
-    (function animate(now) {
-      requestAnimationFrame(animate);
-      const rawDt = Math.min((now - last) / 1000, 0.05);
-      const dt = rawDt * (typeof FX !== 'undefined' ? FX.getTimeScale() : 1);
-      last = now; clock += dt;
-      if (typeof FX !== 'undefined') FX.update(rawDt);
-      if (typeof Visual !== 'undefined') Visual.update(rawDt);
-      render(dt);
-    })(performance.now());
+
+    // Start render loop
+    renderLoop = new RenderLoop(canvas);
+    renderLoop.start(
+      (dt) => {
+        TweenManager.update(dt);
+        particles.update(dt);
+        if (typeof FX !== 'undefined') FX.update(dt);
+        if (typeof Visual !== 'undefined') Visual.update(dt);
+        camera.update(dt);
+      },
+      (ctx, dt) => {
+        render(ctx, dt);
+      }
+    );
   }
 
   function resize() {
     const dpr = Math.min(window.devicePixelRatio, 2);
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = W * dpr; canvas.height = H * dpr;
-    if (typeof FX !== 'undefined') FX.resize(W, H);
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    CX = W / 2; CY = H / 2;
-    SCALE = Math.min(W, H) / 13;
+    camera.resize(W, H);
+    if (typeof FX !== 'undefined') FX.resize(W, H);
   }
 
-  function gts(gx, gz) {
-    return [CX + gx * SCALE + shakeX, CY + gz * SCALE + shakeY];
+  // ============================================================
+  // RENDER (called by RenderLoop)
+  // ============================================================
+  function render(ctx, dt) {
+    // Smoothly interpolate platform radius
+    renderPlatR += (targetPlatR - renderPlatR) * 0.04;
+
+    // Clear
+    ctx.fillStyle = '#06060f';
+    ctx.fillRect(0, 0, W, H);
+    if (typeof FX !== 'undefined') FX.drawBefore(ctx);
+
+    // Render scene (background layer is in screen-space via 'ui' name convention;
+    // but we want arena/players in camera space while background stays in screen space).
+    // Since our arena is centered at world origin and camera stays at origin,
+    // we just render all layers. The camera provides shake offset.
+    scene.render(ctx, camera);
+
+    // Particles (world space — apply camera transform)
+    camera.applyTransform(ctx);
+    particles.draw(ctx);
+    camera.resetTransform(ctx);
+
+    // Post-processing (screen space)
+    if (typeof FX !== 'undefined') FX.drawAfter(ctx);
+    if (typeof Visual !== 'undefined') Visual.drawPost(ctx, { vignette: 0.25, grain: 0.015 });
   }
 
-  // ---- STARS ----
-  function drawStars() {
+  // ============================================================
+  // Helper: world-to-screen using Camera2D
+  // Converts polar game coords (angle, radius) to screen coords
+  // ============================================================
+  function polarToScreen(angle, radius) {
+    const wx = Math.cos(angle) * radius;
+    const wy = Math.sin(angle) * radius;
+    return camera.worldToScreen(wx, wy);
+  }
+
+  // ============================================================
+  // LAYER: BACKGROUND (stars + nebula) — drawn in screen space
+  // Note: this layer is named 'background' so Scene will apply
+  // camera transform. We use raw screen coords so we undo via
+  // screenToWorld or compute in worldToScreen with 0,0 center.
+  // Actually, since camera stays at (0,0) and zoom is fixed,
+  // the camera transform essentially just adds shake. For a
+  // static background we draw in the ctx directly and account
+  // for shake via worldToScreen for the arena center.
+  // ============================================================
+  function drawStars(ctx) {
+    const clock = renderLoop ? renderLoop.getClock() : 0;
+
     // Nebula clouds (slow-moving colored gradients)
     const nebulas = [
       { x: 0.3, y: 0.25, r: 0.2, color: '80,40,140', speed: 0.02 },
@@ -81,10 +155,16 @@ const Render2D = (() => {
     }
   }
 
-  // ---- ARENA ----
-  function drawArena(radius) {
+  // ============================================================
+  // LAYER: ARENA — disc with gradient, glow, concentric rings
+  // ============================================================
+  function drawArena(ctx) {
+    const radius = renderPlatR;
+    const SCALE = camera.getZoom();
     const r = radius * SCALE;
-    const [ax, ay] = [CX + shakeX, CY + shakeY];
+    const center = camera.worldToScreen(0, 0);
+    const ax = center.x;
+    const ay = center.y;
 
     // Outer glow
     const glow = ctx.createRadialGradient(ax, ay, r * 0.85, ax, ay, r * 1.4);
@@ -110,27 +190,8 @@ const Render2D = (() => {
       ctx.beginPath(); ctx.arc(ax, ay, r * f, 0, Math.PI * 2); ctx.stroke();
     }
 
-    // King zone — golden center scoring area
-    const kingR = (kingZoneR || 1.5) * SCALE;
-    const kingGlow = ctx.createRadialGradient(ax, ay, 0, ax, ay, kingR);
-    kingGlow.addColorStop(0, 'rgba(255,200,50,0.12)');
-    kingGlow.addColorStop(0.7, 'rgba(255,200,50,0.04)');
-    kingGlow.addColorStop(1, 'rgba(255,200,50,0)');
-    ctx.fillStyle = kingGlow;
-    ctx.beginPath(); ctx.arc(ax, ay, kingR, 0, Math.PI * 2); ctx.fill();
-    // King zone ring
-    ctx.strokeStyle = 'rgba(255,200,50,0.15)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 6]);
-    ctx.beginPath(); ctx.arc(ax, ay, kingR, 0, Math.PI * 2); ctx.stroke();
-    ctx.setLineDash([]);
-    // Crown icon in center
-    ctx.fillStyle = 'rgba(255,200,50,0.08)';
-    ctx.font = `${Math.round(kingR * 0.4)}px sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('👑', ax, ay);
-
-    // Edge ring
+    // Pulsing edge ring (danger mode)
+    const clock = renderLoop ? renderLoop.getClock() : 0;
     const danger = renderPlatR < 3.5;
     const pulse = 0.4 + Math.sin(clock * (danger ? 6 : 3)) * 0.2;
     ctx.strokeStyle = danger ? `rgba(255,60,60,${pulse})` : `rgba(120,80,220,${pulse})`;
@@ -138,118 +199,184 @@ const Render2D = (() => {
     ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.stroke();
   }
 
-  // ---- TRAILS ----
-  function addTrail(x, y, color) {
-    trails.push({ x, y, color, life: 1 });
+  // ============================================================
+  // LAYER: KING ZONE — golden center scoring area
+  // ============================================================
+  function drawKingZone(ctx) {
+    const SCALE = camera.getZoom();
+    const center = camera.worldToScreen(0, 0);
+    const ax = center.x;
+    const ay = center.y;
+    const kingR = (kingZoneR || 1.5) * SCALE;
+
+    // King zone glow
+    const kingGlow = ctx.createRadialGradient(ax, ay, 0, ax, ay, kingR);
+    kingGlow.addColorStop(0, 'rgba(255,200,50,0.12)');
+    kingGlow.addColorStop(0.7, 'rgba(255,200,50,0.04)');
+    kingGlow.addColorStop(1, 'rgba(255,200,50,0)');
+    ctx.fillStyle = kingGlow;
+    ctx.beginPath(); ctx.arc(ax, ay, kingR, 0, Math.PI * 2); ctx.fill();
+
+    // King zone ring (dashed)
+    ctx.strokeStyle = 'rgba(255,200,50,0.15)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 6]);
+    ctx.beginPath(); ctx.arc(ax, ay, kingR, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Crown icon in center
+    ctx.fillStyle = 'rgba(255,200,50,0.08)';
+    ctx.font = `${Math.round(kingR * 0.4)}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('\uD83D\uDC51', ax, ay);
   }
 
-  function drawTrails() {
-    for (let i = trails.length - 1; i >= 0; i--) {
-      const t = trails[i];
-      t.life -= 0.03;
-      if (t.life <= 0) { trails.splice(i, 1); continue; }
-      ctx.fillStyle = t.color.replace(')', `,${t.life * 0.3})`).replace('rgb', 'rgba');
-      ctx.beginPath(); ctx.arc(t.x, t.y, 4 * t.life, 0, Math.PI * 2); ctx.fill();
-    }
+  // ============================================================
+  // LAYER: TRAILS (dash trails via ParticleSystem)
+  // ============================================================
+  function drawTrails(ctx) {
+    // Trail particles are spawned in drawPlayers when dashing;
+    // they live in the particle system and are drawn in the effects pass.
+    // This function is a placeholder for layer ordering — trails render
+    // below players within the same layer group.
   }
 
-  // ---- CHARACTER ----
-  function drawCharacter(gx, gz, color, alive, dashing, idx, character) {
-    if (!alive) return;
-    const [sx, sy] = gts(gx, gz);
+  // ============================================================
+  // LAYER: PLAYERS (using EntityManager)
+  // ============================================================
+  function drawPlayers(ctx) {
+    const clock = renderLoop ? renderLoop.getClock() : 0;
 
-    // Dash trail
-    if (dashing) addTrail(sx, sy, color);
+    for (const e of entities.all()) {
+      if (!e.visible) continue;
 
-    const expr = dashing ? 'determined' : 'happy';
-    CharDraw.blob(ctx, sx, sy, 22, color, { idx, clock, expression: expr, dashing, running: false, character });
-  }
+      // Interpolate
+      e.lerp(0.15);
 
-  // ---- POOF ----
-  const poofs = [];
-  function spawnPoof(gx, gz, color) {
-    const [sx, sy] = gts(gx, gz);
-    for (let i = 0; i < 12; i++) {
-      poofs.push({
-        x: sx, y: sy,
-        vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
-        color, life: 1
+      // Convert polar (angle, radius) stored in entity to screen coords
+      const gx = Math.cos(e.data.rAngle) * e.data.rRadius;
+      const gz = Math.sin(e.data.rAngle) * e.data.rRadius;
+      const s = camera.worldToScreen(gx, gz);
+
+      // Dash trail particles
+      if (e.data.dashing) {
+        particles.burst(s.x, s.y, 1, {
+          ...ParticleSystem.PRESETS.TRAIL,
+          color: e.data.colorRgb || '255,255,255',
+          speed: 0.3,
+          life: 0.35,
+          size: 4,
+        });
+      }
+
+      // Draw character blob
+      const expr = e.data.dashing ? 'determined' : 'happy';
+      CharDraw.blob(ctx, s.x, s.y, 22, e.color, {
+        idx: e.data.idx || 0,
+        clock,
+        expression: expr,
+        dashing: e.data.dashing,
+        running: false,
+        character: e.character,
       });
     }
-    shakeI = 8;
   }
 
-  function drawPoofs() {
-    for (let i = poofs.length - 1; i >= 0; i--) {
-      const p = poofs[i];
-      p.life -= 0.03;
-      p.x += p.vx; p.y += p.vy; p.vy += 0.1;
-      if (p.life <= 0) { poofs.splice(i, 1); continue; }
-      ctx.globalAlpha = p.life;
-      ctx.fillStyle = p.color;
-      ctx.beginPath(); ctx.arc(p.x, p.y, 4 * p.life, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
+  // ============================================================
+  // LAYER: EFFECTS — particle rendering is handled globally
+  // ============================================================
+  function drawEffects(ctx) {
+    // Particles are drawn in the main render() after scene.render() with
+    // camera transform applied. This layer is reserved for future effects.
   }
 
-  // ---- RENDER ----
-  function render(dt) {
-    renderPlatR += (targetPlatR - renderPlatR) * 0.04;
-    if (shakeI > 0.5) {
-      shakeX = (Math.random() - 0.5) * shakeI;
-      shakeY = (Math.random() - 0.5) * shakeI;
-      shakeI *= 0.88;
-    } else { shakeX = shakeY = 0; shakeI = 0; }
-
-    ctx.fillStyle = '#06060f';
-    ctx.fillRect(0, 0, W, H);
-    if (typeof FX !== 'undefined') FX.drawBefore(ctx);
-
-    drawStars();
-    drawArena(renderPlatR);
-    drawTrails();
-
-    const ids = Object.keys(players);
-    ids.forEach((id, i) => {
-      const p = players[id];
-      if (!p.alive) return;
-      p.rAngle += (p.tAngle - p.rAngle) * 0.15;
-      p.rRadius += (p.tRadius - p.rRadius) * 0.18;
-      const gx = Math.cos(p.rAngle) * p.rRadius;
-      const gz = Math.sin(p.rAngle) * p.rRadius;
-      drawCharacter(gx, gz, p.color, p.alive, p.dashing, i, p.character);
-    });
-
-    drawPoofs();
-    if (typeof FX !== 'undefined') FX.drawAfter(ctx);
-    if (typeof Visual !== 'undefined') Visual.drawPost(ctx, { vignette: 0.25, grain: 0.015 });
-  }
-
-  // ---- PUBLIC ----
+  // ============================================================
+  // PUBLIC API
+  // ============================================================
   function updateState(state) {
     targetPlatR = state.platR;
     if (state.kingZoneR) kingZoneR = state.kingZoneR;
+
+    // Set camera zoom to match original SCALE = Math.min(W,H) / 13
+    const SCALE = Math.min(W || 1280, H || 720) / 13;
+    camera.setZoom(SCALE);
+    camera.setPosition(0, 0);
+
     const ids = Object.keys(state.players);
     ids.forEach((id, i) => {
       const pd = state.players[id];
-      if (!players[id]) {
-        players[id] = {
-          rAngle: pd.angle, tAngle: pd.angle,
-          rRadius: pd.radius, tRadius: pd.radius,
-          color: pd.color, alive: pd.alive, dashing: pd.dashing,
-          wasAlive: true
-        };
+      let e = entities.get(id);
+      if (!e) {
+        e = entities.create(id, 'player');
+        e.data.rAngle = pd.angle;
+        e.data.rRadius = pd.radius;
+        e.data.wasAlive = true;
+        e.data.idx = i;
+        e.color = pd.color;
+        e.character = pd.character || null;
+        // Pre-compute RGB string from hex color for particles
+        e.data.colorRgb = hexToRgb(pd.color);
       }
-      const p = players[id];
-      p.tAngle = pd.angle; p.tRadius = pd.radius;
-      p.dashing = pd.dashing; p.alive = pd.alive; p.color = pd.color; p.character = pd.character || null;
-      if (p.wasAlive && !pd.alive) {
-        p.wasAlive = false;
+
+      // Set interpolation targets for polar coords
+      const prevAngle = e.data.rAngle;
+      const prevRadius = e.data.rRadius;
+      // Smoothly interpolate angle and radius
+      e.data.rAngle += shortAngleDiff(e.data.rAngle, pd.angle) * 0.15;
+      e.data.rRadius += (pd.radius - e.data.rRadius) * 0.18;
+
+      e.data.dashing = pd.dashing;
+      e.visible = pd.alive;
+      e.color = pd.color;
+      e.character = pd.character || null;
+      e.data.colorRgb = hexToRgb(pd.color);
+
+      // Poof on elimination
+      if (e.data.wasAlive && !pd.alive) {
+        e.data.wasAlive = false;
         const gx = Math.cos(pd.angle) * pd.radius;
         const gz = Math.sin(pd.angle) * pd.radius;
-        spawnPoof(gx, gz, pd.color);
+        const s = camera.worldToScreen(gx, gz);
+        spawnPoof(s.x, s.y, pd.color);
       }
+      if (pd.alive) e.data.wasAlive = true;
     });
+  }
+
+  // ============================================================
+  // POOF — elimination particle burst
+  // ============================================================
+  function spawnPoof(sx, sy, color) {
+    const rgb = hexToRgb(color);
+    particles.burst(sx, sy, 12, {
+      speed: 3,
+      life: 0.8,
+      size: 5,
+      sizeEnd: 0,
+      gravity: 1.5,
+      color: rgb,
+      friction: 0.96,
+    });
+    camera.shake(8, 0.3);
+  }
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+  function shortAngleDiff(from, to) {
+    let diff = to - from;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    return diff;
+  }
+
+  function hexToRgb(hex) {
+    if (!hex || hex.charAt(0) !== '#') return '255,255,255';
+    const h = hex.slice(1);
+    const r = parseInt(h.slice(0, 2), 16) || 255;
+    const g = parseInt(h.slice(2, 4), 16) || 255;
+    const b = parseInt(h.slice(4, 6), 16) || 255;
+    return `${r},${g},${b}`;
   }
 
   function triggerWin() {}

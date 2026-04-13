@@ -2,6 +2,8 @@
 // King of the Hill — Server Game Logic (Full Overhaul)
 // ============================================================
 
+const { Physics2D } = require('../engine/Physics2D');
+
 const TICK_MS = 50;
 const ORBIT_SPEED = 0.028;
 const PUSH_FORCE = 0.65;
@@ -166,7 +168,7 @@ class HillGame {
         const bz = Math.sin(this.bumperAngle) * 0.8;
         const px = Math.cos(g.angle) * g.radius;
         const pz = Math.sin(g.angle) * g.radius;
-        if (Math.sqrt((px - bx) ** 2 + (pz - bz) ** 2) < 0.8) {
+        if (Physics2D.pointInCircle(px, pz, bx, bz, 0.8)) {
           g.vr += BUMPER_FORCE;
           this.broadcast({ type: 'bump', from: 0, to: p.id, gameId: 'hillKing' });
         }
@@ -178,7 +180,7 @@ class HillGame {
         const cz = Math.sin(crack.angle) * crack.radius;
         const px = Math.cos(g.angle) * g.radius;
         const pz = Math.sin(g.angle) * g.radius;
-        if (Math.sqrt((px - cx) ** 2 + (pz - cz) ** 2) < 0.8) {
+        if (Physics2D.pointInCircle(px, pz, cx, cz, 0.8)) {
           g.vr += 0.015;
         }
       }
@@ -195,7 +197,7 @@ class HillGame {
         const pz = Math.sin(g.angle) * g.radius;
         const pux = Math.cos(pu.angle) * pu.radius;
         const puz = Math.sin(pu.angle) * pu.radius;
-        if (Math.sqrt((px - pux) ** 2 + (pz - puz) ** 2) < 0.8) {
+        if (Physics2D.pointInCircle(px, pz, pux, puz, 0.8)) {
           this._collectPowerup(p, pu, i);
         }
       }
@@ -260,6 +262,7 @@ class HillGame {
   }
 
   _checkCollisions(alive) {
+    const halfHit = HIT_DIST / 2;
     for (let i = 0; i < alive.length; i++) {
       for (let j = i + 1; j < alive.length; j++) {
         if (!alive[i].gameData.alive || !alive[j].gameData.alive) continue;
@@ -268,10 +271,17 @@ class HillGame {
         const az = Math.sin(a.angle) * a.radius;
         const bx = Math.cos(b.angle) * b.radius;
         const bz = Math.sin(b.angle) * b.radius;
-        const d = Math.sqrt((ax - bx) ** 2 + (az - bz) ** 2);
 
-        if (d >= HIT_DIST) {
-          // Near-miss check
+        // Circle-vs-circle collision using Physics2D
+        const hitResult = Physics2D.circleVsCircle(
+          { x: ax, y: az, radius: halfHit },
+          { x: bx, y: bz, radius: halfHit }
+        );
+
+        if (!hitResult) {
+          // No collision — check near-miss
+          const dx = ax - bx, dz = az - bz;
+          const d = Math.sqrt(dx * dx + dz * dz);
           if (d < HIT_DIST + NEAR_MISS_DIST && (a.dashing || b.dashing)) {
             const dodger = a.dashing ? alive[j] : alive[i];
             dodger.gameData.combo++;
@@ -426,8 +436,7 @@ class HillGame {
         const og = other.gameData;
         const ox = Math.cos(og.angle) * og.radius;
         const oz = Math.sin(og.angle) * og.radius;
-        const d = Math.sqrt((px - ox) ** 2 + (pz - oz) ** 2);
-        if (d < gpoundR && og.anchor <= 0) {
+        if (Physics2D.pointInCircle(ox, oz, px, pz, gpoundR) && og.anchor <= 0) {
           og.vr += GPOUND_FORCE;
           og.combo = 0;
         }
@@ -456,8 +465,9 @@ class HillGame {
           const og = other.gameData;
           const ox = Math.cos(og.angle) * og.radius;
           const oz = Math.sin(og.angle) * og.radius;
-          const d = Math.sqrt((px - ox) ** 2 + (pz - oz) ** 2);
-          if (d < nearestDist) { nearestDist = d; nearestAngle = Math.atan2(oz - pz, ox - px); }
+          const dx = ox - px, dz = oz - pz;
+          const d = Math.sqrt(dx * dx + dz * dz);
+          if (d < nearestDist) { nearestDist = d; nearestAngle = Math.atan2(dz, dx); }
         }
         if (nearestDist < Infinity) {
           g.radius += Math.cos(nearestAngle - g.angle) * 0.8;

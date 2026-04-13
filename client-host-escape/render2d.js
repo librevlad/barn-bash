@@ -1,13 +1,20 @@
 // ============================================================
-// Escape the Fox — 2D Side-Scroll Runner (Canvas2D)
+// Escape the Fox — 2D Side-Scroll Runner (Engine-powered)
+// Uses: RenderLoop, Camera2D, Scene, ParticleSystem, TweenManager, EntityManager
 // ============================================================
 
 const Render2D = (() => {
   let canvas, ctx;
   let W, H;
-  let clock = 0, shakeX = 0, shakeY = 0, shakeI = 0;
 
-  const players = {};
+  // Engine instances
+  const camera = new Camera2D(1280, 720);
+  const scene = new Scene();
+  const particles = new ParticleSystem(400);
+  const entities = new EntityManager();
+  let renderLoop;
+
+  // Game state
   let worldDist = 0, foxDist = -5, foxProx = 0, speed = 0.3;
   let obstacles = [];
   let powerups = [];
@@ -48,9 +55,6 @@ const Render2D = (() => {
     };
   }
 
-  // Parallax layers
-  const BG_COLORS = { sky1: '#1a2a4a', sky2: '#0a1628', ground: '#2a5a3a', groundDark: '#1e4a2e' };
-
   // Stars (static background)
   const stars = [];
   for (let i = 0; i < 60; i++) {
@@ -74,6 +78,9 @@ const Render2D = (() => {
     });
   }
 
+  // ============================================================
+  // INIT
+  // ============================================================
   function init() {
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
@@ -82,16 +89,49 @@ const Render2D = (() => {
     if (typeof FX !== 'undefined') FX.init(W, H);
     if (typeof Visual !== 'undefined') Visual.init(W, H);
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
-    let last = performance.now();
-    (function animate(now) {
-      requestAnimationFrame(animate);
-      const rawDt = Math.min((now - last) / 1000, 0.05);
-      const dt = rawDt * (typeof FX !== 'undefined' ? FX.getTimeScale() : 1);
-      last = now; clock += dt;
-      if (typeof FX !== 'undefined') FX.update(rawDt);
-      if (typeof Visual !== 'undefined') Visual.update(rawDt);
-      render(dt);
-    })(performance.now());
+
+    // Setup scene layers (all screen-space for this side-scroller)
+    scene.createLayer('sky', 0);
+    scene.createLayer('clouds', 2);
+    scene.createLayer('hills', 4);
+    scene.createLayer('ground', 5);
+    scene.createLayer('trees', 8);
+    scene.createLayer('obstacles', 10);
+    scene.createLayer('powerups', 12);
+    scene.createLayer('players', 20);
+    scene.createLayer('fox', 22);
+    scene.createLayer('foxwarning', 24);
+    scene.createLayer('effects', 30);
+    scene.createLayer('ui', 40);
+
+    // Register render functions per layer
+    scene.getLayer('sky').addFn(drawSky);
+    scene.getLayer('clouds').addFn(drawClouds);
+    scene.getLayer('hills').addFn(drawHills);
+    scene.getLayer('ground').addFn(drawGroundLayer);
+    scene.getLayer('trees').addFn(drawTrees);
+    scene.getLayer('obstacles').addFn(drawObstacles);
+    scene.getLayer('powerups').addFn(drawPowerups);
+    scene.getLayer('players').addFn(drawPlayers);
+    scene.getLayer('fox').addFn(drawFox);
+    scene.getLayer('foxwarning').addFn(drawFoxWarning);
+    scene.getLayer('effects').addFn(drawDust);
+    scene.getLayer('ui').addFn(drawLaneMarkers);
+
+    // Start render loop
+    renderLoop = new RenderLoop(canvas);
+    renderLoop.start(
+      (dt) => {
+        TweenManager.update(dt);
+        particles.update(dt);
+        if (typeof FX !== 'undefined') FX.update(dt);
+        if (typeof Visual !== 'undefined') Visual.update(dt);
+        camera.update(dt);
+      },
+      (ctx, dt) => {
+        render(ctx, dt);
+      }
+    );
   }
 
   function resize() {
@@ -101,10 +141,68 @@ const Render2D = (() => {
     if (typeof FX !== 'undefined') FX.resize(W, H);
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    camera.resize(W, H);
   }
 
-  // ---- SKY ----
-  function drawSky() {
+  // ============================================================
+  // RENDER (called by RenderLoop)
+  // ============================================================
+  function render(ctx, dt) {
+    const clock = renderLoop.getClock();
+
+    // Client interpolation for smooth scrolling
+    const elapsed = (performance.now() - lastUpdateTime) / 1000;
+    worldDist = targetWorldDist + targetSpeed * Math.min(elapsed, 0.15);
+    foxDist = targetFoxDist + targetSpeed * 0.95 * Math.min(elapsed, 0.15);
+
+    // Camera tracks worldDist for side-scrolling (x axis = scroll)
+    camera.x = worldDist;
+
+    // Camera shake is handled by Camera2D.update(dt) via shake()
+
+    ctx.clearRect(0, 0, W, H);
+
+    // FX pre-draw
+    ctx.save();
+    ctx.translate(camera._shakeOffsetX, camera._shakeOffsetY);
+    if (typeof FX !== 'undefined') FX.drawBefore(ctx);
+
+    // Dramatic finish zoom
+    if (dramatic) {
+      ctx.translate(W * 0.025, H * 0.025);
+      ctx.scale(0.95 + Math.sin(clock * 2) * 0.01, 0.95 + Math.sin(clock * 2) * 0.01);
+    }
+
+    // Render all scene layers (no camera transform — this is a side-scroller
+    // where layers manage their own worldDist-based parallax)
+    scene.render(ctx, null);
+
+    ctx.restore();
+
+    // Particles (screen space — dust at feet)
+    particles.draw(ctx);
+
+    // FX overlay (particles, popups, screen effects)
+    if (typeof FX !== 'undefined') {
+      FX.drawAfter(ctx);
+      FX.setVignette(foxProx * 0.6, '180,20,0');
+    }
+    // Professional post-processing
+    if (typeof Visual !== 'undefined') {
+      Visual.drawPost(ctx, {
+        vignette: 0.3 + foxProx * 0.4,
+        vignetteColor: foxProx > 0.5 ? '180,20,0' : '0,0,0',
+        grain: 0.02,
+        speedIntensity: speed > 0.35 ? (speed - 0.35) * 3 : 0,
+      });
+    }
+  }
+
+  // ============================================================
+  // LAYER: SKY
+  // ============================================================
+  function drawSky(ctx) {
+    const clock = renderLoop ? renderLoop.getClock() : 0;
     const bc = getBiomeColors();
     const grad = ctx.createLinearGradient(0, 0, 0, H * 0.65);
     grad.addColorStop(0, bc.sky1);
@@ -132,8 +230,10 @@ const Render2D = (() => {
     ctx.fill();
   }
 
-  // ---- CLOUDS ----
-  function drawClouds() {
+  // ============================================================
+  // LAYER: CLOUDS
+  // ============================================================
+  function drawClouds(ctx) {
     for (const c of clouds) {
       c.x -= c.speed;
       if (c.x < -0.2) c.x = 1.2;
@@ -145,12 +245,12 @@ const Render2D = (() => {
     }
   }
 
-  // ---- GROUND ----
-  function drawGround() {
+  // ============================================================
+  // LAYER: HILLS (parallax)
+  // ============================================================
+  function drawHills(ctx) {
     const bc = getBiomeColors();
     const groundY = H * 0.62;
-
-    // Hills (parallax)
     ctx.fillStyle = bc.groundDark;
     for (let i = 0; i < 5; i++) {
       const x = ((i * 300 - worldDist * 8) % (W + 400)) - 200;
@@ -158,8 +258,16 @@ const Render2D = (() => {
       ctx.ellipse(x, groundY + 10, 200, 50, 0, Math.PI, Math.PI * 2);
       ctx.fill();
     }
+  }
 
-    // Main ground
+  // ============================================================
+  // LAYER: GROUND
+  // ============================================================
+  function drawGroundLayer(ctx) {
+    const bc = getBiomeColors();
+    const groundY = H * 0.62;
+
+    // Main ground gradient
     const gGrad = ctx.createLinearGradient(0, groundY, 0, H);
     gGrad.addColorStop(0, bc.ground);
     gGrad.addColorStop(0.3, bc.groundDark);
@@ -174,12 +282,13 @@ const Render2D = (() => {
     ctx.moveTo(0, groundY);
     ctx.lineTo(W, groundY);
     ctx.stroke();
-
-    return groundY;
   }
 
-  // ---- TREES ----
-  function drawTrees(groundY) {
+  // ============================================================
+  // LAYER: TREES
+  // ============================================================
+  function drawTrees(ctx) {
+    const groundY = H * 0.62;
     const scrollX = worldDist * 30;
     for (const t of treeDefs) {
       let x = ((t.worldX - scrollX) % (30 * 120));
@@ -198,7 +307,7 @@ const Render2D = (() => {
         ctx.beginPath(); ctx.ellipse(3, 2, t.h * 0.3, 4, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#4a3520';
         ctx.fillRect(-3, -t.h * 0.4, 7, t.h * 0.4);
-        // Canopy layers (dark → light)
+        // Canopy layers (dark -> light)
         ctx.fillStyle = darken(bc.tree, 15);
         ctx.beginPath(); ctx.arc(0, -t.h * 0.45, t.h * 0.38, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = bc.tree;
@@ -242,8 +351,11 @@ const Render2D = (() => {
     }
   }
 
-  // ---- OBSTACLES ----
-  function drawObstacles(groundY) {
+  // ============================================================
+  // LAYER: OBSTACLES
+  // ============================================================
+  function drawObstacles(ctx) {
+    const groundY = H * 0.62;
     const centerX = W * 0.45;
     const laneW = 45;
     for (const obs of obstacles) {
@@ -306,8 +418,12 @@ const Render2D = (() => {
     }
   }
 
-  // ---- POWER-UPS ----
-  function drawPowerups(groundY) {
+  // ============================================================
+  // LAYER: POWER-UPS
+  // ============================================================
+  function drawPowerups(ctx) {
+    const clock = renderLoop ? renderLoop.getClock() : 0;
+    const groundY = H * 0.62;
     const centerX = W * 0.45;
     const laneW = 45;
     for (const pu of powerups) {
@@ -337,45 +453,81 @@ const Render2D = (() => {
     }
   }
 
-  // ---- CHARACTER (blob) ----
-  function drawBlob(x, y, color, jumpY, alive, idx, pdata) {
-    if (!alive && !(pdata && pdata.stumbling)) return;
-    const sy = y - jumpY * 80;
-    const expr = jumpY > 0.05 ? 'excited' : 'determined';
-    const sliding = pdata && pdata.sliding;
-    const stumbling = pdata && pdata.stumbling;
+  // ============================================================
+  // LAYER: PLAYERS (using EntityManager)
+  // ============================================================
+  function drawPlayers(ctx) {
+    const clock = renderLoop ? renderLoop.getClock() : 0;
+    const groundY = H * 0.62;
+    const centerX = W * 0.45;
+    const laneW = 45;
 
-    ctx.save();
-    // Stumble blink
-    if (stumbling && Math.floor(clock * 10) % 2 === 0) ctx.globalAlpha = 0.4;
+    const allEntities = entities.all();
+    allEntities.forEach((e, i) => {
+      if (!e.visible) return;
+      // Interpolate toward target
+      e.lerp(0.25);
 
-    CharDraw.blob(ctx, x, sy, 20, color, {
-      jumpY, idx, clock, expression: expr, running: true,
-      sliding: sliding,
-      character: pdata ? pdata.character : null,
-    });
+      const pdata = e.data;
+      if (!pdata.alive && !pdata.stumbling) return;
 
-    // Shield ring
-    if (pdata && pdata.shield) {
-      ctx.strokeStyle = `rgba(80,160,255,${0.3 + Math.sin(clock * 6) * 0.15})`;
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(x, sy, 28, 0, Math.PI * 2); ctx.stroke();
-    }
-    // Speed lines
-    if (pdata && pdata.speedBoost) {
-      ctx.strokeStyle = 'rgba(255,220,50,0.3)';
-      ctx.lineWidth = 2;
-      for (let i = 0; i < 3; i++) {
-        const lx = x - 15 - i * 8;
-        const ly = sy + (i - 1) * 6;
-        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - 12, ly); ctx.stroke();
+      // Compute screen position from entity data
+      const laneOffset = e.x * laneW; // e.x stores interpolated lane
+      const distOff = (pdata.distOffset || 0) * 15;
+      const px = centerX + laneOffset + distOff;
+      const py = groundY - 20 - i * 6;
+      const jumpY = e.y; // e.y stores interpolated jump height
+
+      const sy = py - jumpY * 80;
+      const expr = jumpY > 0.05 ? 'excited' : 'determined';
+      const sliding = pdata.sliding;
+      const stumbling = pdata.stumbling;
+
+      ctx.save();
+      // Stumble blink
+      if (stumbling && Math.floor(clock * 10) % 2 === 0) ctx.globalAlpha = 0.4;
+
+      CharDraw.blob(ctx, px, sy, 20, e.color, {
+        jumpY, idx: i, clock, expression: expr, running: true,
+        sliding: sliding,
+        character: pdata.character || null,
+      });
+
+      // Shield ring
+      if (pdata.shield) {
+        ctx.strokeStyle = `rgba(80,160,255,${0.3 + Math.sin(clock * 6) * 0.15})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(px, sy, 28, 0, Math.PI * 2); ctx.stroke();
       }
-    }
-    ctx.restore();
+      // Speed lines
+      if (pdata.speedBoost) {
+        ctx.strokeStyle = 'rgba(255,220,50,0.3)';
+        ctx.lineWidth = 2;
+        for (let j = 0; j < 3; j++) {
+          const lx = px - 15 - j * 8;
+          const ly = sy + (j - 1) * 6;
+          ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - 12, ly); ctx.stroke();
+        }
+      }
+      ctx.restore();
+
+      // Dust particles at feet via ParticleSystem
+      if (pdata.alive && jumpY < 0.02) {
+        particles.burst(px, py + 2, 1, {
+          ...ParticleSystem.PRESETS.DUST,
+          speed: 0.5, life: 0.25, size: 2,
+          color: '200,220,180',
+        });
+      }
+    });
   }
 
-  // ---- FOX ----
-  function drawFox(groundY) {
+  // ============================================================
+  // LAYER: FOX
+  // ============================================================
+  function drawFox(ctx) {
+    const clock = renderLoop ? renderLoop.getClock() : 0;
+    const groundY = H * 0.62;
     const relDist = (worldDist - foxDist) * 40;
     const foxX = W * 0.45 - relDist;
     if (foxX < -60 || foxX > W + 60) return;
@@ -383,8 +535,11 @@ const Render2D = (() => {
     CharDraw.fox(ctx, foxX, foxY, 24, clock);
   }
 
-  // ---- FOX PROXIMITY WARNING ----
-  function drawFoxWarning() {
+  // ============================================================
+  // LAYER: FOX PROXIMITY WARNING
+  // ============================================================
+  function drawFoxWarning(ctx) {
+    const clock = renderLoop ? renderLoop.getClock() : 0;
     if (foxProx < 0.3) return;
     const intensity = Math.min(1, (foxProx - 0.3) / 0.7);
     const pulse = Math.sin(clock * 6) * 0.5 + 0.5;
@@ -402,37 +557,19 @@ const Render2D = (() => {
     ctx.fillRect(0, 0, W * 0.15, H);
   }
 
-  // ---- RENDER ----
-  function render(dt) {
-    if (shakeI > 0.3) {
-      shakeX = (Math.random() - 0.5) * shakeI;
-      shakeY = (Math.random() - 0.5) * shakeI;
-      shakeI *= 0.88;
-    } else { shakeX = shakeY = 0; shakeI = 0; }
+  // ============================================================
+  // LAYER: DUST (additional dust via particle system)
+  // ============================================================
+  function drawDust(ctx) {
+    // Particle system draws are handled in the main render function
+    // This layer exists for any additional screen-space effects
+  }
 
-    ctx.save();
-    ctx.translate(shakeX, shakeY);
-    if (typeof FX !== 'undefined') FX.drawBefore(ctx);
-
-    // Client interpolation for smooth scrolling
-    const elapsed = (performance.now() - lastUpdateTime) / 1000;
-    worldDist = targetWorldDist + targetSpeed * Math.min(elapsed, 0.15);
-    foxDist = targetFoxDist + targetSpeed * 0.95 * Math.min(elapsed, 0.15);
-
-    // Dramatic finish zoom
-    if (dramatic) {
-      ctx.translate(W * 0.025, H * 0.025);
-      ctx.scale(0.95 + Math.sin(clock * 2) * 0.01, 0.95 + Math.sin(clock * 2) * 0.01);
-    }
-
-    drawSky();
-    drawClouds();
-    const groundY = drawGround();
-    drawTrees(groundY);
-    drawObstacles(groundY);
-    drawPowerups(groundY);
-
-    // Lane markers
+  // ============================================================
+  // LAYER: LANE MARKERS (UI)
+  // ============================================================
+  function drawLaneMarkers(ctx) {
+    const groundY = H * 0.62;
     const centerX = W * 0.45;
     const laneW = 45;
     ctx.strokeStyle = 'rgba(255,255,255,0.06)';
@@ -445,53 +582,11 @@ const Render2D = (() => {
     ctx.lineTo(centerX + laneW / 2, groundY + 5);
     ctx.stroke();
     ctx.setLineDash([]);
-
-    // Players — positioned by lane + distOffset
-    const ids = Object.keys(players);
-    ids.forEach((id, i) => {
-      const p = players[id];
-      if (!p.alive && !p.stumbling) return;
-      p.ry += ((p.ty || 0) - p.ry) * 0.25;
-      if (p.rlane === undefined) p.rlane = p.lane || 0;
-      p.rlane += ((p.lane || 0) - p.rlane) * 0.2;
-      const laneOffset = p.rlane * laneW;
-      const distOff = (p.distOffset || 0) * 15;
-      const py = groundY - 20 - i * 6;
-      drawBlob(centerX + laneOffset + distOff, py, p.color, p.ry, p.alive, i, p);
-    });
-
-    drawFox(groundY);
-    drawFoxWarning();
-
-    ctx.restore();
-
-    // Dust particles at characters' feet
-    if (Object.values(players).some(p => p.alive)) {
-      ctx.fillStyle = 'rgba(200,220,180,0.15)';
-      for (let i = 0; i < 8; i++) {
-        const px = centerX + Math.sin(clock * 5 + i * 7) * 30;
-        const py = groundY + 2 + Math.random() * 5;
-        ctx.beginPath(); ctx.arc(px, py, 1 + Math.random(), 0, Math.PI * 2); ctx.fill();
-      }
-    }
-
-    // FX overlay (particles, popups, screen effects)
-    if (typeof FX !== 'undefined') {
-      FX.drawAfter(ctx);
-      FX.setVignette(foxProx * 0.6, '180,20,0');
-    }
-    // Professional post-processing
-    if (typeof Visual !== 'undefined') {
-      Visual.drawPost(ctx, {
-        vignette: 0.3 + foxProx * 0.4,
-        vignetteColor: foxProx > 0.5 ? '180,20,0' : '0,0,0',
-        grain: 0.02,
-        speedIntensity: speed > 0.35 ? (speed - 0.35) * 3 : 0,
-      });
-    }
   }
 
-  // ---- PUBLIC ----
+  // ============================================================
+  // PUBLIC API
+  // ============================================================
   function updateState(state) {
     targetWorldDist = state.worldDist;
     targetFoxDist = state.foxDist;
@@ -505,27 +600,46 @@ const Render2D = (() => {
     const ids = Object.keys(state.players);
     ids.forEach((id) => {
       const pd = state.players[id];
-      if (!players[id]) {
-        players[id] = { ry: 0, ty: 0, color: pd.color, alive: pd.alive };
+      let e = entities.get(id);
+      if (!e) {
+        e = entities.create(id, 'player');
+        e.x = pd.lane || 0;
+        e.y = pd.y || 0;
+        e.color = pd.color;
       }
-      const p = players[id];
-      p.ty = pd.y || 0;
-      p.alive = pd.alive;
-      p.lane = pd.lane || 0;
-      p.color = pd.color;
-      p.sliding = pd.sliding || false;
-      p.shield = pd.shield || false;
-      p.speedBoost = pd.speedBoost || false;
-      p.distOffset = pd.distOffset || 0;
-      p.stumbling = pd.stumbling || false;
-      p.combo = pd.combo || 0;
-      p.character = pd.character || 'cat';
+      e.setTarget({
+        x: pd.lane || 0,     // lane position for interpolation
+        y: pd.y || 0,        // jump height for interpolation
+      });
+      e.color = pd.color;
+      e.name = pd.name;
+      e.character = pd.character;
+      e.visible = pd.connected !== false;
+      e.data.alive = pd.alive;
+      e.data.lane = pd.lane || 0;
+      e.data.sliding = pd.sliding || false;
+      e.data.shield = pd.shield || false;
+      e.data.speedBoost = pd.speedBoost || false;
+      e.data.distOffset = pd.distOffset || 0;
+      e.data.stumbling = pd.stumbling || false;
+      e.data.combo = pd.combo || 0;
+      e.data.character = pd.character || 'cat';
     });
   }
 
   function triggerDramatic() { dramatic = true; }
 
-  function triggerElim() { shakeI = 10; }
+  function triggerElim() {
+    camera.shake(10, 0.3);
+    // Elimination burst particles at screen center
+    particles.burst(W * 0.45, H * 0.62, 15, {
+      ...ParticleSystem.PRESETS.SPARKS,
+      color: '255,80,30',
+      speed: 4,
+      life: 0.5,
+    });
+  }
+
   function triggerWin() {}
 
   return { init, updateState, triggerElim, triggerWin, triggerDramatic };

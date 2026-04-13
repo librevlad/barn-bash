@@ -1,19 +1,30 @@
 // ============================================================
-// Meteor Shower — Premium 2D Renderer (Safe Zone mechanic)
+// Meteor Shower — 2D Renderer (Engine-powered)
+// Uses: Camera2D, Scene, ParticleSystem, TweenManager, EntityManager
 // ============================================================
 
 const Render2D = (() => {
   let canvas, ctx;
-  let W, H, CX, CY, SCALE;
-  let clock = 0, shakeX = 0, shakeY = 0, shakeI = 0;
+  let W, H;
+
+  // Engine instances
+  const camera = new Camera2D(1280, 720);
+  const scene = new Scene();
+  const particles = new ParticleSystem(400);
+  const entities = new EntityManager();
+  let renderLoop;
+
+  // Game state
   let targetPlatR = 4.5, renderPlatR = 4.5;
   let impactFlash = 0;
-
-  const players = {};
   let safeZone = { x: 0, z: 0, r: 1.2 };
   let subPhase = 'idle';
   let showSafe = false;
+  let warnProgress = 0;
 
+  // ============================================================
+  // INIT
+  // ============================================================
   function init() {
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
@@ -23,16 +34,52 @@ const Render2D = (() => {
     if (typeof Visual !== 'undefined') Visual.init(W, H);
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
 
-    let last = performance.now();
-    (function animate(now) {
-      requestAnimationFrame(animate);
-      const rawDt = Math.min((now - last) / 1000, 0.05);
-      const dt = rawDt * (typeof FX !== 'undefined' ? FX.getTimeScale() : 1);
-      last = now; clock += dt;
-      if (typeof FX !== 'undefined') FX.update(rawDt);
-      if (typeof Visual !== 'undefined') Visual.update(rawDt);
-      render(dt);
-    })(performance.now());
+    // Camera: fixed at origin, zoom = SCALE
+    camera.setPosition(0, 0);
+    camera.setZoom(Math.min(W, H) / 12);
+
+    // Setup scene layers
+    scene.createLayer('background', 0);
+    scene.createLayer('arena', 5);
+    scene.createLayer('danger_overlay', 10);
+    scene.createLayer('safezone', 15);
+    scene.createLayer('players', 20);
+    scene.createLayer('effects', 30);
+    scene.createLayer('ui', 40);
+
+    // Register render functions per layer
+    scene.getLayer('background').addFn(drawEmbers);
+    scene.getLayer('arena').addFn(drawArena);
+    scene.getLayer('danger_overlay').addFn(drawDangerOverlay);
+    scene.getLayer('safezone').addFn(drawSafeZone);
+    scene.getLayer('players').addFn(drawPlayers);
+    scene.getLayer('effects').addFn(drawImpactFlash);
+    scene.getLayer('ui').addFn(drawTimerBar);
+
+    // Start render loop
+    renderLoop = new RenderLoop(canvas);
+    renderLoop.start(
+      (dt) => {
+        // Apply time scale from FX if available
+        const rawDt = dt;
+        const scaledDt = rawDt * (typeof FX !== 'undefined' ? FX.getTimeScale() : 1);
+
+        TweenManager.update(scaledDt);
+        particles.update(scaledDt);
+        if (typeof FX !== 'undefined') FX.update(rawDt);
+        if (typeof Visual !== 'undefined') Visual.update(rawDt);
+        camera.update(scaledDt);
+
+        // Smooth arena radius
+        renderPlatR += (targetPlatR - renderPlatR) * 0.04;
+
+        // Decay impact flash
+        if (impactFlash > 0) impactFlash -= scaledDt * 3;
+      },
+      (ctx, dt) => {
+        render(ctx, dt);
+      }
+    );
   }
 
   function resize() {
@@ -42,125 +89,41 @@ const Render2D = (() => {
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    CX = W / 2; CY = H / 2;
-    SCALE = Math.min(W, H) / 12;
+    camera.resize(W, H);
+    camera.setZoom(Math.min(W, H) / 12);
   }
 
-  function gts(gx, gz) {
-    return [CX + gx * SCALE + shakeX, CY + gz * SCALE + shakeY];
-  }
-
-  // ---- ARENA ----
-  function drawArena(radius) {
-    const r = radius * SCALE;
-    const [ax, ay] = [CX + shakeX, CY + shakeY];
-
-    // Outer glow (stronger, wider)
-    const glow = ctx.createRadialGradient(ax, ay, r * 0.85, ax, ay, r * 1.4);
-    glow.addColorStop(0, 'rgba(255,80,10,0.18)');
-    glow.addColorStop(0.6, 'rgba(255,60,0,0.06)');
-    glow.addColorStop(1, 'rgba(255,40,0,0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(ax, ay, r * 1.4, 0, Math.PI * 2); ctx.fill();
-
-    // Arena disc
-    const grad = ctx.createRadialGradient(ax - r * 0.15, ay - r * 0.15, 0, ax, ay, r);
-    grad.addColorStop(0, '#3A2525'); grad.addColorStop(0.7, '#2A1818'); grad.addColorStop(1, '#1A0A0A');
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
-
-    // Subtle cracks
-    ctx.strokeStyle = 'rgba(255,50,0,0.06)';
-    ctx.lineWidth = 1;
-    for (let f = 0.25; f < 1; f += 0.25) {
-      ctx.beginPath(); ctx.arc(ax, ay, r * f, 0, Math.PI * 2); ctx.stroke();
-    }
-
-    // Edge
-    const pulse = 0.5 + Math.sin(clock * 3.5) * 0.15;
-    ctx.strokeStyle = `rgba(255,68,0,${pulse})`; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.stroke();
-  }
-
-  // ---- DANGER ZONE ----
-  function drawDangerOverlay(radius) {
-    if (!showSafe) return;
-    const r = radius * SCALE;
-    const [ax, ay] = [CX + shakeX, CY + shakeY];
-    const [sx, sy] = gts(safeZone.x, safeZone.z);
-    const sr = safeZone.r * SCALE;
-
-    // Red tint over entire arena EXCEPT safe zone
-    ctx.save();
-    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2);
-    ctx.clip();
-
-    // Danger overlay — pulsing red
-    const dangerOpacity = 0.15 + Math.sin(clock * 6) * 0.05;
-    ctx.fillStyle = `rgba(255,20,0,${dangerOpacity})`;
+  // ============================================================
+  // RENDER (called by RenderLoop)
+  // ============================================================
+  function render(ctx, dt) {
+    // Clear with dark background
+    ctx.fillStyle = '#0C0608';
     ctx.fillRect(0, 0, W, H);
+    if (typeof FX !== 'undefined') FX.drawBefore(ctx);
 
-    // Cut out safe zone (clear it)
-    ctx.globalCompositeOperation = 'destination-out';
-    const safeGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
-    safeGrad.addColorStop(0, 'rgba(0,0,0,1)');
-    safeGrad.addColorStop(0.8, 'rgba(0,0,0,1)');
-    safeGrad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = safeGrad;
-    ctx.beginPath(); ctx.arc(sx, sy, sr * 1.2, 0, Math.PI * 2); ctx.fill();
+    // Render scene layers in order. All draw functions convert world coords
+    // to screen coords via camera.worldToScreen(), so we do not pass the
+    // camera to scene.render() (that would double-apply the transform).
+    // Camera is still used for worldToScreen(), getZoom(), and shake().
+    scene.render(ctx);
 
-    ctx.restore();
+    // Post-processing (screen space)
+    if (typeof FX !== 'undefined') FX.drawAfter(ctx);
+    if (typeof Visual !== 'undefined') Visual.drawPost(ctx, {
+      vignette: subPhase === 'warning' ? 0.5 : 0.2,
+      vignetteColor: subPhase === 'warning' ? '180,30,0' : '0,0,0',
+      grain: 0.02,
+    });
   }
 
-  // ---- SAFE ZONE ----
-  function drawSafeZone() {
-    if (!showSafe) return;
-    const [sx, sy] = gts(safeZone.x, safeZone.z);
-    const sr = safeZone.r * SCALE;
+  // ============================================================
+  // LAYER: BACKGROUND (embers — screen space)
+  // ============================================================
+  function drawEmbers(ctx) {
+    const clock = renderLoop ? renderLoop.getClock() : 0;
 
-    // Green glow
-    const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 1.5);
-    glow.addColorStop(0, 'rgba(50,220,80,0.15)');
-    glow.addColorStop(0.6, 'rgba(50,220,80,0.05)');
-    glow.addColorStop(1, 'rgba(50,220,80,0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(sx, sy, sr * 1.5, 0, Math.PI * 2); ctx.fill();
-
-    // Safe disc
-    ctx.fillStyle = 'rgba(50,200,80,0.1)';
-    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
-
-    // Pulsing ring
-    const pulse = 0.4 + Math.sin(clock * 5) * 0.2;
-    ctx.strokeStyle = `rgba(80,255,120,${pulse})`; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.stroke();
-
-    // "SAFE" label
-    ctx.fillStyle = `rgba(80,255,120,${pulse})`;
-    ctx.font = '700 11px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('SAFE', sx, sy - sr - 8);
-  }
-
-  // ---- CHARACTER ----
-  function drawCharacter(gx, gz, color, alive, safe, idx, character) {
-    if (!alive) return;
-    const [sx, sy] = gts(gx, gz);
-    const expr = (subPhase === 'warning' && !safe) ? 'scared' : (safe && showSafe) ? 'happy' : 'determined';
-
-    // Safe indicator ring
-    if (safe && showSafe) {
-      ctx.strokeStyle = 'rgba(80,255,120,0.5)'; ctx.lineWidth = 3;
-      ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(80,255,120,0.4)';
-      ctx.beginPath(); ctx.arc(sx, sy, 28, 0, Math.PI * 2); ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-
-    CharDraw.blob(ctx, sx, sy, 22, color, { idx, clock, expression: expr, running: false, character });
-  }
-
-  // ---- EMBERS (rising sparks with trails) ----
-  function drawEmbers() {
+    // Rising embers with trails
     for (let i = 0; i < 30; i++) {
       const phase = clock * 0.2 + i * 31;
       const x = ((Math.sin(clock * 0.3 + i * 47) * 0.5 + 0.5) * W);
@@ -194,9 +157,160 @@ const Render2D = (() => {
     }
   }
 
-  // ---- TIMER BAR ----
-  let warnProgress = 0; // 0 = just started, 1 = about to impact
-  function drawTimerBar() {
+  // ============================================================
+  // LAYER: ARENA
+  // ============================================================
+  function drawArena(ctx) {
+    const radius = renderPlatR;
+    const SCALE = camera.getZoom();
+    const r = radius * SCALE;
+    const a = camera.worldToScreen(0, 0);
+    const ax = a.x, ay = a.y;
+
+    // Outer glow (stronger, wider)
+    const glow = ctx.createRadialGradient(ax, ay, r * 0.85, ax, ay, r * 1.4);
+    glow.addColorStop(0, 'rgba(255,80,10,0.18)');
+    glow.addColorStop(0.6, 'rgba(255,60,0,0.06)');
+    glow.addColorStop(1, 'rgba(255,40,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(ax, ay, r * 1.4, 0, Math.PI * 2); ctx.fill();
+
+    // Arena disc
+    const grad = ctx.createRadialGradient(ax - r * 0.15, ay - r * 0.15, 0, ax, ay, r);
+    grad.addColorStop(0, '#3A2525'); grad.addColorStop(0.7, '#2A1818'); grad.addColorStop(1, '#1A0A0A');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
+
+    // Subtle cracks
+    ctx.strokeStyle = 'rgba(255,50,0,0.06)';
+    ctx.lineWidth = 1;
+    for (let f = 0.25; f < 1; f += 0.25) {
+      ctx.beginPath(); ctx.arc(ax, ay, r * f, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // Edge
+    const clock = renderLoop ? renderLoop.getClock() : 0;
+    const pulse = 0.5 + Math.sin(clock * 3.5) * 0.15;
+    ctx.strokeStyle = `rgba(255,68,0,${pulse})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  // ============================================================
+  // LAYER: DANGER OVERLAY
+  // ============================================================
+  function drawDangerOverlay(ctx) {
+    if (!showSafe) return;
+    const SCALE = camera.getZoom();
+    const radius = renderPlatR;
+    const r = radius * SCALE;
+    const a = camera.worldToScreen(0, 0);
+    const ax = a.x, ay = a.y;
+    const s = camera.worldToScreen(safeZone.x, safeZone.z);
+    const sx = s.x, sy = s.y;
+    const sr = safeZone.r * SCALE;
+
+    // Red tint over entire arena EXCEPT safe zone
+    ctx.save();
+    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Danger overlay — pulsing red
+    const clock = renderLoop ? renderLoop.getClock() : 0;
+    const dangerOpacity = 0.15 + Math.sin(clock * 6) * 0.05;
+    ctx.fillStyle = `rgba(255,20,0,${dangerOpacity})`;
+    ctx.fillRect(0, 0, W, H);
+
+    // Cut out safe zone (clear it)
+    ctx.globalCompositeOperation = 'destination-out';
+    const safeGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
+    safeGrad.addColorStop(0, 'rgba(0,0,0,1)');
+    safeGrad.addColorStop(0.8, 'rgba(0,0,0,1)');
+    safeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = safeGrad;
+    ctx.beginPath(); ctx.arc(sx, sy, sr * 1.2, 0, Math.PI * 2); ctx.fill();
+
+    ctx.restore();
+  }
+
+  // ============================================================
+  // LAYER: SAFE ZONE
+  // ============================================================
+  function drawSafeZone(ctx) {
+    if (!showSafe) return;
+    const SCALE = camera.getZoom();
+    const s = camera.worldToScreen(safeZone.x, safeZone.z);
+    const sx = s.x, sy = s.y;
+    const sr = safeZone.r * SCALE;
+
+    // Green glow
+    const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 1.5);
+    glow.addColorStop(0, 'rgba(50,220,80,0.15)');
+    glow.addColorStop(0.6, 'rgba(50,220,80,0.05)');
+    glow.addColorStop(1, 'rgba(50,220,80,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(sx, sy, sr * 1.5, 0, Math.PI * 2); ctx.fill();
+
+    // Safe disc
+    ctx.fillStyle = 'rgba(50,200,80,0.1)';
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+
+    // Pulsing ring
+    const clock = renderLoop ? renderLoop.getClock() : 0;
+    const pulse = 0.4 + Math.sin(clock * 5) * 0.2;
+    ctx.strokeStyle = `rgba(80,255,120,${pulse})`; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.stroke();
+
+    // "SAFE" label
+    ctx.fillStyle = `rgba(80,255,120,${pulse})`;
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('SAFE', sx, sy - sr - 8);
+  }
+
+  // ============================================================
+  // LAYER: PLAYERS (using EntityManager)
+  // ============================================================
+  function drawPlayers(ctx) {
+    const clock = renderLoop ? renderLoop.getClock() : 0;
+
+    for (const e of entities.all()) {
+      if (!e.visible) continue;
+      // Interpolate toward target position
+      e.lerp(0.25);
+
+      const s = camera.worldToScreen(e.x, e.y);
+      const alive = e.data.alive;
+      if (!alive) continue;
+
+      const safe = e.data.safe;
+      const expr = (subPhase === 'warning' && !safe) ? 'scared' : (safe && showSafe) ? 'happy' : 'determined';
+
+      // Safe indicator ring
+      if (safe && showSafe) {
+        ctx.strokeStyle = 'rgba(80,255,120,0.5)'; ctx.lineWidth = 3;
+        ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(80,255,120,0.4)';
+        ctx.beginPath(); ctx.arc(s.x, s.y, 28, 0, Math.PI * 2); ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      CharDraw.blob(ctx, s.x, s.y, 22, e.color, { idx: e.data.idx, clock, expression: expr, running: false, character: e.character });
+    }
+  }
+
+  // ============================================================
+  // LAYER: IMPACT FLASH (effects)
+  // ============================================================
+  function drawImpactFlash(ctx) {
+    if (impactFlash > 0) {
+      ctx.fillStyle = `rgba(255,50,0,${impactFlash * 0.2})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  // ============================================================
+  // LAYER: TIMER BAR (UI)
+  // ============================================================
+  function drawTimerBar(ctx) {
     if (!showSafe || warnProgress <= 0) return;
     const barW = W * 0.3, barH = 6;
     const bx = (W - barW) / 2, by = H - 40;
@@ -213,51 +327,9 @@ const Render2D = (() => {
     ctx.strokeRect(bx, by, barW, barH);
   }
 
-  // ---- RENDER ----
-  function render(dt) {
-    renderPlatR += (targetPlatR - renderPlatR) * 0.04;
-    if (shakeI > 0.5) {
-      shakeX = (Math.random() - 0.5) * shakeI;
-      shakeY = (Math.random() - 0.5) * shakeI;
-      shakeI *= 0.9;
-    } else { shakeX = shakeY = 0; shakeI = 0; }
-    if (impactFlash > 0) impactFlash -= dt * 3;
-
-    // Clear
-    ctx.fillStyle = '#0C0608';
-    ctx.fillRect(0, 0, W, H);
-    if (typeof FX !== 'undefined') FX.drawBefore(ctx);
-
-    drawEmbers();
-    drawArena(renderPlatR);
-    drawDangerOverlay(renderPlatR);
-    drawSafeZone();
-    drawTimerBar();
-
-    // Players
-    const ids = Object.keys(players);
-    ids.forEach((id, i) => {
-      const p = players[id];
-      if (!p.alive || !p.connected) return;
-      p.rx += (p.tx - p.rx) * 0.25;
-      p.rz += (p.tz - p.rz) * 0.25;
-      drawCharacter(p.rx, p.rz, p.color, p.alive, p.safe, i, p.character);
-    });
-
-    // Impact flash
-    if (impactFlash > 0) {
-      ctx.fillStyle = `rgba(255,50,0,${impactFlash * 0.2})`;
-      ctx.fillRect(0, 0, W, H);
-    }
-    if (typeof FX !== 'undefined') FX.drawAfter(ctx);
-    if (typeof Visual !== 'undefined') Visual.drawPost(ctx, {
-      vignette: subPhase === 'warning' ? 0.5 : 0.2,
-      vignetteColor: subPhase === 'warning' ? '180,30,0' : '0,0,0',
-      grain: 0.02,
-    });
-  }
-
-  // ---- PUBLIC ----
+  // ============================================================
+  // PUBLIC API
+  // ============================================================
   function updateState(state) {
     targetPlatR = state.platR;
     subPhase = state.subPhase;
@@ -271,16 +343,23 @@ const Render2D = (() => {
       warnProgress = 0;
     }
 
+    // Update entities from server state
     const ids = Object.keys(state.players);
-    ids.forEach((id) => {
+    ids.forEach((id, i) => {
       const pd = state.players[id];
-      if (!players[id]) {
-        players[id] = { rx: pd.x, rz: pd.z, tx: pd.x, tz: pd.z, color: pd.color, alive: pd.alive, connected: pd.connected, safe: pd.safe };
+      let e = entities.get(id);
+      if (!e) {
+        e = entities.create(id, 'player');
+        e.x = pd.x; e.y = pd.z;
+        e.color = pd.color;
       }
-      const p = players[id];
-      p.tx = pd.x; p.tz = pd.z;
-      p.alive = pd.alive; p.connected = pd.connected;
-      p.safe = pd.safe; p.color = pd.color; p.character = pd.character || null;
+      e.setTarget({ x: pd.x, y: pd.z });
+      e.color = pd.color;
+      e.character = pd.character || null;
+      e.visible = pd.connected;
+      e.data.alive = pd.alive;
+      e.data.safe = pd.safe;
+      e.data.idx = i;
     });
   }
 
@@ -290,9 +369,19 @@ const Render2D = (() => {
   }
 
   function onImpact() {
-    shakeI = 15;
+    camera.shake(15, 0.5);
     impactFlash = 1;
     showSafe = false;
+
+    // Impact burst particles at arena center
+    const center = camera.worldToScreen(0, 0);
+    particles.burst(center.x, center.y, 12, {
+      ...ParticleSystem.PRESETS.FIRE,
+      speed: 3,
+      life: 0.4,
+      color: '255,80,20',
+      colorEnd: '255,30,0',
+    });
   }
 
   function triggerWin() {}

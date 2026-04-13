@@ -2,6 +2,8 @@
 // Meteor Shower — Server Game Logic (Full Overhaul)
 // ============================================================
 
+const { Physics2D } = require('../engine/Physics2D');
+
 const TICK_MS = 50;
 const ARENA_R = 4.5;
 const MIN_ARENA_R = 2.5;

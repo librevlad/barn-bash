@@ -2,7 +2,7 @@
 // FRANTICS GRAND PRIX — Server Game Logic (Engine-powered)
 // ============================================================
 
-const Physics2D = require('../engine/Physics2D');
+const { Physics2D } = require('../engine/Physics2D');
 const TICK_MS = 50;
 const TOTAL_LAPS = 3;
 const TRACK_WIDTH = 2.5;

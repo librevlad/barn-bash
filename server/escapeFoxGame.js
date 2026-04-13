@@ -2,6 +2,8 @@
 // Escape the Fox — Server Game Logic (Full Overhaul)
 // ============================================================
 
+const { Physics2D } = require('../engine/Physics2D');
+
 const TICK_MS = 50;
 const RUN_SPEED = 0.28;
 const GRAVITY = 0.028;
