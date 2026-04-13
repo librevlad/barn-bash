@@ -280,12 +280,8 @@ class RaceGame {
         if (!g || g.finished || g.item || g.stunTimer > 0) continue;
         const dx = g.x - item.x, dz = g.z - item.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
-        // Magnetism: pull item toward nearby player
-        if (dist < 5.0 && dist > 0.3) {
-          item.x += (g.x - item.x) * 0.08;
-          item.z += (g.z - item.z) * 0.08;
-        }
-        if (dist < 4.0) {
+        // Fixed radius pickup — no magnetism (items stay at spawn positions)
+        if (dist < 2.0) {
           g.item = item.type;
           g.itemTimer = 0;
           item.active = false;
