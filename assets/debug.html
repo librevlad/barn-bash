@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head><title>Atlas Debug</title></head>
+<body style="background:#333;color:#fff;font-family:monospace">
+<h3>Spritesheet2 Atlas Debug</h3>
+<canvas id="c" width="1200" height="600"></canvas>
+<script>
+const img = new Image();
+img.onload = () => {
+  const c = document.getElementById('c');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#222'; ctx.fillRect(0,0,1200,600);
+
+  const tests = [
+    { name: 'tree-oak-1', x: 1560, y: 20, w: 148, h: 148 },
+    { name: 'tree-oak-2', x: 1720, y: 20, w: 148, h: 148 },
+    { name: 'tree-bush-1', x: 1560, y: 185, w: 133, h: 123 },
+    { name: 'tree-pine-1', x: 20, y: 270, w: 166, h: 268 },
+    { name: 'tree-round-1', x: 20, y: 600, w: 140, h: 128 },
+    { name: 'rock-1', x: 500, y: 627, w: 128, h: 102 },
+    { name: 'rock-large', x: 1280, y: 372, w: 184, h: 159 },
+    { name: 'car-red-1', x: 13, y: 870, w: 159, h: 123 },
+    { name: 'car-blue-1', x: 371, y: 870, w: 159, h: 123 },
+    { name: 'car-green-1', x: 13, y: 1037, w: 159, h: 123 },
+    { name: 'item-crystal', x: 870, y: 346, w: 107, h: 133 },
+    { name: 'tires-1', x: 1780, y: 372, w: 140, h: 128 },
+    { name: 'smoke-1', x: 13, y: 1242, w: 123, h: 107 },
+    { name: 'fire-trail-1', x: 768, y: 870, w: 269, h: 115 },
+  ];
+
+  let dx = 10, dy = 10, row = 0;
+  ctx.font = '11px monospace';
+  for (const t of tests) {
+    if (dx + 110 > 1200) { dx = 10; dy += 150; }
+    ctx.drawImage(img, t.x, t.y, t.w, t.h, dx, dy, 100, 100);
+    ctx.strokeStyle = '#555'; ctx.strokeRect(dx, dy, 100, 100);
+    ctx.fillStyle = '#aaa';
+    ctx.fillText(t.name, dx, dy + 115);
+    ctx.fillText(t.x+','+t.y+' '+t.w+'x'+t.h, dx, dy + 128);
+    dx += 110;
+  }
+  document.body.innerHTML += '<p>✅ Sheet: ' + img.width + 'x' + img.height + ' — ' + tests.length + ' sprites shown</p>';
+};
+img.crossOrigin = 'anonymous';
+img.src = '/assets/spritesheet2.png';
+</script>
+</body></html>
