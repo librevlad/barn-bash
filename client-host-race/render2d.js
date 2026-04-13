@@ -52,36 +52,143 @@ const Render2D = (() => {
   }
 
   // ---- GRASS ----
+  // Trackside objects (generated once)
+  const trackObjects = [];
+  function generateTrackObjects() {
+    if (trackObjects.length > 0 || track.length < 2) return;
+    for (let i = 0; i < track.length; i++) {
+      const wp = track[i];
+      const next = track[(i + 1) % track.length];
+      const angle = Math.atan2(next.z - wp.z, next.x - wp.x);
+      // Trees on both sides
+      for (let side = -1; side <= 1; side += 2) {
+        if (Math.random() < 0.4) continue;
+        const dist = trackWidth + 1.5 + Math.random() * 3;
+        trackObjects.push({
+          type: Math.random() < 0.7 ? 'tree' : 'rock',
+          x: wp.x + Math.cos(angle + Math.PI / 2) * side * dist,
+          z: wp.z + Math.sin(angle + Math.PI / 2) * side * dist,
+          size: 0.4 + Math.random() * 0.6,
+          shade: 0.5 + Math.random() * 0.5,
+        });
+      }
+      // Tire barriers at tight corners
+      if (i % 4 === 0) {
+        const bdist = trackWidth + 0.5;
+        trackObjects.push({
+          type: 'barrier',
+          x: wp.x + Math.cos(angle + Math.PI / 2) * bdist,
+          z: wp.z + Math.sin(angle + Math.PI / 2) * bdist,
+          angle, size: 1,
+        });
+      }
+    }
+  }
+
   function drawGrass() {
-    // Rich grass with radial gradient (lighter center, darker edges)
-    const grassGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.7);
+    // Dark green base
+    const grassGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.75);
     grassGrad.addColorStop(0, '#2a6a2a');
-    grassGrad.addColorStop(0.5, '#1e5520');
-    grassGrad.addColorStop(1, '#143a14');
+    grassGrad.addColorStop(0.6, '#1e5520');
+    grassGrad.addColorStop(1, '#133a12');
     ctx.fillStyle = grassGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Grass texture patches (very subtle, small)
-    for (let i = 0; i < 40; i++) {
-      const gx = ((i * 137 + clock * 0.2) % (W + 100)) - 50;
-      const gy = ((i * 89 + 50) % (H + 100)) - 50;
-      const bright = i % 3 === 0;
-      ctx.fillStyle = bright ? 'rgba(55,100,45,0.06)' : 'rgba(18,40,15,0.05)';
+    // Subtle grass patches
+    for (let i = 0; i < 35; i++) {
+      const gx = ((i * 137 + clock * 0.15) % (W + 80)) - 40;
+      const gy = ((i * 89 + 50) % (H + 80)) - 40;
+      ctx.fillStyle = i % 3 === 0 ? 'rgba(45,90,38,0.06)' : 'rgba(15,35,12,0.04)';
       ctx.beginPath();
-      ctx.ellipse(gx, gy, 15 + i % 10, 10 + i % 7, i * 0.5, 0, Math.PI * 2);
+      ctx.ellipse(gx, gy, 12 + i % 8, 8 + i % 5, i * 0.5, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
 
-    // Grass blades (tiny streaks near track)
-    ctx.strokeStyle = 'rgba(50,100,40,0.1)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 40; i++) {
-      const bx = (i * 97 + Math.sin(clock * 0.1 + i) * 10) % W;
-      const by = (i * 67 + 30) % H;
-      ctx.beginPath();
-      ctx.moveTo(bx, by);
-      ctx.lineTo(bx + Math.sin(clock * 2 + i) * 3, by - 4 - Math.random() * 3);
-      ctx.stroke();
+  // Gravel runoff zones at corners
+  function drawGravelTraps() {
+    if (track.length < 4) return;
+    for (let i = 0; i < track.length; i++) {
+      const prev = track[(i - 1 + track.length) % track.length];
+      const curr = track[i];
+      const next = track[(i + 1) % track.length];
+      // Detect corners (angle change)
+      const a1 = Math.atan2(curr.z - prev.z, curr.x - prev.x);
+      const a2 = Math.atan2(next.z - curr.z, next.x - curr.x);
+      let diff = a2 - a1;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      if (Math.abs(diff) < 0.3) continue; // not a corner
+      // Draw gravel on outside of corner
+      const side = diff > 0 ? -1 : 1;
+      const [sx, sy] = worldToScreen(
+        curr.x + Math.cos(a1 + Math.PI / 2) * side * (trackWidth + 0.8),
+        curr.z + Math.sin(a1 + Math.PI / 2) * side * (trackWidth + 0.8)
+      );
+      const r = camScale * 1.5;
+      ctx.fillStyle = 'rgba(160,140,100,0.12)';
+      ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(140,120,80,0.06)';
+      ctx.beginPath(); ctx.arc(sx, sy, r * 1.3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // Tire marks on corners
+  function drawTireMarks() {
+    if (track.length < 3) return;
+    ctx.strokeStyle = 'rgba(30,30,30,0.08)';
+    ctx.lineWidth = camScale * 0.15;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < track.length; i++) {
+      const prev = track[(i - 1 + track.length) % track.length];
+      const curr = track[i];
+      const next = track[(i + 1) % track.length];
+      const a1 = Math.atan2(curr.z - prev.z, curr.x - prev.x);
+      const a2 = Math.atan2(next.z - curr.z, next.x - curr.x);
+      let diff = a2 - a1;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      if (Math.abs(diff) < 0.2) continue;
+      const [sx, sy] = worldToScreen(curr.x, curr.z);
+      const [px, py] = worldToScreen(prev.x, prev.z);
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx, sy); ctx.stroke();
+    }
+  }
+
+  // Trackside objects rendering
+  function drawTrackObjects() {
+    generateTrackObjects();
+    for (const obj of trackObjects) {
+      const [sx, sy] = worldToScreen(obj.x, obj.z);
+      if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) continue;
+      const s = obj.size * camScale * 0.3;
+
+      if (obj.type === 'tree') {
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.beginPath(); ctx.ellipse(sx + 3, sy + 3, s * 1.2, s * 0.6, 0.3, 0, Math.PI * 2); ctx.fill();
+        // Trunk
+        ctx.fillStyle = '#4a3520';
+        ctx.fillRect(sx - s * 0.1, sy - s * 0.3, s * 0.2, s * 0.6);
+        // Canopy (layered)
+        ctx.fillStyle = `rgba(30,${60 + obj.shade * 40},25,0.9)`;
+        ctx.beginPath(); ctx.arc(sx, sy - s * 0.3, s * 0.8, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(40,${80 + obj.shade * 30},35,0.7)`;
+        ctx.beginPath(); ctx.arc(sx - s * 0.2, sy - s * 0.4, s * 0.5, 0, Math.PI * 2); ctx.fill();
+      } else if (obj.type === 'rock') {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.beginPath(); ctx.ellipse(sx + 2, sy + 2, s * 0.6, s * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(${100 + obj.shade * 40},${90 + obj.shade * 30},${70 + obj.shade * 20},0.8)`;
+        ctx.beginPath(); ctx.ellipse(sx, sy, s * 0.5, s * 0.35, obj.shade, 0, Math.PI * 2); ctx.fill();
+      } else if (obj.type === 'barrier') {
+        // Red-white tire barrier
+        for (let b = 0; b < 3; b++) {
+          const bx = sx + Math.cos(obj.angle) * b * s * 0.4;
+          const bz = sy + Math.sin(obj.angle) * b * s * 0.4;
+          ctx.fillStyle = b % 2 === 0 ? 'rgba(200,40,40,0.6)' : 'rgba(240,240,240,0.5)';
+          ctx.beginPath(); ctx.arc(bx, bz, s * 0.2, 0, Math.PI * 2); ctx.fill();
+        }
+      }
     }
   }
 
@@ -107,20 +214,25 @@ const Render2D = (() => {
     if (track.length < 2) return;
     const tw = trackWidth * camScale;
 
-    // Track shadow (soft dark outline)
-    drawTrackPath('rgba(0,0,0,0.3)', tw + 12);
+    // Track shadow (soft dark outline for depth)
+    drawTrackPath('rgba(0,0,0,0.35)', tw + 16);
 
-    // Outer kerbs — alternating red/white pattern
-    drawTrackPath('rgba(220,50,50,0.5)', tw + 8);
-    drawTrackPath('rgba(255,255,255,0.15)', tw + 6);
+    // Gravel/dirt edge strip (brownish)
+    drawTrackPath('rgba(130,110,80,0.2)', tw + 10);
 
-    // Main track surface — gradient-like (darker edges via layering)
-    drawTrackPath('#555', tw);
-    drawTrackPath('#5a5a5a', tw - 4);
-    drawTrackPath('#606060', tw - 10);
+    // Outer kerbs — red/white
+    drawTrackPath('rgba(200,40,40,0.5)', tw + 6);
 
-    // Edge lines (white)
-    drawTrackPath('rgba(255,255,255,0.2)', tw + 1);
+    // Main track surface — dark asphalt (like real tarmac)
+    drawTrackPath('#3a3a3a', tw);
+    drawTrackPath('#404040', tw - 6);
+    drawTrackPath('#454545', tw - 14);
+
+    // Yellow edge lines (like real racing tracks)
+    drawTrackPath('rgba(255,200,40,0.25)', tw + 1);
+
+    // Ambient occlusion — darkened edges of track
+    drawTrackPath('rgba(0,0,0,0.08)', tw);
 
     // Center dashed line
     ctx.strokeStyle = 'rgba(255,255,255,0.25)';
@@ -397,8 +509,11 @@ const Render2D = (() => {
     }
 
     drawGrass();
+    drawGravelTraps();
     if (typeof FX !== 'undefined') FX.drawBefore(ctx);
     drawTrack();
+    drawTireMarks();
+    drawTrackObjects();
     drawOilSlicks();
     drawItems();
     drawMissiles();
