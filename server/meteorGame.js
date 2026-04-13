@@ -444,11 +444,11 @@ class MeteorGame {
       return Math.sqrt(dx * dx + dz * dz) <= sz.r;
     });
 
-    // Clamp to arena
+    // Clamp to arena edge
     const d = Math.sqrt(g.x * g.x + g.z * g.z);
-    if (d > this.platR * 0.9) {
-      g.x *= (this.platR * 0.9) / d;
-      g.z *= (this.platR * 0.9) / d;
+    if (d > this.platR) {
+      g.x *= this.platR / d;
+      g.z *= this.platR / d;
     }
 
     g.cd = DODGE_CD;

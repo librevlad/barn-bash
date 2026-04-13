@@ -29,10 +29,6 @@ const TEETER_THRESHOLD = 0.5; // platR - this = teeter zone
 const NEAR_MISS_DIST = 0.3;
 
 // Charged dash
-const CHARGE_MIN_TICKS = 4;
-const CHARGE_MAX_TICKS = 20;
-const CHARGE_FORCE_MIN = 1.0;
-const CHARGE_FORCE_MAX = 3.0;
 
 // Ground pound
 const GPOUND_RADIUS = 2.0;
@@ -106,7 +102,6 @@ class HillGame {
         dashing: false, dashT: 0, cd: 0,
         shielding: false,
         // New mechanics
-        charging: false, chargeTicks: 0,
         teetering: false, teeterTimer: 0,
         anchor: 0, superDash: false,
         score: 0, combo: 0,
@@ -136,7 +131,7 @@ class HillGame {
       // Timers
       if (g.anchor > 0) g.anchor--;
       if (g.cd > 0) g.cd--;
-      if (g.charging) g.chargeTicks = Math.min(g.chargeTicks + 1, CHARGE_MAX_TICKS);
+
 
       // Teetering recovery
       if (g.teetering) {
@@ -438,7 +433,6 @@ class HillGame {
 
     if (action === 'shield') {
       g.shielding = true;
-      g.charging = false;
       return;
     }
     if (action === 'shieldEnd') {

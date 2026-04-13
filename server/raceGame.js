@@ -358,7 +358,7 @@ class RaceGame {
             g.finishTime = this.tick;
             this.finishOrder.push(p.id);
             const pos = this.finishOrder.length;
-            g.score = Math.max(0, 4 - pos);
+            g.score = Math.max(0, this.players.connectedCount() - pos);
             this.broadcast({ type: 'race_finish', playerId: p.id, position: pos, gameId: 'race' });
           } else {
             this.broadcast({ type: 'lap_complete', playerId: p.id, lap: g.lap, gameId: 'race' });
@@ -423,7 +423,7 @@ class RaceGame {
     conn.forEach((p, i) => {
       if (!p.gameData.finished) {
         this.finishOrder.push(p.id);
-        p.gameData.score = Math.max(0, 4 - this.finishOrder.length);
+        p.gameData.score = Math.max(0, this.players.connectedCount() - this.finishOrder.length);
       }
     });
     this._endRace();
