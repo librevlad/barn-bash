@@ -173,9 +173,11 @@ class RaceGame {
       if (g.boostTimer > 0) g.boostTimer--;
       if (g.boostCooldown > 0) g.boostCooldown--;
 
-      // Steering
+      // Steering — decay toward 0 (one swipe = one turn, not infinite)
       const driftMult = g.drifting ? 1.4 : 1.0;
       g.angle += g.steerInput * g.handling * driftMult;
+      g.steerInput *= 0.85; // decay to neutral
+      if (Math.abs(g.steerInput) < 0.05) g.steerInput = 0;
 
       // Drift tracking
       if (g.drifting) g.driftTicks++;
