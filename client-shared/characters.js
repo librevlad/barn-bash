@@ -242,67 +242,132 @@ const CharDraw = (() => {
     }
   }
 
-  // Fox/enemy character
+  // Fox/enemy character — menacing, animated, professional
   function fox(ctx, x, y, R, clock) {
     const bob = Math.sin(clock * 12) * 2;
+    const breathe = 1 + Math.sin(clock * 4) * 0.03; // breathing scale
+    const eyePulse = 0.6 + Math.sin(clock * 6) * 0.4; // eye glow pulse
+
     ctx.save();
     ctx.translate(x, y + bob);
+    ctx.scale(breathe, 1 / breathe); // breathing squash/stretch
 
-    // Aura glow
-    ctx.shadowBlur = 25;
-    ctx.shadowColor = 'rgba(255,60,0,0.4)';
+    // === OUTER AURA (pulsing danger glow) ===
+    const auraR = R * (1.6 + Math.sin(clock * 3) * 0.15);
+    const aura = ctx.createRadialGradient(0, 0, R * 0.5, 0, 0, auraR);
+    aura.addColorStop(0, 'rgba(255,60,0,0)');
+    aura.addColorStop(0.6, `rgba(255,40,0,${0.06 + eyePulse * 0.04})`);
+    aura.addColorStop(1, 'rgba(255,20,0,0)');
+    ctx.fillStyle = aura;
+    ctx.beginPath(); ctx.arc(0, 0, auraR, 0, Math.PI * 2); ctx.fill();
 
-    // Body
-    const bodyGrad = ctx.createRadialGradient(-R * 0.2, -R * 0.25, 0, 0, 0, R);
-    bodyGrad.addColorStop(0, '#F06030');
-    bodyGrad.addColorStop(0.6, '#D04818');
+    // === SHADOW ===
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(2, R + 6, R * 0.9, 6, 0, 0, Math.PI * 2); ctx.fill();
+
+    // === TAIL (behind body) ===
+    const tailWag = Math.sin(clock * 8) * 0.3;
+    ctx.save();
+    ctx.translate(R * 0.6, R * 0.2);
+    ctx.rotate(tailWag);
+    ctx.fillStyle = '#C04015';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(R * 0.6, -R * 0.3, R * 0.9, -R * 0.1);
+    ctx.quadraticCurveTo(R * 0.7, R * 0.1, 0, R * 0.15);
+    ctx.fill();
+    // Tail tip (white)
+    ctx.fillStyle = '#FFE8D0';
+    ctx.beginPath();
+    ctx.arc(R * 0.8, -R * 0.05, R * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // === EARS (pointed, behind body top) ===
+    ctx.fillStyle = '#D04818';
+    ctx.beginPath(); ctx.moveTo(-R * 0.5, -R * 0.65); ctx.lineTo(-R * 0.75, -R * 1.4); ctx.lineTo(-R * 0.15, -R * 0.85); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(R * 0.5, -R * 0.65); ctx.lineTo(R * 0.75, -R * 1.4); ctx.lineTo(R * 0.15, -R * 0.85); ctx.fill();
+    // Inner ears
+    ctx.fillStyle = '#F08050';
+    ctx.beginPath(); ctx.moveTo(-R * 0.48, -R * 0.72); ctx.lineTo(-R * 0.65, -R * 1.2); ctx.lineTo(-R * 0.25, -R * 0.85); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(R * 0.48, -R * 0.72); ctx.lineTo(R * 0.65, -R * 1.2); ctx.lineTo(R * 0.25, -R * 0.85); ctx.fill();
+
+    // === BODY (richer gradient) ===
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = 'rgba(255,60,0,0.5)';
+    const bodyGrad = ctx.createRadialGradient(-R * 0.2, -R * 0.3, R * 0.05, 0, R * 0.1, R * 1.1);
+    bodyGrad.addColorStop(0, '#FF7840');
+    bodyGrad.addColorStop(0.3, '#E05828');
+    bodyGrad.addColorStop(0.7, '#C04015');
     bodyGrad.addColorStop(1, '#801808');
     ctx.fillStyle = bodyGrad;
     ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
-
     ctx.shadowBlur = 0;
 
-    // Specular
-    const spec = ctx.createRadialGradient(-R * 0.25, -R * 0.3, 0, 0, 0, R * 0.6);
-    spec.addColorStop(0, 'rgba(255,200,100,0.3)');
+    // === SPECULAR ===
+    const spec = ctx.createRadialGradient(-R * 0.28, -R * 0.32, 0, -R * 0.15, -R * 0.2, R * 0.55);
+    spec.addColorStop(0, 'rgba(255,220,150,0.45)');
+    spec.addColorStop(0.4, 'rgba(255,200,100,0.1)');
     spec.addColorStop(1, 'rgba(255,200,100,0)');
     ctx.fillStyle = spec;
     ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
 
-    // Outline
-    ctx.strokeStyle = '#601008'; ctx.lineWidth = 2;
+    // Small bright dot
+    ctx.fillStyle = 'rgba(255,255,200,0.3)';
+    ctx.beginPath(); ctx.arc(-R * 0.2, -R * 0.25, R * 0.1, 0, Math.PI * 2); ctx.fill();
+
+    // === OUTLINE (thick, dark) ===
+    ctx.strokeStyle = '#501008'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
 
-    // Evil eyes — glowing
-    ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(255,240,0,0.6)';
+    // === SNOUT (subtle lighter area) ===
+    ctx.fillStyle = 'rgba(255,200,150,0.12)';
+    ctx.beginPath(); ctx.ellipse(0, R * 0.15, R * 0.4, R * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+    // Nose
+    ctx.fillStyle = '#301010';
+    ctx.beginPath(); ctx.ellipse(0, R * 0.05, R * 0.1, R * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+
+    // === EVIL EYES (pulsing glow) ===
+    ctx.shadowBlur = 12 + eyePulse * 8;
+    ctx.shadowColor = `rgba(255,240,0,${0.4 + eyePulse * 0.3})`;
+    // Eye whites (actually yellow-orange)
     ctx.fillStyle = '#FFE800';
-    ctx.beginPath(); ctx.ellipse(-R * 0.3, -R * 0.15, R * 0.22, R * 0.28, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(R * 0.3, -R * 0.15, R * 0.22, R * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-R * 0.28, -R * 0.18, R * 0.2, R * 0.26, -0.1, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(R * 0.28, -R * 0.18, R * 0.2, R * 0.26, 0.1, 0, Math.PI * 2); ctx.fill();
     ctx.shadowBlur = 0;
 
-    // Slit pupils
-    ctx.fillStyle = '#111';
-    ctx.beginPath(); ctx.ellipse(-R * 0.3, -R * 0.12, R * 0.08, R * 0.22, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(R * 0.3, -R * 0.12, R * 0.08, R * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+    // Eye outlines
+    ctx.strokeStyle = '#803000'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(-R * 0.28, -R * 0.18, R * 0.2, R * 0.26, -0.1, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(R * 0.28, -R * 0.18, R * 0.2, R * 0.26, 0.1, 0, Math.PI * 2); ctx.stroke();
 
-    // Teeth
+    // Slit pupils (narrowing with pulse — more menacing)
+    const pupilW = R * 0.06 + (1 - eyePulse) * R * 0.04; // narrow when bright
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.ellipse(-R * 0.28, -R * 0.15, pupilW, R * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(R * 0.28, -R * 0.15, pupilW, R * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Eye highlights
+    ctx.fillStyle = 'rgba(255,255,200,0.5)';
+    ctx.beginPath(); ctx.arc(-R * 0.35, -R * 0.28, R * 0.06, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(R * 0.22, -R * 0.28, R * 0.06, 0, Math.PI * 2); ctx.fill();
+
+    // === TEETH (more, sharper) ===
     ctx.fillStyle = '#fff';
-    for (let i = -1; i <= 1; i += 2) {
+    const teethPositions = [-0.2, -0.08, 0.08, 0.2];
+    for (const tx of teethPositions) {
       ctx.beginPath();
-      ctx.moveTo(i * R * 0.12, R * 0.45);
-      ctx.lineTo(i * R * 0.05, R * 0.7);
-      ctx.lineTo(i * R * 0.25, R * 0.45);
+      ctx.moveTo(tx * R - R * 0.04, R * 0.38);
+      ctx.lineTo(tx * R, R * 0.58 + Math.abs(tx) * R * 0.2);
+      ctx.lineTo(tx * R + R * 0.04, R * 0.38);
       ctx.fill();
     }
 
-    // Ears
-    ctx.fillStyle = '#D04818';
-    ctx.beginPath(); ctx.moveTo(-R * 0.55, -R * 0.7); ctx.lineTo(-R * 0.8, -R * 1.3); ctx.lineTo(-R * 0.25, -R * 0.9); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(R * 0.55, -R * 0.7); ctx.lineTo(R * 0.8, -R * 1.3); ctx.lineTo(R * 0.25, -R * 0.9); ctx.fill();
-    // Inner ears
-    ctx.fillStyle = '#F08050';
-    ctx.beginPath(); ctx.moveTo(-R * 0.55, -R * 0.75); ctx.lineTo(-R * 0.7, -R * 1.15); ctx.lineTo(-R * 0.35, -R * 0.9); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(R * 0.55, -R * 0.75); ctx.lineTo(R * 0.7, -R * 1.15); ctx.lineTo(R * 0.35, -R * 0.9); ctx.fill();
+    // === MOUTH LINE ===
+    ctx.strokeStyle = '#501010'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, R * 0.25, R * 0.3, 0.1, Math.PI - 0.1);
+    ctx.stroke();
 
     ctx.restore();
   }

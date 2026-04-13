@@ -55,8 +55,27 @@ const Render2D = (() => {
 
   // ---- STARS ----
   function drawStars() {
+    // Nebula clouds (slow-moving colored gradients)
+    const nebulas = [
+      { x: 0.3, y: 0.25, r: 0.2, color: '80,40,140', speed: 0.02 },
+      { x: 0.7, y: 0.6, r: 0.15, color: '40,60,120', speed: 0.015 },
+      { x: 0.5, y: 0.8, r: 0.18, color: '100,30,80', speed: 0.01 },
+    ];
+    for (const n of nebulas) {
+      const nx = (n.x + Math.sin(clock * n.speed) * 0.05) * W;
+      const ny = (n.y + Math.cos(clock * n.speed * 1.3) * 0.03) * H;
+      const nr = n.r * Math.min(W, H);
+      const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr);
+      grad.addColorStop(0, `rgba(${n.color},0.06)`);
+      grad.addColorStop(0.5, `rgba(${n.color},0.02)`);
+      grad.addColorStop(1, `rgba(${n.color},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(nx, ny, nr, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Stars with twinkle
     for (const s of stars) {
-      const twinkle = 0.2 + Math.sin(clock * 1.5 + s.b * 10) * 0.25;
+      const twinkle = 0.25 + Math.sin(clock * 1.5 + s.b * 10) * 0.3;
       ctx.fillStyle = `rgba(200,180,255,${twinkle})`;
       ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.s, 0, Math.PI * 2); ctx.fill();
     }

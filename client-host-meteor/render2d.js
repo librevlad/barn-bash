@@ -159,14 +159,38 @@ const Render2D = (() => {
     CharDraw.blob(ctx, sx, sy, 22, color, { idx, clock, expression: expr, running: false, character });
   }
 
-  // ---- EMBERS ----
+  // ---- EMBERS (rising sparks with trails) ----
   function drawEmbers() {
-    ctx.fillStyle = 'rgba(255,90,25,0.25)';
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 30; i++) {
+      const phase = clock * 0.2 + i * 31;
       const x = ((Math.sin(clock * 0.3 + i * 47) * 0.5 + 0.5) * W);
-      const y = ((Math.cos(clock * 0.2 + i * 31) * 0.5 + 0.5) * H);
+      const y = ((Math.cos(phase) * 0.5 + 0.5) * H);
       const s = 1 + Math.sin(clock * 1.5 + i) * 0.5;
+      const bright = 0.15 + Math.sin(clock * 3 + i * 7) * 0.1;
+
+      // Ember trail
+      ctx.strokeStyle = `rgba(255,60,10,${bright * 0.3})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.sin(phase * 2) * 3, y + 8 + s * 3);
+      ctx.stroke();
+
+      // Ember dot with glow
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = `rgba(255,90,25,${bright})`;
+      ctx.fillStyle = `rgba(255,${120 + i * 4},25,${bright})`;
       ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    // Occasional large floating ember
+    for (let i = 0; i < 5; i++) {
+      const lx = ((Math.sin(clock * 0.15 + i * 23) * 0.5 + 0.5) * W);
+      const ly = H - ((clock * 15 + i * 150) % (H + 50));
+      const ls = 2 + Math.sin(clock * 2 + i) * 1;
+      ctx.fillStyle = `rgba(255,150,50,${0.08 + Math.sin(clock * 4 + i * 3) * 0.04})`;
+      ctx.beginPath(); ctx.arc(lx, ly, ls, 0, Math.PI * 2); ctx.fill();
     }
   }
 

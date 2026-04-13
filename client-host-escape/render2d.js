@@ -190,32 +190,52 @@ const Render2D = (() => {
       ctx.save();
       ctx.translate(x, baseY);
 
+      const bc = getBiomeColors();
+      const lighten = CharDraw.lighten, darken = CharDraw.darken;
       if (t.type === 0) {
-        // Round tree
-        ctx.fillStyle = '#3a2a18';
-        ctx.fillRect(-3, -t.h * 0.4, 6, t.h * 0.4);
-        ctx.fillStyle = '#2a6a35';
-        ctx.beginPath(); ctx.arc(0, -t.h * 0.5, t.h * 0.35, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#3a8a45';
-        ctx.beginPath(); ctx.arc(4, -t.h * 0.6, t.h * 0.22, 0, Math.PI * 2); ctx.fill();
+        // Round tree — trunk + shadow + multi-layer canopy
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.beginPath(); ctx.ellipse(3, 2, t.h * 0.3, 4, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#4a3520';
+        ctx.fillRect(-3, -t.h * 0.4, 7, t.h * 0.4);
+        // Canopy layers (dark → light)
+        ctx.fillStyle = darken(bc.tree, 15);
+        ctx.beginPath(); ctx.arc(0, -t.h * 0.45, t.h * 0.38, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = bc.tree;
+        ctx.beginPath(); ctx.arc(-2, -t.h * 0.52, t.h * 0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = lighten(bc.tree, 20);
+        ctx.beginPath(); ctx.arc(4, -t.h * 0.58, t.h * 0.2, 0, Math.PI * 2); ctx.fill();
+        // Highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.beginPath(); ctx.arc(-4, -t.h * 0.6, t.h * 0.15, 0, Math.PI * 2); ctx.fill();
       } else if (t.type === 1) {
-        // Pine
-        ctx.fillStyle = '#3a2a18';
-        ctx.fillRect(-2, -t.h * 0.3, 4, t.h * 0.3);
-        ctx.fillStyle = '#1a5a28';
-        ctx.beginPath();
-        ctx.moveTo(0, -t.h); ctx.lineTo(-t.h * 0.3, -t.h * 0.2); ctx.lineTo(t.h * 0.3, -t.h * 0.2);
-        ctx.fill();
-        ctx.fillStyle = '#2a6a35';
-        ctx.beginPath();
-        ctx.moveTo(0, -t.h * 0.85); ctx.lineTo(-t.h * 0.22, -t.h * 0.35); ctx.lineTo(t.h * 0.22, -t.h * 0.35);
-        ctx.fill();
+        // Pine — layered triangles with depth
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.beginPath(); ctx.ellipse(2, 2, t.h * 0.15, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#4a3520';
+        ctx.fillRect(-2, -t.h * 0.3, 5, t.h * 0.3);
+        // 3 triangle layers
+        ctx.fillStyle = darken(bc.tree, 20);
+        ctx.beginPath(); ctx.moveTo(0, -t.h); ctx.lineTo(-t.h * 0.32, -t.h * 0.15); ctx.lineTo(t.h * 0.32, -t.h * 0.15); ctx.fill();
+        ctx.fillStyle = bc.tree;
+        ctx.beginPath(); ctx.moveTo(0, -t.h * 0.88); ctx.lineTo(-t.h * 0.26, -t.h * 0.3); ctx.lineTo(t.h * 0.26, -t.h * 0.3); ctx.fill();
+        ctx.fillStyle = lighten(bc.tree, 15);
+        ctx.beginPath(); ctx.moveTo(0, -t.h * 0.75); ctx.lineTo(-t.h * 0.18, -t.h * 0.42); ctx.lineTo(t.h * 0.18, -t.h * 0.42); ctx.fill();
+        // Snow cap in snow biome
+        if (bc.tree === '#7aaa80') {
+          ctx.fillStyle = 'rgba(255,255,255,0.2)';
+          ctx.beginPath(); ctx.moveTo(0, -t.h); ctx.lineTo(-t.h * 0.12, -t.h * 0.85); ctx.lineTo(t.h * 0.12, -t.h * 0.85); ctx.fill();
+        }
       } else {
-        // Bush
-        ctx.fillStyle = '#2a6a30';
-        ctx.beginPath(); ctx.ellipse(0, -t.h * 0.2, t.h * 0.35, t.h * 0.25, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#3a8a40';
-        ctx.beginPath(); ctx.ellipse(6, -t.h * 0.25, t.h * 0.2, t.h * 0.18, 0, 0, Math.PI * 2); ctx.fill();
+        // Bush — rounded with depth
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.beginPath(); ctx.ellipse(2, 2, t.h * 0.3, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = darken(bc.tree, 10);
+        ctx.beginPath(); ctx.ellipse(0, -t.h * 0.18, t.h * 0.38, t.h * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = bc.tree;
+        ctx.beginPath(); ctx.ellipse(-3, -t.h * 0.22, t.h * 0.25, t.h * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = lighten(bc.tree, 15);
+        ctx.beginPath(); ctx.ellipse(6, -t.h * 0.26, t.h * 0.18, t.h * 0.15, 0, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
     }
