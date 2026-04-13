@@ -60,6 +60,8 @@ function stopIdleNarrator() {
 }
 
 startIdleNarrator();
+// Lobby ambient music
+document.addEventListener('click', () => { Sound.startMusic('lobby'); }, { once: true });
 
 // ============================================================
 // MESSAGE HANDLING

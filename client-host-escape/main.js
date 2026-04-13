@@ -193,15 +193,30 @@ function showMsg(text, ms) {
 function showWinner(winnerId) {
   $hud.style.display = 'none';
   $message.classList.remove('show');
+  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
   const p = winnerId ? state.players[winnerId] : null;
   if (p) {
-    $winOverlay.innerHTML = `<div class="w-text" style="color:${p.color}">${pname(winnerId)} SURVIVED!</div>
-      <div class="w-sub">${Math.floor(state.worldDist)}m distance</div>`;
+    const icon = charIcons[p.character] || '';
+    $winOverlay.innerHTML = `
+      <div style="font-size:60px;margin-bottom:8px;filter:drop-shadow(0 0 20px ${p.color})">${icon}</div>
+      <div class="w-text" style="color:${p.color};text-shadow:0 0 30px ${p.color}">${pname(winnerId)}</div>
+      <div style="font-size:22px;font-weight:800;color:#fff;margin-top:4px;letter-spacing:3px">SURVIVED!</div>
+      <div class="w-sub" style="margin-top:12px">${Math.floor(state.worldDist)}m distance</div>
+      <div id="controls" style="display:flex;justify-content:center;gap:12px;margin-top:24px">
+        <button onclick="ws.send(JSON.stringify({type:'restart'}))" style="padding:10px 24px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.08);color:#eee;font-size:14px;cursor:pointer">PLAY AGAIN</button>
+        <button onclick="window.location.href='/host/'" style="padding:10px 24px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.08);color:#eee;font-size:14px;cursor:pointer">LOBBY</button>
+      </div>`;
   } else {
-    $winOverlay.innerHTML = `<div class="w-text">NOBODY SURVIVED!</div><div class="w-sub">The fox wins this time...</div>`;
+    $winOverlay.innerHTML = `
+      <div style="font-size:50px;margin-bottom:8px">🦊</div>
+      <div class="w-text" style="color:#ff4422;text-shadow:0 0 20px rgba(255,68,34,0.5)">THE FOX WINS</div>
+      <div style="font-size:16px;color:#888;margin-top:8px;font-style:italic">"Nobody survived. I love it when that happens."</div>
+      <div id="controls" style="display:flex;justify-content:center;gap:12px;margin-top:24px">
+        <button onclick="ws.send(JSON.stringify({type:'restart'}))" style="padding:10px 24px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.08);color:#eee;font-size:14px;cursor:pointer">PLAY AGAIN</button>
+        <button onclick="window.location.href='/host/'" style="padding:10px 24px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.08);color:#eee;font-size:14px;cursor:pointer">LOBBY</button>
+      </div>`;
   }
   $winOverlay.classList.add('show');
-  $controls.style.display = 'flex';
 }
 
 $btnStart.onclick = () => ws.send(JSON.stringify({ type: 'start' }));

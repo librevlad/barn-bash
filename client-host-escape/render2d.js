@@ -235,33 +235,51 @@ const Render2D = (() => {
         const screenX = centerX + relZ + lane * laneW * scale * 0.4;
 
         if (obs.type === 'gap') {
-          ctx.fillStyle = 'rgba(0,0,0,0.5)';
-          ctx.fillRect(screenX - 16 * scale, groundY - 2, 32 * scale, 18);
-          ctx.strokeStyle = 'rgba(255,100,50,0.25)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(screenX - 16 * scale, groundY - 2, 32 * scale, 18);
+          // Gap — dark pit with danger glow
+          ctx.fillStyle = 'rgba(0,0,0,0.7)';
+          ctx.fillRect(screenX - 16 * scale, groundY - 2, 32 * scale, 20);
+          ctx.strokeStyle = 'rgba(255,80,30,0.4)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(screenX - 16 * scale, groundY - 2, 32 * scale, 20);
+          // Danger glow
+          ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(255,80,30,0.3)';
+          ctx.strokeRect(screenX - 16 * scale, groundY - 2, 32 * scale, 20);
+          ctx.shadowBlur = 0;
         } else if (obs.type === 'high') {
-          // Overhead branch/log — must slide under
-          const barY = groundY - 38 * scale;
-          ctx.fillStyle = '#5a3a20';
-          ctx.fillRect(screenX - 22 * scale, barY, 44 * scale, 7 * scale);
+          // Overhead branch/log — yellow warning, must slide under
+          const barY = groundY - 40 * scale;
+          // Warning glow
+          ctx.shadowBlur = 12; ctx.shadowColor = 'rgba(255,200,50,0.4)';
+          ctx.fillStyle = '#7a5030';
+          ctx.fillRect(screenX - 24 * scale, barY, 48 * scale, 8 * scale);
+          ctx.shadowBlur = 0;
           // Support posts
-          ctx.fillStyle = '#4a2a15';
-          ctx.fillRect(screenX - 20 * scale, barY, 3 * scale, (groundY - barY));
-          ctx.fillRect(screenX + 17 * scale, barY, 3 * scale, (groundY - barY));
-          // Warning stripe
-          ctx.fillStyle = 'rgba(255,200,50,0.15)';
-          ctx.fillRect(screenX - 22 * scale, barY - 2, 44 * scale, 3);
+          ctx.fillStyle = '#5a3018';
+          ctx.fillRect(screenX - 22 * scale, barY, 4 * scale, (groundY - barY));
+          ctx.fillRect(screenX + 18 * scale, barY, 4 * scale, (groundY - barY));
+          // Yellow warning stripes
+          ctx.fillStyle = 'rgba(255,200,50,0.3)';
+          ctx.fillRect(screenX - 24 * scale, barY - 3, 48 * scale, 4);
+          ctx.fillRect(screenX - 24 * scale, barY + 8 * scale, 48 * scale, 3);
         } else {
-          const rw = 20 * scale, rh = 18 * scale;
-          ctx.fillStyle = '#5a4a3a';
-          ctx.beginPath();
-          ctx.ellipse(screenX, groundY - rh * 0.4, rw, rh, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#6a5a48';
-          ctx.beginPath();
-          ctx.ellipse(screenX - 3, groundY - rh * 0.5, rw * 0.6, rh * 0.65, 0, 0, Math.PI * 2);
-          ctx.fill();
+          // Rock — brighter, with highlight and shadow
+          const rw = 22 * scale, rh = 20 * scale;
+          // Shadow
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.beginPath(); ctx.ellipse(screenX + 2, groundY, rw * 0.8, 4, 0, 0, Math.PI * 2); ctx.fill();
+          // Main body
+          const rockGrad = ctx.createRadialGradient(screenX - rw * 0.2, groundY - rh * 0.5, 0, screenX, groundY - rh * 0.3, rw);
+          rockGrad.addColorStop(0, '#8a7a6a');
+          rockGrad.addColorStop(0.5, '#6a5a48');
+          rockGrad.addColorStop(1, '#4a3a28');
+          ctx.fillStyle = rockGrad;
+          ctx.beginPath(); ctx.ellipse(screenX, groundY - rh * 0.35, rw, rh, 0, 0, Math.PI * 2); ctx.fill();
+          // Specular
+          ctx.fillStyle = 'rgba(255,255,255,0.15)';
+          ctx.beginPath(); ctx.ellipse(screenX - rw * 0.2, groundY - rh * 0.55, rw * 0.3, rh * 0.25, -0.3, 0, Math.PI * 2); ctx.fill();
+          // Outline
+          ctx.strokeStyle = 'rgba(60,40,20,0.5)'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.ellipse(screenX, groundY - rh * 0.35, rw, rh, 0, 0, Math.PI * 2); ctx.stroke();
         }
       }
     }

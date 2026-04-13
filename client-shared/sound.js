@@ -245,47 +245,127 @@ const Sound = (() => {
     },
   };
 
-  // --- Background Music (ambient drones) ---
+  // --- Background Music (melodic themes with arpeggio + rhythm) ---
+
+  let musicInterval = null;
+
+  // Note frequencies for melodies
+  const N = {
+    C3: 131, D3: 147, E3: 165, F3: 175, G3: 196, A3: 220, B3: 247,
+    C4: 262, D4: 294, E4: 330, F4: 349, G4: 392, A4: 440, B4: 494,
+    C5: 523, D5: 587, E5: 659, G5: 784,
+  };
+
+  const THEMES = {
+    escapeFox: {
+      bpm: 140, vol: 0.06,
+      bass: [N.E3, N.E3, N.G3, N.A3, N.E3, N.E3, N.B3, N.A3],
+      melody: [N.E4, N.G4, N.A4, N.G4, N.E4, N.D4, N.E4, 0],
+      arp: [N.E4, N.G4, N.B4, N.E5],
+      bassType: 'triangle', melType: 'square', arpType: 'sine',
+      filterFreq: 800,
+    },
+    hillKing: {
+      bpm: 120, vol: 0.05,
+      bass: [N.A3, N.A3, N.C4, N.D4, N.F3, N.F3, N.A3, N.G3],
+      melody: [N.A4, N.C5, N.D5, N.C5, N.A4, 0, N.G4, N.A4],
+      arp: [N.A3, N.C4, N.E4, N.A4],
+      bassType: 'sawtooth', melType: 'sine', arpType: 'triangle',
+      filterFreq: 600,
+    },
+    meteor: {
+      bpm: 100, vol: 0.045,
+      bass: [N.D3, N.D3, N.F3, N.A3, N.D3, N.D3, N.C3, N.D3],
+      melody: [N.D4, N.F4, N.A4, 0, N.D4, N.E4, N.F4, N.D4],
+      arp: [N.D3, N.F3, N.A3, N.D4],
+      bassType: 'sawtooth', melType: 'triangle', arpType: 'sine',
+      filterFreq: 500,
+    },
+    race: {
+      bpm: 160, vol: 0.06,
+      bass: [N.C3, N.C3, N.E3, N.G3, N.A3, N.A3, N.G3, N.E3],
+      melody: [N.C5, N.E5, N.G5, N.E5, N.C5, N.D5, N.E5, N.C5],
+      arp: [N.C4, N.E4, N.G4, N.C5],
+      bassType: 'square', melType: 'sine', arpType: 'triangle',
+      filterFreq: 900,
+    },
+    lobby: {
+      bpm: 80, vol: 0.03,
+      bass: [N.C3, 0, N.G3, 0, N.A3, 0, N.F3, 0],
+      melody: [N.E4, N.G4, N.C5, 0, N.A4, N.G4, N.E4, 0],
+      arp: [N.C4, N.E4, N.G4, N.C5],
+      bassType: 'triangle', melType: 'sine', arpType: 'sine',
+      filterFreq: 400,
+    },
+  };
 
   function startMusic(theme) {
     stopMusic();
     ensure();
-    const themes = {
-      escapeFox:  { notes: [147, 175], type: 'triangle', vol: 0.04, filterFreq: 600 },
-      hillKing:   { notes: [165, 196], type: 'sine', vol: 0.03, filterFreq: 500 },
-      meteor:     { notes: [220, 165], type: 'sawtooth', vol: 0.025, filterFreq: 400 },
-    };
-    const t = themes[theme] || themes.escapeFox;
+    const t = THEMES[theme] || THEMES.escapeFox;
+    const beatMs = 60000 / t.bpm;
 
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.value = t.filterFreq;
-
-    // LFO for slow wobble
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
-    lfo.frequency.value = 0.3;
-    lfoGain.gain.value = 5;
-    lfo.connect(lfoGain);
-
-    for (const note of t.notes) {
-      const osc = ctx.createOscillator();
-      osc.type = t.type;
-      osc.frequency.value = note;
-      lfoGain.connect(osc.frequency);
-      osc.connect(filter);
-      osc.start();
-      musicOscs.push(osc);
-    }
-    musicOscs.push(lfo);
-    lfo.start();
-
     filter.connect(musicGain);
+
     musicGain.gain.setValueAtTime(0, ctx.currentTime);
     musicGain.gain.linearRampToValueAtTime(t.vol, ctx.currentTime + 2);
+
+    let step = 0;
+    let arpStep = 0;
+
+    musicInterval = setInterval(() => {
+      if (!ctx || ctx.state === 'suspended') return;
+      const now = ctx.currentTime;
+      const bassNote = t.bass[step % t.bass.length];
+      const melNote = t.melody[step % t.melody.length];
+
+      // Bass note
+      if (bassNote) {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = t.bassType;
+        osc.frequency.value = bassNote;
+        g.gain.setValueAtTime(0.12, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + beatMs / 1000 * 0.9);
+        osc.connect(g).connect(filter);
+        osc.start(now); osc.stop(now + beatMs / 1000);
+      }
+
+      // Melody note (every 2 beats)
+      if (step % 2 === 0 && melNote) {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = t.melType;
+        osc.frequency.value = melNote;
+        g.gain.setValueAtTime(0.08, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + beatMs / 500);
+        osc.connect(g).connect(filter);
+        osc.start(now); osc.stop(now + beatMs / 500);
+      }
+
+      // Arpeggio (every beat, cycling through 4 notes)
+      const arpNote = t.arp[arpStep % t.arp.length];
+      if (arpNote) {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = t.arpType;
+        osc.frequency.value = arpNote;
+        g.gain.setValueAtTime(0.04, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + beatMs / 1500);
+        osc.connect(g).connect(filter);
+        osc.start(now); osc.stop(now + beatMs / 1500);
+      }
+
+      step++;
+      arpStep++;
+    }, beatMs);
   }
 
   function stopMusic() {
+    if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
     if (!ctx) return;
     musicGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
     setTimeout(() => {
