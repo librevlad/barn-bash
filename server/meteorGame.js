@@ -7,11 +7,11 @@ const { Physics2D } = require('../engine/Physics2D');
 const TICK_MS = 50;
 const ARENA_R = 4.5;
 const MIN_ARENA_R = 2.5;
-const SAFE_R = 1.6;
-const WARN_TICKS = 50;
-const PAUSE_TICKS = 20;
-const MOVE_SPEED = 0.45;
-const DODGE_CD = 2;
+const SAFE_R = 1.8;          // slightly bigger safe zone (was 1.6)
+const WARN_TICKS = 55;       // 2.75s warning (was 2.5s) — more time to reach
+const PAUSE_TICKS = 30;      // 1.5s between waves (was 1s) — breathe
+const MOVE_SPEED = 0.5;      // faster movement (was 0.45) — more responsive
+const DODGE_CD = 3;           // slight cooldown to prevent pure tap-spam
 
 // Sprint
 const SPRINT_SPEED = 0.9;
@@ -19,8 +19,8 @@ const SPRINT_TICKS = 10;
 const SPRINT_CD = 20;
 
 // Push
-const PUSH_DIST = 0.8;
-const PUSH_FORCE = 0.6;
+const PUSH_DIST = 1.2;       // wider push range (was 0.8)
+const PUSH_FORCE = 0.8;      // stronger push (was 0.6)
 
 // Singed (stumble equivalent)
 const SINGED_THRESHOLD = 1.0; // safe zone radius + this = singed zone (wider = more forgiving)
@@ -86,7 +86,7 @@ class MeteorGame {
     this.wave = 0;
     this.platR = ARENA_R;
     this.subPhase = 'pause';
-    this.subTick = 80;
+    this.subTick = 60; // 3s initial wait (was 4s) — faster start
     this.winner = null;
     this.decoyZones = [];
     this.fireZones = [];

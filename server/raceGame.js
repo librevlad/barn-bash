@@ -181,21 +181,19 @@ class RaceGame {
       if (g.boostTimer > 0) g.boostTimer--;
       if (g.boostCooldown > 0) g.boostCooldown--;
 
-      // Auto-steer toward next waypoint when no player input
-      // This keeps players roughly on-track even with imprecise phone controls
-      const nextWP = TRACK[g.waypoint % TRACK.length];
-      const toWPx = nextWP.x - g.x, toWPz = nextWP.z - g.z;
-      const toWPdist = Math.sqrt(toWPx * toWPx + toWPz * toWPz);
-      if (toWPdist > 0.5) {
-        const targetAngle = Math.atan2(toWPz, toWPx);
-        let angleDiff = targetAngle - g.angle;
-        // Normalize to [-PI, PI]
-        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-        // Gentle auto-correction (weaker than player steering, stronger when off-track)
-        const onTrackNow = this._isOnTrack(g.x, g.z);
-        const autoSteerForce = onTrackNow ? 0.015 : 0.06;
-        g.angle += angleDiff * autoSteerForce;
+      // Auto-steer ONLY when off-track (recovery assist, not autopilot)
+      const onTrackNow = this._isOnTrack(g.x, g.z);
+      if (!onTrackNow) {
+        const nextWP = TRACK[g.waypoint % TRACK.length];
+        const toWPx = nextWP.x - g.x, toWPz = nextWP.z - g.z;
+        const toWPdist = Math.sqrt(toWPx * toWPx + toWPz * toWPz);
+        if (toWPdist > 0.5) {
+          const targetAngle = Math.atan2(toWPz, toWPx);
+          let angleDiff = targetAngle - g.angle;
+          while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+          while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+          g.angle += angleDiff * 0.05; // strong correction only when lost
+        }
       }
 
       // Player steering — decay toward 0 (one swipe = one turn, not infinite)

@@ -9,11 +9,11 @@ const RUN_SPEED = 0.28;
 const GRAVITY = 0.028;
 const HIT_HEIGHT = 0.22;
 const SPAWN_AHEAD = 16;
-const INITIAL_SPAWN_INT = 55;
-const MIN_SPAWN_INT = 18;
+const INITIAL_SPAWN_INT = 40;  // obstacles start sooner (was 55 = 2.75s)
+const MIN_SPAWN_INT = 15;     // faster max obstacle rate (was 18)
 const FOX_CATCH_DIST = 1.5;
 const COLLISION_HALF = 0.35;
-const NEAR_MISS_EXTRA = 0.15;
+const NEAR_MISS_EXTRA = 0.25; // wider near-miss zone (was 0.15) — more "CLOSE!" moments
 
 // Physics
 const JUMP_VY_MIN = 0.10;
