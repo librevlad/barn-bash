@@ -207,6 +207,6 @@ function showWinner(winnerId) {
 $btnStart.onclick = () => ws.send(JSON.stringify({ type: 'start' }));
 $('btn-again').onclick = () => ws.send(JSON.stringify({ type: 'restart' }));
 $('btn-lobby').onclick = () => {
-  ws.send(JSON.stringify({ type: 'selectGame', gameId: 'escapeFox' }));
-  window.location.href = '/host/';
+  ws.send(JSON.stringify({ type: 'restart' }));
+  setTimeout(() => { window.location.href = '/host/'; }, 200);
 };

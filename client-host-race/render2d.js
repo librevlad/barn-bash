@@ -61,14 +61,14 @@ const Render2D = (() => {
     ctx.fillStyle = grassGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Grass texture patches (lighter/darker spots)
-    for (let i = 0; i < 30; i++) {
-      const gx = ((i * 137 + clock * 0.3) % (W + 200)) - 100;
-      const gy = ((i * 89 + 50) % (H + 200)) - 100;
+    // Grass texture patches (very subtle, small)
+    for (let i = 0; i < 40; i++) {
+      const gx = ((i * 137 + clock * 0.2) % (W + 100)) - 50;
+      const gy = ((i * 89 + 50) % (H + 100)) - 50;
       const bright = i % 3 === 0;
-      ctx.fillStyle = bright ? 'rgba(60,110,50,0.15)' : 'rgba(15,35,12,0.12)';
+      ctx.fillStyle = bright ? 'rgba(55,100,45,0.06)' : 'rgba(18,40,15,0.05)';
       ctx.beginPath();
-      ctx.ellipse(gx, gy, 35 + i * 2, 18 + i, i * 0.5, 0, Math.PI * 2);
+      ctx.ellipse(gx, gy, 15 + i % 10, 10 + i % 7, i * 0.5, 0, Math.PI * 2);
       ctx.fill();
     }
 

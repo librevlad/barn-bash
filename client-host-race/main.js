@@ -36,7 +36,7 @@ ws.onmessage = (e) => {
           $lobby.classList.add('hidden');
           $controls.style.display = 'none';
           $winOverlay.classList.remove('show');
-          if (typeof HUD !== 'undefined') HUD.init();
+          if (typeof HUD !== 'undefined') { HUD.init(); $hud.style.display = 'none'; }
           Sound.startMusic('escapeFox'); // reuse escape music for now
           Narrator.gameIntro('race');
           runCountdown();
@@ -220,6 +220,6 @@ function showWinner(winnerId) {
 $btnStart.onclick = () => ws.send(JSON.stringify({ type: 'start' }));
 $('btn-again').onclick = () => ws.send(JSON.stringify({ type: 'restart' }));
 $('btn-lobby').onclick = () => {
-  ws.send(JSON.stringify({ type: 'selectGame', gameId: 'race' }));
-  window.location.href = '/host/';
+  ws.send(JSON.stringify({ type: 'restart' }));
+  setTimeout(() => { window.location.href = '/host/'; }, 200);
 };
