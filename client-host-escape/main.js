@@ -10,7 +10,7 @@ const $countdown = $('countdown'), $message = $('message');
 const $winOverlay = $('winner-overlay'), $controls = $('controls');
 
 Render2D.init();
-function pname(id) { const p = window._lastPlayers && window._lastPlayers[id]; return p ? (p.name || 'Player ' + id) : 'Player ' + id; }
+const pname = HostCommon.pname;
 
 ws.onopen = () => ws.send(JSON.stringify({ type: 'host' }));
 
@@ -21,11 +21,7 @@ ws.onmessage = (e) => {
   switch (msg.type) {
     case 'state':
       window._lastPlayers = msg.gameState ? msg.gameState.players : {};
-      if (msg.gameId && msg.gameId !== 'escapeFox') {
-        const urls = { hillKing: '/host-hill/', meteor: '/host-meteor/', race: '/host-race/' };
-        window.location.href = urls[msg.gameId] || '/host/';
-        return;
-      }
+      if (HostCommon.redirectIfWrongGame('escapeFox', msg.gameId)) return;
       state = msg.gameState;
       if (state.phase === 'lobby') {
         gameStarted = false;
@@ -146,16 +142,10 @@ function showLobby(s) {
   $controls.style.display = 'none';
   $winOverlay.classList.remove('show');
   $countdown.style.display = 'none';
-  const conn = Object.entries(s.players).filter(([, p]) => p.connected);
-  $lobbyInfo.textContent = conn.length >= 2 ? 'Ready to run!' : 'Waiting for players...';
-  $btnStart.style.display = conn.length >= 2 ? '' : 'none';
-  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
-  $lobbyPlayers.innerHTML = conn
-    .map(([id, p]) => {
-      const name = p.name || ('P' + id);
-      const icon = p.character ? (charIcons[p.character] || '') : '';
-      return `<span style="color:${p.color};margin:0 12px;font-weight:700;font-size:16px;">${icon} ${name}</span>`;
-    }).join('');
+  const { connected } = HostCommon.countPlayers(s.players);
+  $lobbyInfo.textContent = connected >= 2 ? 'Ready to run!' : 'Waiting for players...';
+  $btnStart.style.display = connected >= 2 ? '' : 'none';
+  $lobbyPlayers.innerHTML = HostCommon.lobbyPlayersHTML(s.players);
 }
 
 function updateHUD(s) {
@@ -181,12 +171,7 @@ function updateHUD(s) {
   }
 }
 
-let msgTimer = null;
-function showMsg(text, ms) {
-  clearTimeout(msgTimer);
-  $message.textContent = text;
-  $message.classList.add('show');
-  msgTimer = setTimeout(() => $message.classList.remove('show'), ms);
+function showMsg(text, ms) { HostCommon.showMsg($message, text, ms);
 }
 
 function showWinner(winnerId) {
