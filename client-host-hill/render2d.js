@@ -69,16 +69,18 @@ const Render2D = (() => {
 
     // Outer glow
     const glow = ctx.createRadialGradient(ax, ay, r * 0.85, ax, ay, r * 1.4);
-    glow.addColorStop(0, 'rgba(120,80,220,0.12)');
-    glow.addColorStop(1, 'rgba(120,80,220,0)');
+    glow.addColorStop(0, 'rgba(140,90,240,0.18)');
+    glow.addColorStop(0.6, 'rgba(140,90,240,0.05)');
+    glow.addColorStop(1, 'rgba(140,90,240,0)');
     ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(ax, ay, r * 1.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ax, ay, r * 1.5, 0, Math.PI * 2); ctx.fill();
 
-    // Arena disc
+    // Arena disc (richer gradient)
     const grad = ctx.createRadialGradient(ax - r * 0.15, ay - r * 0.15, 0, ax, ay, r);
-    grad.addColorStop(0, '#2A2050');
-    grad.addColorStop(0.7, '#1A1540');
-    grad.addColorStop(1, '#100C28');
+    grad.addColorStop(0, '#352868');
+    grad.addColorStop(0.5, '#221a50');
+    grad.addColorStop(0.8, '#161040');
+    grad.addColorStop(1, '#120C30');
     ctx.fillStyle = grad;
     ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
 

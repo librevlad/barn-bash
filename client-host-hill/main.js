@@ -53,7 +53,7 @@ ws.onmessage = (e) => {
       break;
     case 'bump':
       Sound.play('bump');
-      if (typeof FX !== 'undefined') { FX.shake(6); FX.screenFlash('#fff', 0.15); }
+      if (typeof FX !== 'undefined') { FX.shake(8); FX.screenFlash('#fff', 0.2); FX.burst(640, 360, 15, { color: '#B070FF', speed: 4, life: 0.3, glow: true }); }
       showMsg('Player ' + msg.from + ' bumped Player ' + msg.to + '!', 1200);
       break;
     case 'shieldBlock':

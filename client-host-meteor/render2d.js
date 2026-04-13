@@ -55,12 +55,13 @@ const Render2D = (() => {
     const r = radius * SCALE;
     const [ax, ay] = [CX + shakeX, CY + shakeY];
 
-    // Outer glow
-    const glow = ctx.createRadialGradient(ax, ay, r * 0.9, ax, ay, r * 1.3);
-    glow.addColorStop(0, 'rgba(255,68,0,0.12)');
-    glow.addColorStop(1, 'rgba(255,68,0,0)');
+    // Outer glow (stronger, wider)
+    const glow = ctx.createRadialGradient(ax, ay, r * 0.85, ax, ay, r * 1.4);
+    glow.addColorStop(0, 'rgba(255,80,10,0.18)');
+    glow.addColorStop(0.6, 'rgba(255,60,0,0.06)');
+    glow.addColorStop(1, 'rgba(255,40,0,0)');
     ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(ax, ay, r * 1.3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ax, ay, r * 1.4, 0, Math.PI * 2); ctx.fill();
 
     // Arena disc
     const grad = ctx.createRadialGradient(ax - r * 0.15, ay - r * 0.15, 0, ax, ay, r);

@@ -54,7 +54,12 @@ ws.onmessage = (e) => {
     case 'meteor_impact':
       Sound.play('meteorImpact');
       Render2D.onImpact();
-      if (typeof FX !== 'undefined') { FX.shake(16); FX.screenFlash('#ff3300', 0.4); FX.burst(640, 360, 30, { color: '#ff6600', speed: 6, glow: true, life: 0.6 }); }
+      if (typeof FX !== 'undefined') {
+        FX.shake(20); FX.screenFlash('#ff3300', 0.5);
+        FX.burst(640, 360, 40, { color: '#ff6600', speed: 8, glow: true, life: 0.8, size: 5 });
+        FX.burst(640, 360, 20, { color: '#ffcc00', speed: 4, glow: true, life: 0.5, size: 3 });
+        FX.burst(640, 360, 10, { color: '#fff', speed: 10, life: 0.3, size: 2 });
+      }
       break;
     case 'eliminated':
       Sound.play('eliminated');

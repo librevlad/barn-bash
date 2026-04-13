@@ -62,10 +62,13 @@ ws.onmessage = (e) => {
       break;
     case 'speed_burst':
       Narrator.speedBurst();
+      if (typeof FX !== 'undefined') { FX.screenFlash('#ff6600', 0.1); FX.textPopup(640, 200, 'SPEED UP!', '#ff6600'); }
+      if (typeof Visual !== 'undefined') Visual.drawSpeedLines(document.getElementById('game-canvas')?.getContext('2d'), 640, 360, 0.5);
       break;
     case 'stumble':
       Sound.play('stumble');
       Render2D.triggerElim();
+      if (typeof FX !== 'undefined') { FX.shake(6); FX.screenFlash('#ffaa00', 0.15); FX.burst(640, 400, 12, { color: '#ffaa00', speed: 3, life: 0.4 }); FX.textPopup(640, 370, 'STUMBLE!', '#ffaa00'); }
       showMsg(pname(msg.playerId) + ' stumbled!', 1500);
       break;
     case 'near_miss':

@@ -53,10 +53,10 @@ const Render2D = (() => {
 
   // ---- GRASS ----
   function drawGrass() {
-    ctx.fillStyle = '#1a3a1a';
+    ctx.fillStyle = '#1e4a1e';
     ctx.fillRect(0, 0, W, H);
-    // Subtle pattern
-    ctx.fillStyle = 'rgba(30,60,30,0.3)';
+    // Richer grass texture
+    ctx.fillStyle = 'rgba(35,75,35,0.3)';
     for (let i = 0; i < 20; i++) {
       const x = ((i * 137 + clock * 0.5) % (W + 200)) - 100;
       const y = ((i * 89 + 50) % (H + 200)) - 100;
@@ -72,7 +72,7 @@ const Render2D = (() => {
     const tw = trackWidth * camScale;
 
     // Track surface (gray asphalt)
-    ctx.strokeStyle = '#3a3a3a';
+    ctx.strokeStyle = '#4a4a4a';
     ctx.lineWidth = tw;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -88,7 +88,7 @@ const Render2D = (() => {
     ctx.stroke();
 
     // Edge kerbs (red-white)
-    ctx.strokeStyle = 'rgba(200,50,50,0.3)';
+    ctx.strokeStyle = 'rgba(220,60,60,0.4)';
     ctx.lineWidth = tw + 6;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
@@ -101,7 +101,7 @@ const Render2D = (() => {
     ctx.stroke();
 
     // Re-draw track on top of kerbs
-    ctx.strokeStyle = '#3a3a3a';
+    ctx.strokeStyle = '#4a4a4a';
     ctx.lineWidth = tw;
     ctx.beginPath();
     ctx.moveTo(sx, sy);

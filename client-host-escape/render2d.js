@@ -16,12 +16,12 @@ const Render2D = (() => {
   let targetWorldDist = 0, targetFoxDist = -5, targetSpeed = 0.3;
   let lastUpdateTime = 0;
 
-  // Biome system
+  // Biome system — vibrant, saturated colors (pro quality)
   const BIOMES = [
-    { name: 'forest', sky: ['#1a2a4a','#0a1628'], ground: ['#2a5a3a','#1e4a2e'], tree: '#2a6a35' },
-    { name: 'cave',   sky: ['#0a0a15','#050510'], ground: ['#3a3a4a','#2a2a3a'], tree: '#4a4a5a' },
-    { name: 'snow',   sky: ['#4a5a7a','#2a3a5a'], ground: ['#8a9aaa','#6a7a8a'], tree: '#6a8a6a' },
-    { name: 'volcano',sky: ['#4a1a0a','#2a0a05'], ground: ['#5a2a1a','#3a1a0a'], tree: '#6a3a2a' },
+    { name: 'forest', sky: ['#1e3560','#0c1a30'], ground: ['#2d7a42','#1a5a2a'], tree: '#35884a' },
+    { name: 'cave',   sky: ['#0e0e20','#060612'], ground: ['#4a4a5e','#303048'], tree: '#5a5a70' },
+    { name: 'snow',   sky: ['#5a70a0','#3a4a70'], ground: ['#a0b5cc','#7a90aa'], tree: '#7aaa80' },
+    { name: 'volcano',sky: ['#601a08','#351005'], ground: ['#7a3020','#4a1a0a'], tree: '#884030' },
   ];
   let currentBiome = 0;
   function lerpColor(a, b, t) {
