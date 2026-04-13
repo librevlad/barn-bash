@@ -338,6 +338,12 @@ const Narrator = (() => {
       case 'tournament_start': tournamentStart(); break;
       case 'tournament_standings': tournamentStandings(); break;
       case 'champion': champion(event.playerName); break;
+      case 'tournament_round_intro':
+        tournamentRoundIntro(event.round, event.total, event.gameName); break;
+      case 'tournament_standings_commentary':
+        tournamentStandingsCommentary(event.leader, event.last, event.round, event.score); break;
+      case 'tournament_champion':
+        tournamentChampionQuip(event.champion); break;
       case 'fox_close': foxClose(); break;
       case 'shield_block': shieldBlock(event.playerName); break;
       case 'speed_burst': speedBurst(); break;
@@ -358,6 +364,8 @@ const Narrator = (() => {
     gameIntro, elimination, winner, noWinner,
     tournamentStart, tournamentStandings, champion,
     foxClose, shieldBlock, speedBurst, custom,
+    // Tournament dramatic quips
+    tournamentRoundIntro, tournamentStandingsCommentary, tournamentChampionQuip,
     // Event-driven API (AI-ready)
     narrateEvent, getEventLog,
   };

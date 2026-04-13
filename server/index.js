@@ -236,11 +236,17 @@ function handleTournamentGameEnd(msg) {
   // Show standings
   tournament.phase = 'standings';
   setTimeout(() => {
+    // Include player names for the overlay display
+    const playerNames = {};
+    for (const p of players.connected()) {
+      playerNames[p.id] = p.name || 'Player ' + p.id;
+    }
     broadcastRaw({
       type: 'tournamentStandings',
       round: tournament.round,
       totalRounds: tournament.totalRounds,
       scores: tournament.scores,
+      playerNames,
       nextGameId: tournament.round < tournament.totalRounds
         ? tournament.sequence[tournament.round % tournament.sequence.length]
         : null
@@ -261,9 +267,19 @@ function endTournament() {
     if (pts > maxPts) { maxPts = pts; champId = Number(id); }
   }
 
+  const champName = players.get(champId)?.name || 'Player ' + champId;
+
+  // Include player names for the overlay display
+  const playerNames = {};
+  for (const p of players.connected()) {
+    playerNames[p.id] = p.name || 'Player ' + p.id;
+  }
+
   broadcastRaw({
     type: 'tournamentEnd',
     champId,
+    champName,
+    playerNames,
     scores: tournament.scores
   });
 
