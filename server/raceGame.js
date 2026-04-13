@@ -1,7 +1,8 @@
 // ============================================================
-// FRANTICS GRAND PRIX — Server Game Logic
+// FRANTICS GRAND PRIX — Server Game Logic (Engine-powered)
 // ============================================================
 
+const Physics2D = require('../engine/Physics2D');
 const TICK_MS = 50;
 const TOTAL_LAPS = 3;
 const TRACK_WIDTH = 2.5;
@@ -403,36 +404,16 @@ class RaceGame {
   }
 
   _isOnTrack(x, z) {
-    return this._distToTrack(x, z) < TRACK_WIDTH;
-  }
-
-  _distToTrack(x, z) {
-    let minDist = Infinity;
-    for (let i = 0; i < TRACK.length; i++) {
-      const a = TRACK[i], b = TRACK[(i + 1) % TRACK.length];
-      const d = this._distToSegment(x, z, a.x, a.z, b.x, b.z);
-      if (d < minDist) minDist = d;
-    }
-    return minDist;
+    // Use Physics2D.nearestPointOnPath for accurate track distance
+    const trackPath = TRACK.map(wp => ({ x: wp.x, y: wp.z }));
+    const nearest = Physics2D.nearestPointOnPath(x, z, trackPath);
+    return nearest.dist < TRACK_WIDTH;
   }
 
   _nearestTrackPoint(x, z) {
-    let minDist = Infinity, nearest = TRACK[0];
-    for (const wp of TRACK) {
-      const d = Math.sqrt((x - wp.x) ** 2 + (z - wp.z) ** 2);
-      if (d < minDist) { minDist = d; nearest = wp; }
-    }
-    return nearest;
-  }
-
-  _distToSegment(px, pz, ax, az, bx, bz) {
-    const dx = bx - ax, dz = bz - az;
-    const len2 = dx * dx + dz * dz;
-    if (len2 === 0) return Math.sqrt((px - ax) ** 2 + (pz - az) ** 2);
-    let t = ((px - ax) * dx + (pz - az) * dz) / len2;
-    t = Math.max(0, Math.min(1, t));
-    const projX = ax + t * dx, projZ = az + t * dz;
-    return Math.sqrt((px - projX) ** 2 + (pz - projZ) ** 2);
+    const trackPath = TRACK.map(wp => ({ x: wp.x, y: wp.z }));
+    const nearest = Physics2D.nearestPointOnPath(x, z, trackPath);
+    return { x: nearest.x, z: nearest.y };
   }
 
   _forceEnd() {
