@@ -90,7 +90,23 @@ ws.onmessage = (e) => {
       if (msg.winnerId) Narrator.winner(pname(msg.winnerId));
       else Narrator.noWinner();
       if (typeof Tournament !== 'undefined' && Tournament.isActive()) break;
-      showWinner(msg.winnerId);
+      if (typeof PostGame !== 'undefined') {
+        const w = msg.winnerId ? state.players[msg.winnerId] : null;
+        PostGame.show({
+          winnerId: msg.winnerId,
+          winnerName: w ? (w.name || 'Player ' + msg.winnerId) : null,
+          winnerColor: w ? w.color : '#fff',
+          winnerCharacter: w ? w.character : null,
+          winLabel: 'WINS THE RACE!',
+          loseIcon: '🏁', loseText: 'RACE OVER!',
+          loseQuote: 'Nobody crossed the line...',
+          stats: [
+            { label: 'Finished', value: (state.finishOrder ? state.finishOrder.length : 0) + '/' + Object.keys(state.players).length },
+          ],
+          onPlayAgain: () => ws.send(JSON.stringify({ type: 'restart' })),
+          onLobby: () => { ws.send(JSON.stringify({ type: 'restart' })); setTimeout(() => window.location.href = '/host/', 200); },
+        });
+      } else { showWinner(msg.winnerId); }
       break;
 
     case 'gameSelected':

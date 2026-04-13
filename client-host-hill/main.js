@@ -113,7 +113,21 @@ ws.onmessage = (e) => {
       if (msg.winnerId) Narrator.winner(pname(msg.winnerId));
       else Narrator.noWinner();
       if (typeof Tournament !== 'undefined' && Tournament.isActive()) break;
-      showWinner(msg.winnerId);
+      if (typeof PostGame !== 'undefined') {
+        const w = msg.winnerId ? state.players[msg.winnerId] : null;
+        PostGame.show({
+          winnerId: msg.winnerId,
+          winnerName: w ? (w.name || 'Player ' + msg.winnerId) : null,
+          winnerColor: w ? w.color : '#fff',
+          winnerCharacter: w ? w.character : null,
+          winLabel: 'IS KING!',
+          loseIcon: '💀', loseText: 'NOBODY SURVIVED!',
+          loseQuote: 'The hill claims all...',
+          stats: [],
+          onPlayAgain: () => ws.send(JSON.stringify({ type: 'restart' })),
+          onLobby: () => { ws.send(JSON.stringify({ type: 'restart' })); setTimeout(() => window.location.href = '/host/', 200); },
+        });
+      } else { showWinner(msg.winnerId); }
       break;
     case 'gameSelected':
       if (msg.gameId !== 'hillKing') window.location.href = '/host/';
