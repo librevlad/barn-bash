@@ -23,7 +23,7 @@ const PUSH_DIST = 0.8;
 const PUSH_FORCE = 0.6;
 
 // Singed (stumble equivalent)
-const SINGED_THRESHOLD = 0.3; // safe zone radius + this = singed zone
+const SINGED_THRESHOLD = 1.0; // safe zone radius + this = singed zone (wider = more forgiving)
 
 // Near-miss
 const NEAR_MISS_TICKS = 15; // last N ticks of warning = near-miss zone

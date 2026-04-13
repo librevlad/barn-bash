@@ -120,7 +120,7 @@ const FX = (() => {
   // SCREEN EFFECTS
   // ============================================================
   let flashAlpha = 0, flashColor = '#fff';
-  let vignetteIntensity = 0, vignetteColor = 'rgba(0,0,0,';
+  let vignetteIntensity = 0, vignetteColor = '0,0,0';
   let chromaticAmount = 0;
   let shakeX = 0, shakeY = 0, shakeIntensity = 0;
 
