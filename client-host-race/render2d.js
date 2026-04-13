@@ -53,27 +53,42 @@ const Render2D = (() => {
 
   // ---- GRASS ----
   function drawGrass() {
-    ctx.fillStyle = '#1e4a1e';
+    // Rich grass with radial gradient (lighter center, darker edges)
+    const grassGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.7);
+    grassGrad.addColorStop(0, '#2a6a2a');
+    grassGrad.addColorStop(0.5, '#1e5520');
+    grassGrad.addColorStop(1, '#143a14');
+    ctx.fillStyle = grassGrad;
     ctx.fillRect(0, 0, W, H);
-    // Richer grass texture
-    ctx.fillStyle = 'rgba(35,75,35,0.3)';
-    for (let i = 0; i < 20; i++) {
-      const x = ((i * 137 + clock * 0.5) % (W + 200)) - 100;
-      const y = ((i * 89 + 50) % (H + 200)) - 100;
+
+    // Grass texture patches (lighter/darker spots)
+    for (let i = 0; i < 30; i++) {
+      const gx = ((i * 137 + clock * 0.3) % (W + 200)) - 100;
+      const gy = ((i * 89 + 50) % (H + 200)) - 100;
+      const bright = i % 3 === 0;
+      ctx.fillStyle = bright ? 'rgba(60,110,50,0.15)' : 'rgba(15,35,12,0.12)';
       ctx.beginPath();
-      ctx.ellipse(x, y, 40 + i * 3, 20 + i * 2, i * 0.5, 0, Math.PI * 2);
+      ctx.ellipse(gx, gy, 35 + i * 2, 18 + i, i * 0.5, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // Grass blades (tiny streaks near track)
+    ctx.strokeStyle = 'rgba(50,100,40,0.1)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 40; i++) {
+      const bx = (i * 97 + Math.sin(clock * 0.1 + i) * 10) % W;
+      const by = (i * 67 + 30) % H;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.lineTo(bx + Math.sin(clock * 2 + i) * 3, by - 4 - Math.random() * 3);
+      ctx.stroke();
     }
   }
 
   // ---- TRACK ----
-  function drawTrack() {
-    if (track.length < 2) return;
-    const tw = trackWidth * camScale;
-
-    // Track surface (gray asphalt)
-    ctx.strokeStyle = '#4a4a4a';
-    ctx.lineWidth = tw;
+  function drawTrackPath(style, width) {
+    ctx.strokeStyle = style;
+    ctx.lineWidth = width;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
@@ -86,38 +101,34 @@ const Render2D = (() => {
     }
     ctx.closePath();
     ctx.stroke();
+  }
 
-    // Edge kerbs (red-white)
-    ctx.strokeStyle = 'rgba(220,60,60,0.4)';
-    ctx.lineWidth = tw + 6;
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    for (let i = 1; i <= track.length; i++) {
-      const wp = track[i % track.length];
-      const [px, py] = worldToScreen(wp.x, wp.z);
-      ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.stroke();
+  function drawTrack() {
+    if (track.length < 2) return;
+    const tw = trackWidth * camScale;
 
-    // Re-draw track on top of kerbs
-    ctx.strokeStyle = '#4a4a4a';
-    ctx.lineWidth = tw;
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    for (let i = 1; i <= track.length; i++) {
-      const wp = track[i % track.length];
-      const [px, py] = worldToScreen(wp.x, wp.z);
-      ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.stroke();
+    // Track shadow (soft dark outline)
+    drawTrackPath('rgba(0,0,0,0.3)', tw + 12);
+
+    // Outer kerbs — alternating red/white pattern
+    drawTrackPath('rgba(220,50,50,0.5)', tw + 8);
+    drawTrackPath('rgba(255,255,255,0.15)', tw + 6);
+
+    // Main track surface — gradient-like (darker edges via layering)
+    drawTrackPath('#555', tw);
+    drawTrackPath('#5a5a5a', tw - 4);
+    drawTrackPath('#606060', tw - 10);
+
+    // Edge lines (white)
+    drawTrackPath('rgba(255,255,255,0.2)', tw + 1);
 
     // Center dashed line
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
     ctx.lineWidth = 2;
-    ctx.setLineDash([8, 12]);
+    ctx.setLineDash([10, 14]);
+    ctx.lineCap = 'round';
     ctx.beginPath();
+    const [sx, sy] = worldToScreen(track[0].x, track[0].z);
     ctx.moveTo(sx, sy);
     for (let i = 1; i <= track.length; i++) {
       const wp = track[i % track.length];
@@ -128,24 +139,31 @@ const Render2D = (() => {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Start/finish line (checkered)
+    // Start/finish line — proper checkered flag
     if (track.length > 1) {
       const [fx, fy] = worldToScreen(track[0].x, track[0].z);
       const angle = Math.atan2(track[1].z - track[0].z, track[1].x - track[0].x);
       const perpX = -Math.sin(angle) * tw * 0.5;
       const perpY = Math.cos(angle) * tw * 0.5;
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(fx + perpX, fy + perpY);
-      ctx.lineTo(fx - perpX, fy - perpY);
-      ctx.stroke();
-      // Checkered pattern
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      for (let c = 0; c < 6; c++) {
-        if (c % 2 === 0) {
-          const t = (c / 6 - 0.5) * 2;
-          ctx.fillRect(fx + perpX * t - 3, fy + perpY * t - 3, 6, 6);
+
+      // Checkered flag (8 squares)
+      const squares = 8;
+      for (let r = 0; r < 2; r++) {
+        for (let c = 0; c < squares; c++) {
+          const isBlack = (r + c) % 2 === 0;
+          const t = (c / squares - 0.5) * 2;
+          const t2 = ((c + 1) / squares - 0.5) * 2;
+          const px1 = fx + perpX * t, py1 = fy + perpY * t;
+          const px2 = fx + perpX * t2, py2 = fy + perpY * t2;
+          const along = (r - 0.5) * 6;
+          const ax = Math.cos(angle) * along, az = Math.sin(angle) * along;
+          ctx.fillStyle = isBlack ? '#222' : '#eee';
+          ctx.beginPath();
+          ctx.moveTo(px1 + ax, py1 + az);
+          ctx.lineTo(px2 + ax, py2 + az);
+          ctx.lineTo(px2 + ax + Math.cos(angle) * 6, py2 + az + Math.sin(angle) * 6);
+          ctx.lineTo(px1 + ax + Math.cos(angle) * 6, py1 + az + Math.sin(angle) * 6);
+          ctx.fill();
         }
       }
     }
@@ -231,23 +249,39 @@ const Render2D = (() => {
       // Finished transparency
       if (p.finished) ctx.globalAlpha = 0.4;
 
-      // Shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.3)';
-      ctx.beginPath(); ctx.ellipse(1, 2, R, R * 0.8, 0, 0, Math.PI * 2); ctx.fill();
+      // Shadow (larger, softer)
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.beginPath(); ctx.ellipse(2, 3, R * 1.1, R * 0.6, 0, 0, Math.PI * 2); ctx.fill();
 
-      // Body
-      const grad = ctx.createRadialGradient(-2, -2, 2, 0, 0, R);
-      grad.addColorStop(0, lightenColor(p.color, 30));
-      grad.addColorStop(1, p.color);
+      // Body glow
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = p.color;
+
+      // Body (richer gradient)
+      const grad = ctx.createRadialGradient(-3, -3, 1, 0, 2, R * 1.1);
+      grad.addColorStop(0, lightenColor(p.color, 50));
+      grad.addColorStop(0.35, lightenColor(p.color, 15));
+      grad.addColorStop(0.7, p.color);
+      grad.addColorStop(1, darkenColor(p.color, 40));
       ctx.fillStyle = grad;
       ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
 
-      // Direction arrow
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      // Specular
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath(); ctx.arc(-R * 0.2, -R * 0.2, R * 0.25, 0, Math.PI * 2); ctx.fill();
+
+      // Outline
+      ctx.strokeStyle = darkenColor(p.color, 50);
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
+
+      // Direction arrow (brighter, larger)
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
       ctx.beginPath();
-      ctx.moveTo(0, -R - 4);
-      ctx.lineTo(-4, -R + 2);
-      ctx.lineTo(4, -R + 2);
+      ctx.moveTo(0, -R - 6);
+      ctx.lineTo(-5, -R + 1);
+      ctx.lineTo(5, -R + 1);
       ctx.fill();
 
       // Character features (top-down)
@@ -290,10 +324,14 @@ const Render2D = (() => {
     const mmW = 120, mmH = 100;
     const mmX = W - mmW - 12, mmY = H - mmH - 12;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(mmX, mmY, mmW, mmH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-    ctx.strokeRect(mmX, mmY, mmW, mmH);
+    // Minimap background with rounded corners
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.beginPath();
+    ctx.roundRect(mmX, mmY, mmW, mmH, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
     // Find track bounds
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
@@ -382,6 +420,12 @@ const Render2D = (() => {
     const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + amt);
     const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + amt);
     const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amt);
+    return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+  function darkenColor(hex, amt) {
+    const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amt);
+    const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - amt);
+    const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - amt);
     return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
   }
 

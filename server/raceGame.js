@@ -271,7 +271,13 @@ class RaceGame {
         const g = p.gameData;
         if (!g || g.finished || g.item || g.stunTimer > 0) continue;
         const dx = g.x - item.x, dz = g.z - item.z;
-        if (Math.sqrt(dx * dx + dz * dz) < 1.5) { // increased pickup radius
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        // Magnetism: pull item toward nearby player
+        if (dist < 3.0 && dist > 0.3) {
+          item.x += (g.x - item.x) * 0.03;
+          item.z += (g.z - item.z) * 0.03;
+        }
+        if (dist < 2.0) {
           g.item = item.type;
           item.active = false;
           item.respawnAt = this.tick + ITEM_RESPAWN_TICKS;
@@ -331,31 +337,38 @@ class RaceGame {
       const g = p.gameData;
       if (!g || g.finished) continue;
 
-      // Check current AND next 2 waypoints (allow skipping up to 2)
+      // Check current waypoint and up to 2 ahead (forgiveness for imprecise paths)
+      let bestHit = -1;
       for (let skip = 0; skip <= 2; skip++) {
         const wpIdx = (g.waypoint + skip) % TRACK.length;
         const wp = TRACK[wpIdx];
         const dx = g.x - wp.x, dz = g.z - wp.z;
-        if (Math.sqrt(dx * dx + dz * dz) < 3.5) { // increased from 2.0
-          g.waypoint = wpIdx + 1;
-          break; // take the furthest match
+        if (Math.sqrt(dx * dx + dz * dz) < 3.5) {
+          bestHit = skip;
         }
       }
-      // Lap check (separated from waypoint hit)
-      if (g.waypoint >= TRACK.length) {
-        g.waypoint = 0;
-        g.lap++;
-        if (g.lap > TOTAL_LAPS) {
+
+      if (bestHit >= 0) {
+        const newWP = g.waypoint + bestHit + 1;
+
+        // Lap boundary check: crossing from last waypoints to first
+        if (newWP >= TRACK.length) {
+          g.waypoint = newWP - TRACK.length;
+          g.lap++;
+          if (g.lap > TOTAL_LAPS) {
             g.finished = true;
             g.finishTime = this.tick;
             this.finishOrder.push(p.id);
             const pos = this.finishOrder.length;
-            g.score = Math.max(0, 4 - pos); // 1st=3, 2nd=2, 3rd=1
+            g.score = Math.max(0, 4 - pos);
             this.broadcast({ type: 'race_finish', playerId: p.id, position: pos, gameId: 'race' });
           } else {
             this.broadcast({ type: 'lap_complete', playerId: p.id, lap: g.lap, gameId: 'race' });
           }
+        } else {
+          g.waypoint = newWP;
         }
+      }
     }
   }
 
