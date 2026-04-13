@@ -1,0 +1,112 @@
+<h2>Controller Join Flow</h2>
+<p class="subtitle">Игрок открывает URL на телефоне. Что он видит? Сейчас: мгновенный join без имени. Должно стать: onboarding → имя → персонаж → готов.</p>
+
+<div class="section">
+  <h3>Step-by-step на телефоне игрока</h3>
+
+  <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+
+    <!-- Step 1: Name -->
+    <div style="flex:0 0 200px">
+      <div style="background:#222;border-radius:24px;padding:20px 16px;border:2px solid #333;min-height:340px;display:flex;flex-direction:column;align-items:center">
+        <div style="font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;margin-bottom:12px">Step 1</div>
+        <div style="font-size:28px;font-weight:900;background:linear-gradient(135deg,#ff6633,#ff3366);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px">FRANTICS!</div>
+        <div style="color:#aaa;font-size:13px;margin-bottom:16px;text-align:center">Welcome, contestant.</div>
+        <div style="width:100%;margin-bottom:12px">
+          <div style="color:#888;font-size:11px;margin-bottom:4px">Your name:</div>
+          <div style="background:#1a1a1a;border:1px solid #444;border-radius:8px;padding:10px 12px;color:#eee;font-size:16px">Alex_</div>
+        </div>
+        <div style="color:#666;font-size:10px;font-style:italic;text-align:center;margin-top:auto">"Make it memorable. You won't be here long."</div>
+      </div>
+      <div style="text-align:center;color:#888;font-size:11px;margin-top:8px">Ввод имени</div>
+    </div>
+
+    <!-- Step 2: Character -->
+    <div style="flex:0 0 200px">
+      <div style="background:#222;border-radius:24px;padding:20px 16px;border:2px solid #333;min-height:340px;display:flex;flex-direction:column;align-items:center">
+        <div style="font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;margin-bottom:12px">Step 2</div>
+        <div style="color:#aaa;font-size:13px;margin-bottom:12px;text-align:center">Choose your fighter:</div>
+
+        <!-- Cat -->
+        <div style="width:100%;padding:8px 12px;border:2px solid rgba(255,150,100,0.4);border-radius:10px;margin-bottom:8px;display:flex;align-items:center;gap:10px;background:rgba(255,150,100,0.05)">
+          <svg viewBox="0 0 40 40" style="width:32px;height:32px;flex-shrink:0">
+            <circle cx="20" cy="24" r="12" fill="#dd7744"/>
+            <polygon points="12,16 9,5 17,13" fill="#cc5533"/>
+            <polygon points="28,16 31,5 23,13" fill="#cc5533"/>
+            <circle cx="16" cy="22" r="3" fill="white"/><circle cx="24" cy="22" r="3" fill="white"/>
+            <circle cx="16.5" cy="22.5" r="1.5" fill="#333"/><circle cx="24.5" cy="22.5" r="1.5" fill="#333"/>
+          </svg>
+          <div>
+            <div style="color:#eee;font-size:13px;font-weight:700">Cat</div>
+            <div style="color:#888;font-size:10px">High Jumper</div>
+          </div>
+        </div>
+
+        <!-- Frog - selected -->
+        <div style="width:100%;padding:8px 12px;border:2px solid #3498db;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;gap:10px;background:rgba(52,152,219,0.1);box-shadow:0 0 12px rgba(52,152,219,0.2)">
+          <svg viewBox="0 0 40 40" style="width:32px;height:32px;flex-shrink:0">
+            <circle cx="20" cy="26" r="12" fill="#3498db"/>
+            <circle cx="14" cy="15" r="6" fill="#2980b9"/><circle cx="26" cy="15" r="6" fill="#2980b9"/>
+            <circle cx="14" cy="14.5" r="4" fill="white"/><circle cx="26" cy="14.5" r="4" fill="white"/>
+            <circle cx="14.5" cy="15" r="2" fill="#222"/><circle cx="26.5" cy="15" r="2" fill="#222"/>
+          </svg>
+          <div>
+            <div style="color:#eee;font-size:13px;font-weight:700">Frog ✓</div>
+            <div style="color:#888;font-size:10px">Triple Jump</div>
+          </div>
+        </div>
+
+        <!-- Wolf -->
+        <div style="width:100%;padding:8px 12px;border:2px solid rgba(136,153,187,0.3);border-radius:10px;margin-bottom:8px;display:flex;align-items:center;gap:10px;background:rgba(136,153,187,0.05)">
+          <svg viewBox="0 0 40 40" style="width:32px;height:32px;flex-shrink:0">
+            <circle cx="20" cy="24" r="12" fill="#778899"/>
+            <polygon points="10,16 6,3 18,12" fill="#556677"/>
+            <polygon points="30,16 34,3 22,12" fill="#556677"/>
+            <ellipse cx="16" cy="22" rx="3" ry="2.5" fill="white"/><ellipse cx="24" cy="22" rx="3" ry="2.5" fill="white"/>
+            <circle cx="16.5" cy="22" r="1.5" fill="#cc2211"/><circle cx="24.5" cy="22" r="1.5" fill="#cc2211"/>
+            <polygon points="17,30 18,33 19,30" fill="white" opacity="0.8"/>
+            <polygon points="21,30 22,33 23,30" fill="white" opacity="0.8"/>
+          </svg>
+          <div>
+            <div style="color:#eee;font-size:13px;font-weight:700">Wolf</div>
+            <div style="color:#888;font-size:10px">Long Slide</div>
+          </div>
+        </div>
+
+        <div style="color:#666;font-size:10px;font-style:italic;text-align:center;margin-top:auto">"A frog? This should be... slimy."</div>
+      </div>
+      <div style="text-align:center;color:#888;font-size:11px;margin-top:8px">Выбор персонажа</div>
+    </div>
+
+    <!-- Step 3: Ready -->
+    <div style="flex:0 0 200px">
+      <div style="background:linear-gradient(180deg,#1a2a1a,#222);border-radius:24px;padding:20px 16px;border:2px solid #3a5a3a;min-height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div style="font-size:9px;letter-spacing:3px;color:#5a8a5a;text-transform:uppercase;margin-bottom:16px">Ready</div>
+        <svg viewBox="0 0 80 80" style="width:70px;height:70px;margin-bottom:12px">
+          <circle cx="40" cy="48" r="24" fill="#3498db"/>
+          <circle cx="28" cy="30" r="12" fill="#2980b9"/><circle cx="52" cy="30" r="12" fill="#2980b9"/>
+          <circle cx="28" cy="29" r="8" fill="white"/><circle cx="52" cy="29" r="8" fill="white"/>
+          <circle cx="29" cy="30" r="4.5" fill="#222"/><circle cx="53" cy="30" r="4.5" fill="#222"/>
+          <circle cx="27" cy="28" r="2" fill="white"/><circle cx="51" cy="28" r="2" fill="white"/>
+        </svg>
+        <div style="color:#3498db;font-size:20px;font-weight:900">Alex</div>
+        <div style="color:#888;font-size:12px;margin-top:4px">🐸 Frog — Triple Jump</div>
+        <div style="margin-top:16px;padding:8px 20px;background:rgba(52,152,219,0.2);border:1px solid rgba(52,152,219,0.3);border-radius:8px;color:#6ab0e0;font-size:12px">WAITING FOR GAME...</div>
+        <div style="color:#555;font-size:10px;margin-top:12px;text-align:center">
+          TAP jump · SWIPE ←→ lane<br/>SWIPE ↓ slide
+        </div>
+      </div>
+      <div style="text-align:center;color:#888;font-size:11px;margin-top:8px">Готов к игре</div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+  <h3 style="margin-top:0;font-size:14px;color:#aaa">Хранение данных</h3>
+  <ul style="color:#888;font-size:12px;line-height:1.8;margin:8px 0 0">
+    <li><strong>localStorage:</strong> имя + персонаж сохраняются на телефоне. При повторном подключении — автозаполнение</li>
+    <li><strong>Server (players.js):</strong> поле <code>name</code> + <code>character</code> хранятся на объекте player</li>
+    <li><strong>Host отображает:</strong> имя + blob персонажа вместо "P1 🐱"</li>
+    <li><strong>Narrator использует имена:</strong> "Alex stumbled!" вместо "Player 2 stumbled!"</li>
+  </ul>
+</div>

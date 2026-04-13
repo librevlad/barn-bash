@@ -1,0 +1,109 @@
+<h2>Lobby Flow — "Welcome to FRANTICS!"</h2>
+<p class="subtitle">Первое что видит игрок. Сейчас: плоское меню с 3 кнопками. Должно стать: вход в ТВ-шоу.</p>
+
+<div class="section">
+  <h3>Host Screen — Sequence</h3>
+  <div class="mockup">
+    <div class="mockup-header">1. Title Screen (до подключения игроков)</div>
+    <div class="mockup-body" style="background:#0a0a14;text-align:center;padding:40px 20px">
+      <div style="font-size:42px;font-weight:900;letter-spacing:6px;background:linear-gradient(135deg,#ff6633,#ff3366,#cc33ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none">FRANTICS!</div>
+      <div style="font-size:11px;letter-spacing:4px;color:#666;margin-top:8px;text-transform:uppercase">A Game Master Production</div>
+      <div style="margin-top:30px;padding:12px 20px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;display:inline-block">
+        <div style="color:#888;font-size:13px">Connect your phone:</div>
+        <div style="color:#eee;font-size:16px;font-family:monospace;margin-top:4px">192.168.1.6:3000/controller</div>
+      </div>
+      <div style="color:#555;font-size:12px;margin-top:20px;font-style:italic">"Waiting for contestants..."</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">2. Contestants Joining (игроки подключаются)</div>
+    <div class="mockup-body" style="background:#0a0a14;padding:30px 20px">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:11px;letter-spacing:3px;color:#666;text-transform:uppercase">Tonight's Contestants</div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap">
+        <!-- Player 1 -->
+        <div style="text-align:center;padding:16px;border:1px solid rgba(231,76,60,0.3);border-radius:12px;min-width:80px">
+          <svg viewBox="0 0 60 60" style="width:50px;height:50px">
+            <circle cx="30" cy="32" r="18" fill="#e74c3c"/>
+            <polygon points="16,20 12,6 24,16" fill="#cc3322"/>
+            <polygon points="44,20 48,6 36,16" fill="#cc3322"/>
+            <circle cx="24" cy="28" r="4" fill="white"/><circle cx="36" cy="28" r="4" fill="white"/>
+            <circle cx="25" cy="29" r="2" fill="#222"/><circle cx="37" cy="29" r="2" fill="#222"/>
+            <line x1="8" y1="32" x2="20" y2="33" stroke="rgba(200,100,80,0.4)" stroke-width="0.8"/>
+            <line x1="52" y1="32" x2="40" y2="33" stroke="rgba(200,100,80,0.4)" stroke-width="0.8"/>
+          </svg>
+          <div style="color:#e74c3c;font-weight:700;font-size:14px;margin-top:6px">P1</div>
+          <div style="color:#888;font-size:10px">🐱 Cat</div>
+        </div>
+        <!-- Player 2 -->
+        <div style="text-align:center;padding:16px;border:1px solid rgba(52,152,219,0.3);border-radius:12px;min-width:80px">
+          <svg viewBox="0 0 60 60" style="width:50px;height:50px">
+            <circle cx="30" cy="34" r="18" fill="#3498db"/>
+            <circle cx="20" cy="18" r="8" fill="#2980b9"/>
+            <circle cx="40" cy="18" r="8" fill="#2980b9"/>
+            <circle cx="20" cy="17" r="6" fill="white"/><circle cx="40" cy="17" r="6" fill="white"/>
+            <circle cx="21" cy="18" r="3" fill="#222"/><circle cx="41" cy="18" r="3" fill="#222"/>
+            <path d="M22,40 Q30,46 38,40" fill="none" stroke="#1a6090" stroke-width="1.5"/>
+          </svg>
+          <div style="color:#3498db;font-weight:700;font-size:14px;margin-top:6px">P2</div>
+          <div style="color:#888;font-size:10px">🐸 Frog</div>
+        </div>
+        <!-- Player 3 -->
+        <div style="text-align:center;padding:16px;border:1px solid rgba(46,204,113,0.3);border-radius:12px;min-width:80px;opacity:0.3">
+          <div style="font-size:36px;color:#555">?</div>
+          <div style="color:#555;font-weight:700;font-size:14px;margin-top:6px">P3</div>
+          <div style="color:#555;font-size:10px">waiting...</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:20px">
+        <div style="color:#555;font-size:12px;font-style:italic">"Ah, two brave souls. Anyone else? No? Fine."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">3. Game Selection (Game Master presents challenges)</div>
+    <div class="mockup-body" style="background:#0a0a14;padding:20px">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:11px;letter-spacing:3px;color:#666;text-transform:uppercase">Tonight's Challenges</div>
+        <div style="color:#555;font-size:12px;font-style:italic;margin-top:4px">"Choose your torment. Or I'll choose for you."</div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px;max-width:180px;padding:16px;border-radius:12px;background:rgba(224,80,32,0.1);border:1px solid rgba(224,80,32,0.2);text-align:center;cursor:pointer">
+          <div style="font-size:28px">🦊</div>
+          <div style="color:#E05020;font-weight:700;font-size:14px;margin-top:6px">ESCAPE THE FOX</div>
+          <div style="color:#777;font-size:11px;margin-top:4px">Run. Don't look back.</div>
+        </div>
+        <div style="flex:1;min-width:140px;max-width:180px;padding:16px;border-radius:12px;background:rgba(176,112,255,0.1);border:1px solid rgba(176,112,255,0.2);text-align:center;cursor:pointer">
+          <div style="font-size:28px">👑</div>
+          <div style="color:#B070FF;font-weight:700;font-size:14px;margin-top:6px">KING OF THE HILL</div>
+          <div style="color:#777;font-size:11px;margin-top:4px">Push or be pushed.</div>
+        </div>
+        <div style="flex:1;min-width:140px;max-width:180px;padding:16px;border-radius:12px;background:rgba(255,102,51,0.1);border:1px solid rgba(255,102,51,0.2);text-align:center;cursor:pointer">
+          <div style="font-size:28px">☄️</div>
+          <div style="color:#FF6633;font-weight:700;font-size:14px;margin-top:6px">METEOR SHOWER</div>
+          <div style="color:#777;font-size:11px;margin-top:4px">Find shelter. Fast.</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:16px">
+        <div style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,#ff3366,#cc33ff);border-radius:8px;color:white;font-weight:700;font-size:13px;letter-spacing:1px;cursor:pointer">🏆 TOURNAMENT — 3 Rounds</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+  <h3 style="margin-top:0;font-size:14px;color:#aaa">Narrator Integration Points</h3>
+  <ul style="color:#888;font-size:12px;line-height:1.8;margin:8px 0 0">
+    <li><strong>Title screen:</strong> idle quips every 8-10s ("Is anyone coming?" "I didn't prepare all this for nothing.")</li>
+    <li><strong>Player joins:</strong> character-specific intro ("A cat. How... predictable." / "A frog? This should be interesting.")</li>
+    <li><strong>Game selection:</strong> narrator teases each game on hover</li>
+    <li><strong>Tournament start:</strong> dramatic intro sequence with contestant lineup</li>
+  </ul>
+</div>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>FRANTICS! — A Game Master Production</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      background: #0c0c14; color: #eee;
+      height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background: radial-gradient(ellipse at 50% 25%, rgba(255,50,100,0.08), transparent 65%),
+                  radial-gradient(ellipse at 30% 70%, rgba(100,50,255,0.05), transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Title */
+    .lobby-brand { font-size: 11px; letter-spacing: 5px; color: #555; text-transform: uppercase; }
+    .lobby-title {
+      font-size: 52px; font-weight: 900; letter-spacing: 8px; margin: 6px 0 4px;
+      background: linear-gradient(135deg, #ff6633, #ff3366, #cc33ff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      text-shadow: none;
+      filter: drop-shadow(0 0 30px rgba(255,50,100,0.3));
+    }
+    .lobby-sub { font-size: 12px; color: #666; margin-bottom: 10px; letter-spacing: 3px; }
+
+    /* Narrator overlay */
+    #narrator-idle {
+      font-size: 14px; color: #888; font-style: italic; margin-bottom: 20px;
+      min-height: 22px; transition: opacity 0.4s; text-align: center; max-width: 440px;
+      text-shadow: 0 0 20px rgba(255,50,100,0.15);
+    }
+
+    /* Connect URL */
+    .connect-url {
+      padding: 12px 22px; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+      background: rgba(255,255,255,0.03); margin-bottom: 28px; text-align: center;
+    }
+    .connect-url-label { font-size: 10px; color: #666; letter-spacing: 3px; text-transform: uppercase; }
+    .connect-url-value { font-size: 16px; font-family: 'SF Mono', 'Consolas', monospace; color: #bbb; margin-top: 4px; }
+
+    /* Contestants */
+    .contestants-label { font-size: 10px; letter-spacing: 4px; color: #555; text-transform: uppercase; margin-bottom: 14px; }
+    .contestants {
+      display: flex; gap: 24px; margin-bottom: 32px; min-height: 100px;
+      align-items: flex-start; justify-content: center; flex-wrap: wrap;
+    }
+    .contestant {
+      text-align: center; padding: 16px 20px; min-width: 100px;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 14px;
+      background: rgba(255,255,255,0.03); transition: all 0.3s;
+    }
+    .contestant:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
+    .contestant-blob { width: 56px; height: 56px; margin: 0 auto 8px; font-size: 36px; line-height: 56px; }
+    .contestant-name { font-size: 15px; font-weight: 700; }
+    .contestant-char { font-size: 11px; color: #777; margin-top: 3px; }
+    .contestant-empty {
+      text-align: center; padding: 12px 16px; min-width: 80px;
+      border: 1px dashed rgba(255,255,255,0.06); border-radius: 12px; opacity: 0.3;
+    }
+    .contestant-empty-icon { font-size: 28px; color: #333; }
+    .contestant-empty-text { font-size: 10px; color: #444; margin-top: 4px; }
+
+    /* Game Selection */
+    .section-label {
+      font-size: 9px; letter-spacing: 3px; color: #444; text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .section-quip { font-size: 11px; color: #555; font-style: italic; margin-bottom: 12px; }
+
+    .game-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 14px; max-width: 600px; width: 92%;
+    }
+    .game-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 22px 16px;
+      cursor: pointer; transition: all 0.25s; text-align: center;
+    }
+    .game-card:hover {
+      background: rgba(255,255,255,0.07);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .game-card.disabled { opacity: 0.25; pointer-events: none; }
+    .game-card-icon { font-size: 32px; margin-bottom: 10px; }
+    .game-card-name { font-size: 14px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 5px; }
+    .game-card-desc { font-size: 11px; color: #777; line-height: 1.5; }
+
+    .game-card[data-game="escapeFox"] .game-card-name { color: #E05020; }
+    .game-card[data-game="hillKing"] .game-card-name { color: #B070FF; }
+    .game-card[data-game="meteor"] .game-card-name { color: #FF6633; }
+    .game-card[data-game="escapeFox"]:hover { border-color: rgba(224,80,32,0.4); box-shadow: 0 8px 24px rgba(224,80,32,0.15); }
+    .game-card[data-game="hillKing"]:hover { border-color: rgba(176,112,255,0.4); box-shadow: 0 8px 24px rgba(176,112,255,0.15); }
+    .game-card[data-game="meteor"]:hover { border-color: rgba(255,102,51,0.4); box-shadow: 0 8px 24px rgba(255,102,51,0.15); }
+
+    /* Tournament */
+    .tournament-card {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, rgba(255,50,100,0.08), rgba(204,51,255,0.05));
+      border: 1px solid rgba(255,50,100,0.2);
+      border-radius: 14px; padding: 16px; cursor: pointer;
+      text-align: center; transition: all 0.25s; margin-top: 6px;
+    }
+    .tournament-card:hover {
+      border-color: rgba(255,50,100,0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(255,50,100,0.15);
+    }
+    .tournament-card.disabled { opacity: 0.25; pointer-events: none; }
+    .tournament-card-name {
+      font-size: 16px; font-weight: 900; letter-spacing: 3px;
+      background: linear-gradient(135deg, #ff3366, #cc33ff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .tournament-card-desc { font-size: 12px; color: #777; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="lobby-brand">A Game Master Production</div>
+  <div class="lobby-title">FRANTICS!</div>
+  <div class="lobby-sub">the show must go on</div>
+
+  <div id="narrator-idle"></div>
+
+  <div class="connect-url" id="connect-url">
+    <div class="connect-url-label">Join the show</div>
+    <div class="connect-url-value" id="connect-url-value"></div>
+  </div>
+
+  <div class="contestants-label" id="contestants-label">Tonight's Contestants</div>
+  <div class="contestants" id="lobby-players">
+    <div class="contestant-empty"><div class="contestant-empty-icon">?</div><div class="contestant-empty-text">waiting...</div></div>
+  </div>
+
+  <div class="section-label">Tonight's Challenges</div>
+  <div class="section-quip">"Choose your torment. Or I'll choose for you."</div>
+
+  <div class="game-grid" id="game-grid">
+    <div class="game-card disabled" data-game="escapeFox">
+      <div class="game-card-icon">&#129418;</div>
+      <div class="game-card-name">ESCAPE THE FOX</div>
+      <div class="game-card-desc">Run. Don't look back.</div>
+    </div>
+    <div class="game-card disabled" data-game="hillKing">
+      <div class="game-card-icon">&#128081;</div>
+      <div class="game-card-name">KING OF THE HILL</div>
+      <div class="game-card-desc">Push or be pushed.</div>
+    </div>
+    <div class="game-card disabled" data-game="meteor">
+      <div class="game-card-icon">&#9732;</div>
+      <div class="game-card-name">METEOR SHOWER</div>
+      <div class="game-card-desc">Find shelter. Fast.</div>
+    </div>
+  </div>
+
+  <div class="tournament-card disabled" id="btn-tournament">
+    <div style="font-size:18px">&#127942;</div>
+    <div class="tournament-card-name">TOURNAMENT — 3 ROUNDS</div>
+    <div class="tournament-card-desc">All games. One champion. No mercy.</div>
+  </div>
+
+  <script src="/shared/narrator.js"></script>
+  <script src="/shared/sound.js"></script>
+  <script src="/shared/transitions.js"></script>
+  <script src="/shared/tournament.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

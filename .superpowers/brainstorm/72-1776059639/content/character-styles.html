@@ -1,0 +1,168 @@
+<h2>Character Visual Identity</h2>
+<p class="subtitle">Сейчас все персонажи — одинаковые цветные blob-ы с буквой P1/P2. Cat, Frog, Wolf должны выглядеть по-разному даже в blob-стиле. Какой уровень детализации?</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:30px;text-align:center;background:#1a1a2e">
+      <svg viewBox="0 0 300 200" style="width:100%;max-width:280px">
+        <!-- Cat blob with ears -->
+        <defs>
+          <radialGradient id="catGrad" cx="40%" cy="35%">
+            <stop offset="0%" style="stop-color:#ff9966"/>
+            <stop offset="100%" style="stop-color:#cc5533"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="80" cy="130" rx="28" ry="6" fill="rgba(0,0,0,0.2)"/>
+        <circle cx="80" cy="110" r="25" fill="url(#catGrad)"/>
+        <!-- Pointed ears -->
+        <polygon points="62,92 58,72 72,88" fill="#cc5533"/>
+        <polygon points="98,92 102,72 88,88" fill="#cc5533"/>
+        <polygon points="64,90 60,76 72,88" fill="#ff9966" opacity="0.5"/>
+        <polygon points="96,90 100,76 88,88" fill="#ff9966" opacity="0.5"/>
+        <!-- Eyes -->
+        <ellipse cx="72" cy="106" rx="5" ry="6" fill="white"/>
+        <ellipse cx="88" cy="106" rx="5" ry="6" fill="white"/>
+        <ellipse cx="73" cy="107" rx="3" ry="4" fill="#2a2a3a"/>
+        <ellipse cx="89" cy="107" rx="3" ry="4" fill="#2a2a3a"/>
+        <!-- Whiskers -->
+        <line x1="55" y1="110" x2="68" y2="112" stroke="#cc5533" stroke-width="1" opacity="0.5"/>
+        <line x1="55" y1="115" x2="68" y2="114" stroke="#cc5533" stroke-width="1" opacity="0.5"/>
+        <line x1="105" y1="110" x2="92" y2="112" stroke="#cc5533" stroke-width="1" opacity="0.5"/>
+        <line x1="105" y1="115" x2="92" y2="114" stroke="#cc5533" stroke-width="1" opacity="0.5"/>
+        <text x="80" y="170" text-anchor="middle" fill="#aaa" font-size="12" font-family="sans-serif">CAT — уши + усы</text>
+
+        <!-- Frog blob with big eyes -->
+        <defs>
+          <radialGradient id="frogGrad" cx="40%" cy="35%">
+            <stop offset="0%" style="stop-color:#66dd88"/>
+            <stop offset="100%" style="stop-color:#339955"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="170" cy="130" rx="28" ry="6" fill="rgba(0,0,0,0.2)"/>
+        <circle cx="170" cy="110" r="25" fill="url(#frogGrad)"/>
+        <!-- Bulging eyes on top -->
+        <circle cx="158" cy="90" r="10" fill="#339955"/>
+        <circle cx="182" cy="90" r="10" fill="#339955"/>
+        <circle cx="158" cy="89" r="7" fill="white"/>
+        <circle cx="182" cy="89" r="7" fill="white"/>
+        <circle cx="159" cy="90" r="4" fill="#1a1a3a"/>
+        <circle cx="183" cy="90" r="4" fill="#1a1a3a"/>
+        <!-- Wide mouth -->
+        <path d="M155,118 Q170,128 185,118" fill="none" stroke="#228844" stroke-width="2"/>
+        <text x="170" y="170" text-anchor="middle" fill="#aaa" font-size="12" font-family="sans-serif">FROG — выпуклые глаза + рот</text>
+
+        <!-- Wolf blob with ears and fangs -->
+        <defs>
+          <radialGradient id="wolfGrad" cx="40%" cy="35%">
+            <stop offset="0%" style="stop-color:#8899bb"/>
+            <stop offset="100%" style="stop-color:#556688"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="260" cy="130" rx="28" ry="6" fill="rgba(0,0,0,0.2)"/>
+        <circle cx="260" cy="110" r="25" fill="url(#wolfGrad)"/>
+        <!-- Angular ears -->
+        <polygon points="240,95 234,68 252,88" fill="#556688"/>
+        <polygon points="280,95 286,68 268,88" fill="#556688"/>
+        <polygon points="242,93 237,73 252,88" fill="#7788aa" opacity="0.4"/>
+        <polygon points="278,93 283,73 268,88" fill="#7788aa" opacity="0.4"/>
+        <!-- Narrowed eyes -->
+        <ellipse cx="252" cy="106" rx="5" ry="4" fill="white"/>
+        <ellipse cx="268" cy="106" rx="5" ry="4" fill="white"/>
+        <ellipse cx="253" cy="106" rx="3" ry="3" fill="#cc3322"/>
+        <ellipse cx="269" cy="106" rx="3" ry="3" fill="#cc3322"/>
+        <!-- Fangs -->
+        <polygon points="254,120 256,127 258,120" fill="white" opacity="0.8"/>
+        <polygon points="262,120 264,127 266,120" fill="white" opacity="0.8"/>
+        <text x="260" y="170" text-anchor="middle" fill="#aaa" font-size="12" font-family="sans-serif">WOLF — острые уши + клыки</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A) Blob + Distinctive Features</h3>
+      <p>Базовый blob остаётся, но каждому персонажу добавляются 2-3 уникальных элемента: уши, глаза, усы, клыки. Узнаёшь персонажа на расстоянии. Минимальные изменения в characters.js.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:30px;text-align:center;background:#1a1a2e">
+      <svg viewBox="0 0 300 200" style="width:100%;max-width:280px">
+        <!-- Cat - more detailed silhouette -->
+        <defs>
+          <radialGradient id="catGrad2" cx="40%" cy="35%">
+            <stop offset="0%" style="stop-color:#ffaa77"/>
+            <stop offset="100%" style="stop-color:#cc5533"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="80" cy="140" rx="22" ry="5" fill="rgba(0,0,0,0.2)"/>
+        <!-- Cat body - more oval, less circle -->
+        <ellipse cx="80" cy="115" rx="22" ry="28" fill="url(#catGrad2)"/>
+        <!-- Tall pointed ears -->
+        <polygon points="62,92 55,62 74,85" fill="#cc5533"/>
+        <polygon points="98,92 105,62 86,85" fill="#cc5533"/>
+        <polygon points="64,90 58,67 73,85" fill="#ffcc99" opacity="0.3"/>
+        <polygon points="96,90 102,67 87,85" fill="#ffcc99" opacity="0.3"/>
+        <!-- Almond eyes -->
+        <ellipse cx="71" cy="104" rx="6" ry="5" fill="white"/>
+        <ellipse cx="89" cy="104" rx="6" ry="5" fill="white"/>
+        <ellipse cx="72" cy="105" rx="3" ry="4" fill="#2a5a2a"/>
+        <ellipse cx="90" cy="105" rx="3" ry="4" fill="#2a5a2a"/>
+        <!-- Nose + whiskers -->
+        <ellipse cx="80" cy="112" rx="3" ry="2" fill="#aa4422"/>
+        <line x1="50" y1="108" x2="68" y2="111" stroke="rgba(200,150,100,0.4)" stroke-width="1"/>
+        <line x1="50" y1="114" x2="68" y2="113" stroke="rgba(200,150,100,0.4)" stroke-width="1"/>
+        <line x1="110" y1="108" x2="92" y2="111" stroke="rgba(200,150,100,0.4)" stroke-width="1"/>
+        <line x1="110" y1="114" x2="92" y2="113" stroke="rgba(200,150,100,0.4)" stroke-width="1"/>
+        <!-- Tail -->
+        <path d="M100,130 Q115,120 110,105 Q108,95 115,90" fill="none" stroke="#cc5533" stroke-width="4" stroke-linecap="round"/>
+        <text x="80" y="170" text-anchor="middle" fill="#aaa" font-size="11" font-family="sans-serif">CAT — силуэт + хвост</text>
+
+        <!-- Frog - squat proportions -->
+        <ellipse cx="170" cy="140" rx="24" ry="5" fill="rgba(0,0,0,0.2)"/>
+        <ellipse cx="170" cy="120" rx="26" ry="22" fill="url(#frogGrad)"/>
+        <!-- Massive bulging eyes -->
+        <circle cx="155" cy="98" r="12" fill="#339955"/>
+        <circle cx="185" cy="98" r="12" fill="#339955"/>
+        <circle cx="155" cy="97" r="9" fill="#eeffee"/>
+        <circle cx="185" cy="97" r="9" fill="#eeffee"/>
+        <circle cx="156" cy="98" r="5" fill="#1a1a3a"/>
+        <circle cx="186" cy="98" r="5" fill="#1a1a3a"/>
+        <circle cx="154" cy="96" r="2" fill="white"/>
+        <circle cx="184" cy="96" r="2" fill="white"/>
+        <!-- Spots -->
+        <circle cx="160" cy="115" r="4" fill="#228844" opacity="0.3"/>
+        <circle cx="180" cy="120" r="3" fill="#228844" opacity="0.3"/>
+        <circle cx="168" cy="125" r="5" fill="#228844" opacity="0.2"/>
+        <text x="170" y="170" text-anchor="middle" fill="#aaa" font-size="11" font-family="sans-serif">FROG — приплюснутый + пятна</text>
+
+        <!-- Wolf - angular proportions -->
+        <ellipse cx="260" cy="140" rx="22" ry="5" fill="rgba(0,0,0,0.2)"/>
+        <ellipse cx="260" cy="115" rx="20" ry="28" fill="url(#wolfGrad)"/>
+        <!-- Sharp tall ears -->
+        <polygon points="242,92 232,58 256,84" fill="#556688"/>
+        <polygon points="278,92 288,58 264,84" fill="#556688"/>
+        <!-- Angry narrowed eyes -->
+        <path d="M248,100 L257,103 L248,106" fill="white"/>
+        <path d="M263,103 L272,100 L272,106" fill="white"/>
+        <circle cx="253" cy="103" r="3" fill="#cc2211"/>
+        <circle cx="268" cy="103" r="3" fill="#cc2211"/>
+        <!-- Snout -->
+        <ellipse cx="260" cy="118" rx="10" ry="7" fill="#445566"/>
+        <ellipse cx="260" cy="116" rx="3" ry="2" fill="#223344"/>
+        <!-- Fangs prominent -->
+        <polygon points="254,122 256,130 258,122" fill="white"/>
+        <polygon points="262,122 264,130 266,122" fill="white"/>
+        <!-- Fur tuft -->
+        <path d="M248,88 L244,78 L250,85 L248,75 L254,84" fill="#7788aa" opacity="0.4"/>
+        <path d="M272,88 L276,78 L270,85 L272,75 L266,84" fill="#7788aa" opacity="0.4"/>
+        <text x="260" y="170" text-anchor="middle" fill="#aaa" font-size="11" font-family="sans-serif">WOLF — вытянутый + морда</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B) Shaped Blobs — Unique Silhouettes</h3>
+      <p>Каждый персонаж имеет свою форму тела (не просто круг): кот вытянутый с хвостом, лягушка приплюснутая с пятнами, волк угловатый с мордой. Больше работы, но мгновенно узнаваемые.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.06)">
+  <p style="color:#888; font-size:13px; margin:0"><strong>Контекст:</strong> Текущий CharDraw.blob() рисует идеальный круг с градиентом, глазами, ртом и ногами. Оба варианта используют существующий рендерер как базу. Вариант A — добавить элементы поверх круга. Вариант B — заменить круг на эллипс + уникальные пропорции.</p>
+</div>
