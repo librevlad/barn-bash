@@ -107,63 +107,12 @@ function connectWS() {
 // ============================================================
 // GESTURE DETECTION
 // ============================================================
-const SWIPE_THRESHOLD = 35;
-const TAP_MAX_DIST = 25;
-const TAP_MAX_TIME = 280;
-const HOLD_TIME = 450;
-
-let ptrStart = null, ptrStartTime = 0, holdTimer = null, isHolding = false;
-
-document.body.addEventListener('pointerdown', (e) => {
-  // Don't block inputs/buttons in onboarding
-  const tag = e.target.tagName;
-  if (tag === 'INPUT' || tag === 'BUTTON' || e.target.closest('#onboarding')) return;
-  e.preventDefault();
-  ptrStart = { x: e.clientX, y: e.clientY };
-  ptrStartTime = Date.now();
-  isHolding = false;
-
-  holdTimer = setTimeout(() => {
-    isHolding = true;
-    onHold();
-  }, HOLD_TIME);
-});
-
-document.body.addEventListener('pointermove', (e) => {
-  if (!ptrStart) return;
-  const dx = e.clientX - ptrStart.x;
-  const dy = e.clientY - ptrStart.y;
-  if (Math.sqrt(dx * dx + dy * dy) > SWIPE_THRESHOLD) {
-    clearTimeout(holdTimer);
-  }
-});
-
-document.body.addEventListener('pointerup', (e) => {
-  clearTimeout(holdTimer);
-  if (!ptrStart) return;
-  if (isHolding) { onHoldRelease(); ptrStart = null; return; }
-
-  const dx = e.clientX - ptrStart.x;
-  const dy = e.clientY - ptrStart.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const elapsed = Date.now() - ptrStartTime;
-
-  if (dist < TAP_MAX_DIST && elapsed < TAP_MAX_TIME) {
-    onTap();
-  } else if (dist >= SWIPE_THRESHOLD) {
-    if (Math.abs(dx) > Math.abs(dy)) {
-      onSwipe(dx > 0 ? 'right' : 'left');
-    } else {
-      onSwipe(dy > 0 ? 'down' : 'up');
-    }
-  }
-  ptrStart = null;
-});
-
-document.body.addEventListener('pointercancel', () => {
-  clearTimeout(holdTimer); ptrStart = null; isHolding = false;
-  $holdRing.classList.remove('charging');
-});
+// Uses engine/Input.js — unified gesture manager
+const input = new InputManager(document.body, { excludeSelector: '#onboarding' });
+input.onTap(() => onTap());
+input.onSwipe(({ direction }) => onSwipe(direction));
+input.onHold(() => onHold());
+input.onHoldRelease(() => onHoldRelease());
 
 // ============================================================
 // GESTURE HANDLERS
