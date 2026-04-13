@@ -39,6 +39,15 @@ function resolve(url) {
   if (url.startsWith('/engine/') && url.endsWith('.js'))
     return path.join(root, 'engine', path.basename(url));
 
+  // Assets (sprites, textures)
+  if (url.startsWith('/assets/')) {
+    const rel = url.slice('/assets/'.length);
+    if (!rel || rel.includes('..')) return null;
+    const resolved = path.resolve(root, 'assets', rel);
+    if (!resolved.startsWith(path.resolve(root, 'assets'))) return null;
+    return resolved;
+  }
+
   // Escape host — full subpath serving
   if (url === '/host-escape/')
     return path.join(root, 'client-host-escape', 'index.html');
