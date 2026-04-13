@@ -496,12 +496,19 @@ function onMessage(e) {
     case 'game_over':
       phase = 'result'; $result.textContent = ''; $result.className = '';
       $gestHint.textContent = '';
-      if (gameId === 'escapeFox') {
-        $status.textContent = msg.winnerId === playerId ? 'YOU SURVIVED!' : msg.winnerId ? 'Player ' + msg.winnerId + ' survived' : 'Nobody survived!';
-      } else if (gameId === 'hillKing') {
-        $status.textContent = msg.winnerId === playerId ? 'YOU ARE KING!' : msg.winnerId ? 'Player ' + msg.winnerId + ' is king' : 'Nobody survived!';
-      } else if (gameId === 'meteor') {
-        $status.textContent = msg.winnerId === playerId ? 'YOU SURVIVED!' : msg.winnerId ? 'Player ' + msg.winnerId + ' survived' : 'Everyone burned!';
+      const isMe = msg.winnerId === playerId;
+      if (isMe) {
+        $result.textContent = '🏆'; $result.className = 'correct';
+        $score.textContent = 'WINNER!';
+        $status.textContent = gameId === 'hillKing' ? 'YOU ARE KING!' : gameId === 'race' ? 'YOU WON THE RACE!' : 'YOU SURVIVED!';
+        navigator.vibrate?.([50, 30, 50, 30, 100]);
+        document.body.style.background = myColor;
+      } else if (msg.winnerId) {
+        $result.textContent = ''; $result.className = '';
+        $status.textContent = 'Game over';
+      } else {
+        $result.textContent = '💀'; $result.className = 'wrong';
+        $status.textContent = 'Nobody survived!';
       }
       break;
   }
