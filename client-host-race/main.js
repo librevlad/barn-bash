@@ -174,6 +174,7 @@ function showMsg(text, ms) { HostCommon.showMsg($message, text, ms);
 }
 
 function showWinner(winnerId) {
+  if (typeof HUD !== 'undefined') HUD.hide();
   $hud.style.display = 'none';
   $message.classList.remove('show');
   const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };

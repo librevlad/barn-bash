@@ -28,7 +28,7 @@ ws.onmessage = (e) => {
         if (!gameStarted) {
           gameStarted = true;
           $lobby.classList.add('hidden');
-          if (typeof HUD !== 'undefined') HUD.init();
+          if (typeof HUD !== 'undefined') { HUD.init(); $hud.style.display = 'none'; }
           $controls.style.display = 'none';
           $winOverlay.classList.remove('show');
           Sound.startMusic('meteor');
@@ -162,6 +162,7 @@ function showMsg(text, ms) { HostCommon.showMsg($message, text, ms);
 }
 
 function showWinner(winnerId) {
+  if (typeof HUD !== 'undefined') HUD.hide();
   $hud.style.display = 'none';
   $message.classList.remove('show');
   const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };

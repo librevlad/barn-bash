@@ -38,8 +38,8 @@ const HUD = (() => {
       }
       .hud-player.dead { opacity: 0.3; transform: scale(0.9); }
       .hud-player.stumbling { animation: hudBlink 0.3s ease-in-out infinite; }
-      .hud-player-icon { font-size: 16px; }
-      .hud-player-name { font-weight: 700; font-size: 13px; }
+      .hud-player-icon { font-size: 18px; }
+      .hud-player-name { font-weight: 700; font-size: 15px; }
       .hud-player-score { font-size: 11px; color: #FFD700; margin-left: 4px; }
       .hud-player-combo { font-size: 10px; color: #FF8C00; font-weight: 700; }
       .hud-player-shield { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4488ff; margin-left: 4px; box-shadow: 0 0 6px rgba(68,136,255,0.5); }
