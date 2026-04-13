@@ -80,8 +80,7 @@ $obNameBtn.addEventListener('click', () => {
   myName = name;
   $obStepName.style.display = 'none';
   $obStepChar.style.display = '';
-  // If character already selected (from localStorage), auto-proceed
-  if (selectedChar) setTimeout(finishOnboarding, 300);
+  // Always show character selection — don't auto-proceed
 });
 $obName.addEventListener('keydown', (e) => { if (e.key === 'Enter') $obNameBtn.click(); });
 
@@ -116,6 +115,9 @@ const HOLD_TIME = 450;
 let ptrStart = null, ptrStartTime = 0, holdTimer = null, isHolding = false;
 
 document.body.addEventListener('pointerdown', (e) => {
+  // Don't block inputs/buttons in onboarding
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'BUTTON' || e.target.closest('#onboarding')) return;
   e.preventDefault();
   ptrStart = { x: e.clientX, y: e.clientY };
   ptrStartTime = Date.now();
