@@ -35,6 +35,10 @@ const Render2D = (() => {
     resize();
     window.addEventListener('resize', resize);
 
+    // Initial camera: centered on track, zoomed to fit (~40px per game unit)
+    camera.setPosition(0, 1);
+    camera.setZoom(40);
+
     // Setup scene layers
     scene.createLayer('grass', 0);
     scene.createLayer('gravel', 2);
@@ -92,10 +96,13 @@ const Render2D = (() => {
   function render(ctx, dt) {
     const clock = renderLoop.getClock();
 
-    // Update camera — follow players
+    // Update camera — follow players with enough zoom to see track
     const activePlayers = entities.all().filter(e => e.visible && !e.data.finished);
     if (activePlayers.length > 0) {
       camera.followGroup(activePlayers, 4);
+      // Clamp zoom: min 25 (see full track), max 50 (not too close)
+      if (camera._zoom < 25) camera._zoom = 25;
+      if (camera._zoom > 50) camera._zoom = 50;
     }
 
     // Clear

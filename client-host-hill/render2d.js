@@ -41,14 +41,12 @@ const Render2D = (() => {
     scene.createLayer('arena', 5);
     scene.createLayer('kingzone', 8);
     scene.createLayer('players', 20);
-    scene.createLayer('effects', 30);
     scene.createLayer('ui', 40);
 
     // Register render functions per layer
     scene.getLayer('arena').addFn(drawArena);
     scene.getLayer('kingzone').addFn(drawKingZone);
     scene.getLayer('players').addFn(drawPlayers);
-    scene.getLayer('effects').addFn(drawEffects);
 
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
 
@@ -90,16 +88,16 @@ const Render2D = (() => {
     ctx.fillRect(0, 0, W, H);
     if (typeof FX !== 'undefined') FX.drawBefore(ctx);
 
-    // Render scene (background layer is in screen-space via 'ui' name convention;
-    // but we want arena/players in camera space while background stays in screen space).
-    // Since our arena is centered at world origin and camera stays at origin,
-    // we just render all layers. The camera provides shake offset.
-    scene.render(ctx, camera);
+    // Draw background (screen-space stars + nebula) before scene
+    drawStars(ctx);
 
-    // Particles (world space — apply camera transform)
-    camera.applyTransform(ctx);
+    // Render scene layers — all draw functions use camera.worldToScreen()
+    // for coordinate conversion (which includes shake offset), so we
+    // render without passing the camera to avoid double-transform.
+    scene.render(ctx);
+
+    // Particles (screen-space — spawned at screen coords from worldToScreen)
     particles.draw(ctx);
-    camera.resetTransform(ctx);
 
     // Post-processing (screen space)
     if (typeof FX !== 'undefined') FX.drawAfter(ctx);
@@ -107,24 +105,8 @@ const Render2D = (() => {
   }
 
   // ============================================================
-  // Helper: world-to-screen using Camera2D
-  // Converts polar game coords (angle, radius) to screen coords
-  // ============================================================
-  function polarToScreen(angle, radius) {
-    const wx = Math.cos(angle) * radius;
-    const wy = Math.sin(angle) * radius;
-    return camera.worldToScreen(wx, wy);
-  }
-
-  // ============================================================
-  // LAYER: BACKGROUND (stars + nebula) — drawn in screen space
-  // Note: this layer is named 'background' so Scene will apply
-  // camera transform. We use raw screen coords so we undo via
-  // screenToWorld or compute in worldToScreen with 0,0 center.
-  // Actually, since camera stays at (0,0) and zoom is fixed,
-  // the camera transform essentially just adds shake. For a
-  // static background we draw in the ctx directly and account
-  // for shake via worldToScreen for the arena center.
+  // BACKGROUND (stars + nebula) — drawn in screen space before
+  // the scene layers, so it is unaffected by camera transform.
   // ============================================================
   function drawStars(ctx) {
     const clock = renderLoop ? renderLoop.getClock() : 0;
@@ -232,16 +214,6 @@ const Render2D = (() => {
   }
 
   // ============================================================
-  // LAYER: TRAILS (dash trails via ParticleSystem)
-  // ============================================================
-  function drawTrails(ctx) {
-    // Trail particles are spawned in drawPlayers when dashing;
-    // they live in the particle system and are drawn in the effects pass.
-    // This function is a placeholder for layer ordering — trails render
-    // below players within the same layer group.
-  }
-
-  // ============================================================
   // LAYER: PLAYERS (using EntityManager)
   // ============================================================
   function drawPlayers(ctx) {
@@ -283,14 +255,6 @@ const Render2D = (() => {
   }
 
   // ============================================================
-  // LAYER: EFFECTS — particle rendering is handled globally
-  // ============================================================
-  function drawEffects(ctx) {
-    // Particles are drawn in the main render() after scene.render() with
-    // camera transform applied. This layer is reserved for future effects.
-  }
-
-  // ============================================================
   // PUBLIC API
   // ============================================================
   function updateState(state) {
@@ -318,10 +282,7 @@ const Render2D = (() => {
         e.data.colorRgb = hexToRgb(pd.color);
       }
 
-      // Set interpolation targets for polar coords
-      const prevAngle = e.data.rAngle;
-      const prevRadius = e.data.rRadius;
-      // Smoothly interpolate angle and radius
+      // Smoothly interpolate angle and radius (same factors as original)
       e.data.rAngle += shortAngleDiff(e.data.rAngle, pd.angle) * 0.15;
       e.data.rRadius += (pd.radius - e.data.rRadius) * 0.18;
 

@@ -132,7 +132,6 @@ function showLobby(s) {
   $lobbyInfo.textContent = connected >= 2 ? 'Ready to race!' : 'Waiting for players...';
   $btnStart.style.display = connected >= 2 ? '' : 'none';
   $lobbyPlayers.innerHTML = HostCommon.lobbyPlayersHTML(s.players);
-    }).join('');
 }
 
 function updateHUD(s) {
