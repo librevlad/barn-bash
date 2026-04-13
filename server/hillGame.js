@@ -5,17 +5,17 @@
 const { Physics2D } = require('../engine/Physics2D');
 
 const TICK_MS = 50;
-const ORBIT_SPEED = 0.028;
-const PUSH_FORCE = 0.65;
+const ORBIT_SPEED = 0.022;   // slower auto-orbit (player controls speed now)
+const PUSH_FORCE = 1.0;      // one good hit = real threat (was 0.65)
 const FRICTION = 0.87;
-const HIT_DIST = 1.4; // increased for more reliable collisions + shieldBlock
-const INIT_R = 5;
-const MIN_R = 2;
-const SHRINK_INT = 130;
-const SUDDEN_DEATH_TICK = 900; // 45s — accelerated shrinking, no teetering
-const SHRINK_AMT = 0.4;
-const DASH_CD = 16;
-const GRAVITY_PULL = 0.003;
+const HIT_DIST = 1.4;
+const INIT_R = 4;            // smaller arena from start (was 5) — more action
+const MIN_R = 1.8;           // can shrink smaller
+const SHRINK_INT = 80;       // shrink every 4s (was 6.5s) — more pressure
+const SUDDEN_DEATH_TICK = 700; // 35s (was 45s)
+const SHRINK_AMT = 0.35;
+const DASH_CD = 10;          // 0.5s cooldown (was 0.8s) — more active play
+const GRAVITY_PULL = 0.004;  // slightly stronger pull to center
 
 // King zone
 const KING_ZONE_R = 1.5;
@@ -39,7 +39,7 @@ const GPOUND_RADIUS = 2.0;
 const GPOUND_FORCE = 0.45;
 
 // Power-ups
-const POWERUP_SPAWN_INT = 200;
+const POWERUP_SPAWN_INT = 120; // every 6s (was 10s)
 const POWERUP_TYPES = ['anchor', 'superDash', 'gravityBomb'];
 const ANCHOR_DURATION = 60; // 3s
 const SUPER_DASH_MULT = 2.0;
@@ -68,7 +68,7 @@ class HillGame {
     this.winner = null;
     this._iv = null;
     this.powerups = [];
-    this.nextPowerup = POWERUP_SPAWN_INT;
+    this.nextPowerup = 60; // first powerup at 3s (was 10s)
     // Hazards
     this.cracks = [];
     this.bumperAngle = 0;
@@ -88,7 +88,7 @@ class HillGame {
     this.platR = INIT_R;
     this.winner = null;
     this.powerups = [];
-    this.nextPowerup = POWERUP_SPAWN_INT;
+    this.nextPowerup = 60; // first powerup at 3s (was 10s)
     this.cracks = [];
     this.bumperAngle = 0;
     this.bumperActive = false;
@@ -197,7 +197,7 @@ class HillGame {
         const pz = Math.sin(g.angle) * g.radius;
         const pux = Math.cos(pu.angle) * pu.radius;
         const puz = Math.sin(pu.angle) * pu.radius;
-        if (Physics2D.pointInCircle(px, pz, pux, puz, 0.8)) {
+        if (Physics2D.pointInCircle(px, pz, pux, puz, 1.2)) { // bigger pickup radius
           this._collectPowerup(p, pu, i);
         }
       }
@@ -412,7 +412,16 @@ class HillGame {
     if (!p || !p.gameData || !p.gameData.alive) return;
     const g = p.gameData;
 
-    if (g.teetering) return; // no actions while teetering
+    if (g.teetering) return;
+
+    // DIRECT MOVEMENT — swipe controls orbit and radius
+    if (action === 'move' && msg && msg.direction) {
+      if (msg.direction === 'left') g.angle -= 0.15;       // orbit left
+      else if (msg.direction === 'right') g.angle += 0.15;  // orbit right
+      else if (msg.direction === 'up') g.radius = Math.max(0.5, g.radius - 0.3); // toward center
+      else if (msg.direction === 'down') g.radius = Math.min(this.platR, g.radius + 0.3); // away from center
+      return;
+    }
 
     if (action === 'shield') {
       g.shielding = true;
@@ -424,9 +433,8 @@ class HillGame {
       return;
     }
 
-    // Ground pound — tap during dash
+    // Ground pound — swipe down OR tap during dash
     if (action === 'groundPound' || (action === 'dash' && g.dashing)) {
-      if (!g.dashing) return;
       // Slam — push all nearby players outward
       const px = Math.cos(g.angle) * g.radius;
       const pz = Math.sin(g.angle) * g.radius;
@@ -476,7 +484,7 @@ class HillGame {
       }
 
       g.dashing = true;
-      g.dashT = 6;
+      g.dashT = 12; // 0.6s dash duration (was 0.3s) — more reliable hits
       g.cd = DASH_CD;
       g.shielding = false;
     }
