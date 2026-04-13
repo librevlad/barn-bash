@@ -117,6 +117,7 @@ class RaceGame {
         boostCooldown: 0,
         stunTimer: 0,
         item: null,
+        itemTimer: 0,
         score: 0,
         character: char,
         maxSpeed: trait.maxSpeed,
@@ -168,6 +169,12 @@ class RaceGame {
 
       // Stun
       if (g.stunTimer > 0) { g.stunTimer--; g.speed *= 0.9; continue; }
+
+      // Auto-use held item after 5 seconds
+      if (g.item) {
+        g.itemTimer++;
+        if (g.itemTimer > 100) { this._useItem(p); }
+      }
 
       // Boost timer
       if (g.boostTimer > 0) g.boostTimer--;
@@ -273,12 +280,13 @@ class RaceGame {
         const dx = g.x - item.x, dz = g.z - item.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
         // Magnetism: pull item toward nearby player
-        if (dist < 4.0 && dist > 0.3) {
-          item.x += (g.x - item.x) * 0.05;
-          item.z += (g.z - item.z) * 0.05;
+        if (dist < 5.0 && dist > 0.3) {
+          item.x += (g.x - item.x) * 0.08;
+          item.z += (g.z - item.z) * 0.08;
         }
-        if (dist < 2.5) {
+        if (dist < 4.0) {
           g.item = item.type;
+          g.itemTimer = 0;
           item.active = false;
           item.respawnAt = this.tick + ITEM_RESPAWN_TICKS;
           this.broadcast({ type: 'item_pickup', playerId: p.id, item: item.type, gameId: 'race' });
@@ -337,19 +345,14 @@ class RaceGame {
       const g = p.gameData;
       if (!g || g.finished) continue;
 
-      // Check current waypoint and up to 2 ahead (forgiveness for imprecise paths)
-      let bestHit = -1;
-      for (let skip = 0; skip <= 2; skip++) {
-        const wpIdx = (g.waypoint + skip) % TRACK.length;
-        const wp = TRACK[wpIdx];
-        const dx = g.x - wp.x, dz = g.z - wp.z;
-        if (Math.sqrt(dx * dx + dz * dz) < 3.5) {
-          bestHit = skip;
-        }
-      }
+      // Check current waypoint only (advance one at a time for accurate lap counting)
+      const wpIdx = g.waypoint % TRACK.length;
+      const wp = TRACK[wpIdx];
+      const dx = g.x - wp.x, dz = g.z - wp.z;
+      const wpDist = Math.sqrt(dx * dx + dz * dz);
 
-      if (bestHit >= 0) {
-        const newWP = g.waypoint + bestHit + 1;
+      if (wpDist < 3.0) {
+        const newWP = g.waypoint + 1;
 
         // Lap boundary check: crossing from last waypoints to first
         if (newWP >= TRACK.length) {
@@ -373,8 +376,14 @@ class RaceGame {
   }
 
   _respawnItems() {
-    for (const item of this.items) {
+    for (let i = 0; i < this.items.length; i++) {
+      const item = this.items[i];
       if (!item.active && this.tick >= item.respawnAt) {
+        // Reset position to original spawn point (magnetism may have moved it)
+        const spawn = ITEM_SPAWNS[i % ITEM_SPAWNS.length];
+        const wp = TRACK[spawn.seg];
+        item.x = wp.x;
+        item.z = wp.z;
         item.active = true;
         item.type = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
       }
