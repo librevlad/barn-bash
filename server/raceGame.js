@@ -273,11 +273,11 @@ class RaceGame {
         const dx = g.x - item.x, dz = g.z - item.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
         // Magnetism: pull item toward nearby player
-        if (dist < 3.0 && dist > 0.3) {
-          item.x += (g.x - item.x) * 0.03;
-          item.z += (g.z - item.z) * 0.03;
+        if (dist < 4.0 && dist > 0.3) {
+          item.x += (g.x - item.x) * 0.05;
+          item.z += (g.z - item.z) * 0.05;
         }
-        if (dist < 2.0) {
+        if (dist < 2.5) {
           g.item = item.type;
           item.active = false;
           item.respawnAt = this.tick + ITEM_RESPAWN_TICKS;

@@ -285,29 +285,58 @@ const Render2D = (() => {
   function drawItems() {
     for (const item of items) {
       const [ix, iy] = worldToScreen(item.x, item.z);
-      const bob = Math.sin(clock * 3 + item.x) * 3;
-      const r = 8;
+      const bob = Math.sin(clock * 3 + item.x) * 4;
+      const r = 14; // BIGGER
+      const pulse = 0.7 + Math.sin(clock * 4 + item.x * 2) * 0.3;
+
       ctx.save();
       ctx.translate(ix, iy + bob);
 
+      // Outer pulsing ring (so items are unmissable)
+      const ringR = r + 6 + pulse * 4;
+      let ringColor;
+      if (item.type === 'boost') ringColor = '68,170,255';
+      else if (item.type === 'oil') ringColor = '80,80,80';
+      else ringColor = '255,68,68';
+      ctx.strokeStyle = `rgba(${ringColor},${0.2 + pulse * 0.2})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, ringR, 0, Math.PI * 2); ctx.stroke();
+
+      // Glow
       if (item.type === 'boost') {
+        ctx.shadowBlur = 16; ctx.shadowColor = '#44aaff';
         ctx.fillStyle = '#44aaff';
-        ctx.shadowBlur = 8; ctx.shadowColor = '#44aaff';
       } else if (item.type === 'oil') {
-        ctx.fillStyle = '#333';
-        ctx.shadowBlur = 4; ctx.shadowColor = '#333';
-      } else if (item.type === 'missile') {
+        ctx.shadowBlur = 10; ctx.shadowColor = '#666';
+        ctx.fillStyle = '#555';
+      } else {
+        ctx.shadowBlur = 16; ctx.shadowColor = '#ff4444';
         ctx.fillStyle = '#ff4444';
-        ctx.shadowBlur = 8; ctx.shadowColor = '#ff4444';
       }
+
+      // Main circle
       ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
 
-      // Icon
+      // Inner white circle
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath(); ctx.arc(-2, -2, r * 0.5, 0, Math.PI * 2); ctx.fill();
+
+      // Outline
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+
+      // Icon (larger)
       ctx.fillStyle = '#fff';
-      ctx.font = '10px sans-serif';
+      ctx.font = 'bold 14px sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(item.type === 'boost' ? '⚡' : item.type === 'oil' ? '💧' : '🚀', 0, 0);
+      ctx.fillText(item.type === 'boost' ? '⚡' : item.type === 'oil' ? '💧' : '🚀', 0, 1);
+
+      // Type label below
+      ctx.font = '8px sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillText(item.type.toUpperCase(), 0, r + 10);
 
       ctx.restore();
     }
