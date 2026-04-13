@@ -13,7 +13,7 @@ const $gestHint = document.getElementById('gesture-hint');
 let playerId = null, myColor = null, phase = 'lobby';
 let gameId = 'escapeFox', tapped = false;
 
-const GAME_NAMES = { escapeFox: 'ESCAPE THE FOX', hillKing: 'KING OF THE HILL', meteor: 'METEOR SHOWER' };
+const GAME_NAMES = { escapeFox: 'ESCAPE THE FOX', hillKing: 'KING OF THE HILL', meteor: 'METEOR SHOWER', race: 'GRAND PRIX' };
 const GESTURE_HINTS = {
   escapeFox: 'TAP = jump · SWIPE ←→ = change lane · SWIPE ↓ = slide under',
   hillKing:  'SWIPE = move · SWIPE DOWN = slam · TAP = dash · HOLD = shield',
@@ -364,10 +364,33 @@ function onMessage(e) {
         const me = msg.gameState.players[playerId];
         if (me) {
           if (phase === 'running') {
-            $score.textContent = me.alive ? '' : 'OUT';
+            $score.textContent = me.alive ? (me.score > 0 ? me.score + 'pts' : '') : 'OUT';
             if (!me.alive) { $status.textContent = 'ELIMINATED'; $cdWrap.style.display = 'none'; }
             else if (me.cd > 0) { $status.textContent = 'COOLDOWN...'; showCooldown(me.cd, 16); }
             else { $status.textContent = ''; $cdWrap.style.display = 'none'; }
+          } else if (phase === 'lobby') {
+            $score.textContent = '0'; $status.textContent = 'Waiting for start...';
+            $result.textContent = ''; $result.className = ''; $cdWrap.style.display = 'none';
+          }
+        }
+      } else if (gameId === 'race') {
+        const me = msg.gameState.players[playerId];
+        if (me) {
+          if (phase === 'running') {
+            const lapText = 'Lap ' + (me.lap || 1) + '/' + (msg.gameState.totalLaps || 3);
+            $score.textContent = lapText;
+            if (me.finished) {
+              $status.textContent = 'FINISHED! #' + (me.position || '?');
+            } else if (me.item) {
+              $status.textContent = me.item.toUpperCase() + ' ready! TAP to use';
+            } else if (me.stunned) {
+              $status.textContent = 'STUNNED...';
+            } else if (me.drifting) {
+              $status.textContent = 'DRIFTING...';
+            } else {
+              $status.textContent = '';
+            }
+            $cdWrap.style.display = 'none';
           } else if (phase === 'lobby') {
             $score.textContent = '0'; $status.textContent = 'Waiting for start...';
             $result.textContent = ''; $result.className = ''; $cdWrap.style.display = 'none';
@@ -497,6 +520,60 @@ function onMessage(e) {
         $result.textContent = 'BUMPED!'; $result.className = 'wrong';
         navigator.vibrate?.([40, 30, 40]);
         setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 800);
+      }
+      break;
+
+    case 'item_pickup':
+      if (msg.playerId === playerId) {
+        const itemLabels = { boost: 'BOOST!', oil: 'OIL TRAP!', missile: 'MISSILE!' };
+        $result.textContent = itemLabels[msg.item] || 'ITEM!'; $result.className = 'correct';
+        Sound.play('coinPickup');
+        navigator.vibrate?.([10, 5, 10]);
+        setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 800);
+      }
+      break;
+
+    case 'item_used':
+      if (msg.playerId === playerId) {
+        $result.textContent = msg.item === 'boost' ? 'BOOST!' : msg.item === 'missile' ? 'FIRE!' : 'DROPPED!';
+        $result.className = 'correct';
+        Sound.play('dash');
+        navigator.vibrate?.([20]);
+        setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 600);
+      }
+      break;
+
+    case 'lap_complete':
+      if (msg.playerId === playerId) {
+        $result.textContent = 'LAP ' + msg.lap + '!'; $result.className = 'correct';
+        Sound.play('nearMiss');
+        navigator.vibrate?.([30, 15, 30]);
+        setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 1500);
+      }
+      break;
+
+    case 'race_finish':
+      if (msg.playerId === playerId) {
+        $result.textContent = '#' + msg.position; $result.className = 'correct';
+        Sound.play('shieldPickup');
+        navigator.vibrate?.([50, 30, 50]);
+      }
+      break;
+
+    case 'drift_boost':
+      if (msg.playerId === playerId) {
+        $result.textContent = 'DRIFT BOOST!'; $result.className = 'correct';
+        navigator.vibrate?.([15]);
+        setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 500);
+      }
+      break;
+
+    case 'player_stunned':
+      if (msg.playerId === playerId) {
+        $result.textContent = 'STUNNED!'; $result.className = 'wrong';
+        Sound.play('stumble');
+        navigator.vibrate?.([60, 30, 60]);
+        setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 1000);
       }
       break;
 

@@ -278,6 +278,8 @@ class HillGame {
       for (let j = i + 1; j < alive.length; j++) {
         if (!alive[i].gameData.alive || !alive[j].gameData.alive) continue;
         const a = alive[i].gameData, b = alive[j].gameData;
+        // Skip collisions involving teetering players (give them a chance to recover)
+        if (a.teetering || b.teetering) continue;
         const ax = Math.cos(a.angle) * a.radius;
         const az = Math.sin(a.angle) * a.radius;
         const bx = Math.cos(b.angle) * b.radius;

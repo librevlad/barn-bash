@@ -491,12 +491,16 @@ class MeteorGame {
         sprintBoost: g ? (g.sprintBoost > 0) : false,
         score: g ? g.score || 0 : 0,
         combo: g ? g.combo || 0 : 0,
+        radar: g ? !!g.radar : false,
       };
     }
+    // Reveal next safe zone if any alive player has radar
+    const anyRadar = Object.values(players).some(p => p.alive && p.radar);
     return {
       phase: this.phase, wave: this.wave, platR: this.platR,
       subPhase: this.subPhase, subTick: this.subTick,
       safeZone: this.safeZone,
+      nextSafeZone: anyRadar ? this.nextSafeZone : null,
       clusterZones: this.clusterMode ? this.clusterZones : null,
       decoyZones: this.decoyZones,
       fireZones: this.fireZones,
