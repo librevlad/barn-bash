@@ -6,7 +6,7 @@ const TICK_MS = 50;
 const TOTAL_LAPS = 3;
 const TRACK_WIDTH = 2.5;
 const FRICTION = 0.98;
-const OFF_TRACK_FRICTION = 0.93;
+const OFF_TRACK_FRICTION = 0.88; // much harsher off-track
 const HIT_DIST = 0.6;
 const STUN_TICKS = 15;
 const BOOST_TICKS = 20;
@@ -173,10 +173,27 @@ class RaceGame {
       if (g.boostTimer > 0) g.boostTimer--;
       if (g.boostCooldown > 0) g.boostCooldown--;
 
-      // Steering — decay toward 0 (one swipe = one turn, not infinite)
+      // Auto-steer toward next waypoint when no player input
+      // This keeps players roughly on-track even with imprecise phone controls
+      const nextWP = TRACK[g.waypoint % TRACK.length];
+      const toWPx = nextWP.x - g.x, toWPz = nextWP.z - g.z;
+      const toWPdist = Math.sqrt(toWPx * toWPx + toWPz * toWPz);
+      if (toWPdist > 0.5) {
+        const targetAngle = Math.atan2(toWPz, toWPx);
+        let angleDiff = targetAngle - g.angle;
+        // Normalize to [-PI, PI]
+        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+        // Gentle auto-correction (weaker than player steering, stronger when off-track)
+        const onTrackNow = this._isOnTrack(g.x, g.z);
+        const autoSteerForce = onTrackNow ? 0.015 : 0.06;
+        g.angle += angleDiff * autoSteerForce;
+      }
+
+      // Player steering — decay toward 0 (one swipe = one turn, not infinite)
       const driftMult = g.drifting ? 1.4 : 1.0;
       g.angle += g.steerInput * g.handling * driftMult;
-      g.steerInput *= 0.85; // decay to neutral
+      g.steerInput *= 0.85;
       if (Math.abs(g.steerInput) < 0.05) g.steerInput = 0;
 
       // Drift tracking
@@ -186,7 +203,7 @@ class RaceGame {
       const maxSpd = g.maxSpeed + (g.boostTimer > 0 ? BOOST_SPEED : 0);
       if (g.speed < maxSpd) g.speed = Math.min(maxSpd, g.speed + g.accel);
 
-      // Friction
+      // Friction (much harsher off-track)
       const onTrack = this._isOnTrack(g.x, g.z);
       g.speed *= onTrack ? FRICTION : OFF_TRACK_FRICTION;
 
@@ -194,14 +211,22 @@ class RaceGame {
       g.x += Math.cos(g.angle) * g.speed;
       g.z += Math.sin(g.angle) * g.speed;
 
-      // Off-track push back toward nearest track point
+      // Off-track hard correction — strong pull back toward track
       if (!onTrack) {
         const nearest = this._nearestTrackPoint(g.x, g.z);
         const dx = nearest.x - g.x, dz = nearest.z - g.z;
         const d = Math.sqrt(dx * dx + dz * dz);
         if (d > 0) {
-          g.x += (dx / d) * 0.02;
-          g.z += (dz / d) * 0.02;
+          // Strong pull — 15% of distance per tick (was 0.02 fixed)
+          const pullForce = Math.min(0.15, d * 0.15);
+          g.x += (dx / d) * pullForce;
+          g.z += (dz / d) * pullForce;
+        }
+        // Hard clamp — never more than 1.5 units past track edge
+        if (d > TRACK_WIDTH + 1.5) {
+          g.x = nearest.x + (g.x - nearest.x) / d * (TRACK_WIDTH + 1.0);
+          g.z = nearest.z + (g.z - nearest.z) / d * (TRACK_WIDTH + 1.0);
+          g.speed *= 0.7;
         }
       }
 
@@ -246,7 +271,7 @@ class RaceGame {
         const g = p.gameData;
         if (!g || g.finished || g.item || g.stunTimer > 0) continue;
         const dx = g.x - item.x, dz = g.z - item.z;
-        if (Math.sqrt(dx * dx + dz * dz) < 0.6) {
+        if (Math.sqrt(dx * dx + dz * dz) < 1.5) { // increased pickup radius
           g.item = item.type;
           item.active = false;
           item.respawnAt = this.tick + ITEM_RESPAWN_TICKS;
@@ -306,15 +331,21 @@ class RaceGame {
       const g = p.gameData;
       if (!g || g.finished) continue;
 
-      const wp = TRACK[g.waypoint % TRACK.length];
-      const dx = g.x - wp.x, dz = g.z - wp.z;
-      if (Math.sqrt(dx * dx + dz * dz) < 2.0) {
-        g.waypoint++;
-        // Lap check
-        if (g.waypoint >= TRACK.length) {
-          g.waypoint = 0;
-          g.lap++;
-          if (g.lap > TOTAL_LAPS) {
+      // Check current AND next 2 waypoints (allow skipping up to 2)
+      for (let skip = 0; skip <= 2; skip++) {
+        const wpIdx = (g.waypoint + skip) % TRACK.length;
+        const wp = TRACK[wpIdx];
+        const dx = g.x - wp.x, dz = g.z - wp.z;
+        if (Math.sqrt(dx * dx + dz * dz) < 3.5) { // increased from 2.0
+          g.waypoint = wpIdx + 1;
+          break; // take the furthest match
+        }
+      }
+      // Lap check (separated from waypoint hit)
+      if (g.waypoint >= TRACK.length) {
+        g.waypoint = 0;
+        g.lap++;
+        if (g.lap > TOTAL_LAPS) {
             g.finished = true;
             g.finishTime = this.tick;
             this.finishOrder.push(p.id);
@@ -325,7 +356,6 @@ class RaceGame {
             this.broadcast({ type: 'lap_complete', playerId: p.id, lap: g.lap, gameId: 'race' });
           }
         }
-      }
     }
   }
 
