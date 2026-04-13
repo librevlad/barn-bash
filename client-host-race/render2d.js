@@ -24,6 +24,7 @@ const Render2D = (() => {
     resize();
     window.addEventListener('resize', resize);
     if (typeof FX !== 'undefined') FX.init(W, H);
+    if (typeof Visual !== 'undefined') Visual.init(W, H);
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
     let last = performance.now();
     (function animate(now) {
@@ -32,6 +33,7 @@ const Render2D = (() => {
       const dt = rawDt * (typeof FX !== 'undefined' ? FX.getTimeScale() : 1);
       last = now; clock += dt;
       if (typeof FX !== 'undefined') FX.update(rawDt);
+      if (typeof Visual !== 'undefined') Visual.update(rawDt);
       render(dt);
     })(performance.now());
   }
@@ -365,6 +367,14 @@ const Render2D = (() => {
     drawPlayers();
     drawMinimap();
     if (typeof FX !== 'undefined') FX.drawAfter(ctx);
+    // Find max player speed for speed lines
+    let maxSpeed = 0;
+    for (const p of Object.values(players)) { if (p.speed > maxSpeed) maxSpeed = p.speed; }
+    if (typeof Visual !== 'undefined') Visual.drawPost(ctx, {
+      vignette: 0.2,
+      grain: 0.015,
+      speedIntensity: maxSpeed > 0.1 ? (maxSpeed - 0.1) * 5 : 0,
+    });
   }
 
   // ---- HELPERS ----

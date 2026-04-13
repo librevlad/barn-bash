@@ -95,6 +95,7 @@ ws.onmessage = (e) => {
       Sound.stopMusic();
       Sound.play(msg.winnerId ? 'winner' : 'eliminated');
       if (typeof FX !== 'undefined') { FX.screenFlash('#fff', 0.4); FX.triggerSlowMo(0.3, 1.5); }
+      if (typeof Visual !== 'undefined') Visual.triggerWinner();
       if (msg.winnerId) Narrator.winner(pname(msg.winnerId));
       else Narrator.noWinner();
       if (typeof Tournament !== 'undefined' && Tournament.isActive()) break;

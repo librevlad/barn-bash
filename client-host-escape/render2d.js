@@ -80,6 +80,7 @@ const Render2D = (() => {
     resize();
     window.addEventListener('resize', resize);
     if (typeof FX !== 'undefined') FX.init(W, H);
+    if (typeof Visual !== 'undefined') Visual.init(W, H);
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
     let last = performance.now();
     (function animate(now) {
@@ -88,6 +89,7 @@ const Render2D = (() => {
       const dt = rawDt * (typeof FX !== 'undefined' ? FX.getTimeScale() : 1);
       last = now; clock += dt;
       if (typeof FX !== 'undefined') FX.update(rawDt);
+      if (typeof Visual !== 'undefined') Visual.update(rawDt);
       render(dt);
     })(performance.now());
   }
@@ -437,8 +439,16 @@ const Render2D = (() => {
     // FX overlay (particles, popups, screen effects)
     if (typeof FX !== 'undefined') {
       FX.drawAfter(ctx);
-      // Dynamic vignette based on fox proximity
       FX.setVignette(foxProx * 0.6, 'rgba(180,20,0,');
+    }
+    // Professional post-processing
+    if (typeof Visual !== 'undefined') {
+      Visual.drawPost(ctx, {
+        vignette: 0.3 + foxProx * 0.4,
+        vignetteColor: foxProx > 0.5 ? '180,20,0' : '0,0,0',
+        grain: 0.02,
+        speedIntensity: speed > 0.35 ? (speed - 0.35) * 3 : 0,
+      });
     }
   }
 

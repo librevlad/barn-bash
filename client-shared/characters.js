@@ -23,42 +23,58 @@ const CharDraw = (() => {
     } else if (dashing) ctx.scale(0.85, 1.15);
     else ctx.scale(sX, sY);
 
-    // === SHADOW ===
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    // === IDLE BOUNCE (subtle life-like pulse) ===
+    const idlePulse = 1 + Math.sin(clock * 3 + idx * 1.5) * 0.015;
+    if (!sliding && jumpY < 0.01) ctx.scale(idlePulse, 1 / idlePulse);
+
+    // === SHADOW (larger, softer, offset) ===
+    const shadowScale = jumpY > 0.05 ? 0.5 : 1; // smaller shadow when jumping
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.beginPath();
-    ctx.ellipse(0, R + 5, R * 0.75, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(2, R + 6, R * 0.85 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Secondary soft shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.beginPath();
+    ctx.ellipse(0, R + 8, R * 1.2 * shadowScale, 3, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // === BODY GLOW (bloom effect) ===
-    ctx.shadowBlur = 15;
+    // === BODY GLOW (stronger bloom) ===
+    ctx.shadowBlur = 25;
     ctx.shadowColor = color;
 
-    // === BODY — rich gradient ===
-    const bodyGrad = ctx.createRadialGradient(-R * 0.25, -R * 0.3, R * 0.1, 0, 0, R);
-    bodyGrad.addColorStop(0, lighten(color, 40));
-    bodyGrad.addColorStop(0.5, color);
-    bodyGrad.addColorStop(1, darken(color, 30));
+    // === BODY — rich gradient (more contrast) ===
+    const bodyGrad = ctx.createRadialGradient(-R * 0.25, -R * 0.35, R * 0.05, 0, R * 0.1, R * 1.1);
+    bodyGrad.addColorStop(0, lighten(color, 50));
+    bodyGrad.addColorStop(0.35, lighten(color, 15));
+    bodyGrad.addColorStop(0.7, color);
+    bodyGrad.addColorStop(1, darken(color, 40));
     ctx.fillStyle = bodyGrad;
     ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
 
     ctx.shadowBlur = 0;
 
-    // === SPECULAR HIGHLIGHT ===
-    const specGrad = ctx.createRadialGradient(-R * 0.3, -R * 0.35, 0, -R * 0.2, -R * 0.25, R * 0.6);
-    specGrad.addColorStop(0, 'rgba(255,255,255,0.4)');
-    specGrad.addColorStop(0.4, 'rgba(255,255,255,0.08)');
+    // === PRIMARY SPECULAR (top-left, large) ===
+    const specGrad = ctx.createRadialGradient(-R * 0.3, -R * 0.35, 0, -R * 0.15, -R * 0.2, R * 0.55);
+    specGrad.addColorStop(0, 'rgba(255,255,255,0.5)');
+    specGrad.addColorStop(0.3, 'rgba(255,255,255,0.15)');
+    specGrad.addColorStop(0.7, 'rgba(255,255,255,0.03)');
     specGrad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = specGrad;
     ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
 
-    // === RIM LIGHT (bottom edge) ===
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(0, 0, R - 0.5, Math.PI * 0.2, Math.PI * 0.8); ctx.stroke();
+    // === SECONDARY SPECULAR (small bright dot) ===
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.arc(-R * 0.22, -R * 0.28, R * 0.12, 0, Math.PI * 2); ctx.fill();
 
-    // === OUTLINE ===
-    ctx.strokeStyle = darken(color, 40);
-    ctx.lineWidth = 2;
+    // === RIM LIGHT (bottom edge, wider) ===
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, R - 0.5, Math.PI * 0.15, Math.PI * 0.85); ctx.stroke();
+
+    // === OUTLINE (thicker, darker = more pop) ===
+    ctx.strokeStyle = darken(color, 55);
+    ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
 
     // === CHARACTER FEATURES ===

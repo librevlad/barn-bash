@@ -24,6 +24,7 @@ const Render2D = (() => {
     resize();
     window.addEventListener('resize', resize);
     if (typeof FX !== 'undefined') FX.init(W, H);
+    if (typeof Visual !== 'undefined') Visual.init(W, H);
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
     let last = performance.now();
     (function animate(now) {
@@ -32,6 +33,7 @@ const Render2D = (() => {
       const dt = rawDt * (typeof FX !== 'undefined' ? FX.getTimeScale() : 1);
       last = now; clock += dt;
       if (typeof FX !== 'undefined') FX.update(rawDt);
+      if (typeof Visual !== 'undefined') Visual.update(rawDt);
       render(dt);
     })(performance.now());
   }
@@ -199,6 +201,7 @@ const Render2D = (() => {
 
     drawPoofs();
     if (typeof FX !== 'undefined') FX.drawAfter(ctx);
+    if (typeof Visual !== 'undefined') Visual.drawPost(ctx, { vignette: 0.25, grain: 0.015 });
   }
 
   // ---- PUBLIC ----
