@@ -29,15 +29,33 @@ const Render2D = (() => {
   // ============================================================
   // INIT
   // ============================================================
+  let spritesReady = false;
+
   function init() {
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
     resize();
     window.addEventListener('resize', resize);
 
-    // Initial camera: centered on track, zoomed to fit (~40px per game unit)
+    // Initial camera
     camera.setPosition(0, 1);
     camera.setZoom(40);
+
+    // Load sprites
+    if (typeof SpriteLoader !== 'undefined' && typeof SPRITE_ATLAS !== 'undefined') {
+      SpriteLoader.loadSheet('main', SPRITE_ATLAS.sheet).then(function () {
+        var defs = [];
+        for (var name in SPRITE_ATLAS.sprites) {
+          var s = SPRITE_ATLAS.sprites[name];
+          defs.push({ name: name, x: s.x, y: s.y, w: s.w, h: s.h });
+        }
+        SpriteLoader.defineAll('main', defs);
+        spritesReady = true;
+        console.log('Sprites loaded:', SpriteLoader.getProgress().loaded);
+      }).catch(function (e) {
+        console.warn('Sprites failed to load, using procedural fallback:', e.message);
+      });
+    }
 
     // Setup scene layers
     scene.createLayer('grass', 0);
@@ -311,29 +329,51 @@ const Render2D = (() => {
 
   function drawTrackObjects(ctx) {
     generateTrackObjects();
+    const zoom = camera.getZoom();
     for (const obj of trackObjects) {
       const s = camera.worldToScreen(obj.x, obj.z);
-      if (s.x < -50 || s.x > W + 50 || s.y < -50 || s.y > H + 50) continue;
-      const sz = obj.size * camera.getZoom() * 0.3;
+      if (s.x < -80 || s.x > W + 80 || s.y < -80 || s.y > H + 80) continue;
+      const sz = obj.size * zoom * 0.3;
+      const spriteSize = sz * 4; // sprites are larger than procedural
 
-      if (obj.type === 'tree') {
-        ctx.fillStyle = 'rgba(0,0,0,0.15)';
-        ctx.beginPath(); ctx.ellipse(s.x + 3, s.y + 3, sz * 1.2, sz * 0.6, 0.3, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#4a3520';
-        ctx.fillRect(s.x - sz * 0.1, s.y - sz * 0.3, sz * 0.2, sz * 0.6);
-        ctx.fillStyle = `rgba(30,${60 + obj.shade * 40},25,0.9)`;
-        ctx.beginPath(); ctx.arc(s.x, s.y - sz * 0.3, sz * 0.8, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = `rgba(40,${80 + obj.shade * 30},35,0.7)`;
-        ctx.beginPath(); ctx.arc(s.x - sz * 0.2, s.y - sz * 0.4, sz * 0.5, 0, Math.PI * 2); ctx.fill();
-      } else if (obj.type === 'rock') {
-        ctx.fillStyle = `rgba(${100 + obj.shade * 40},${90 + obj.shade * 30},${70 + obj.shade * 20},0.8)`;
-        ctx.beginPath(); ctx.ellipse(s.x, s.y, sz * 0.5, sz * 0.35, obj.shade, 0, Math.PI * 2); ctx.fill();
-      } else if (obj.type === 'barrier') {
-        for (let b = 0; b < 3; b++) {
-          const bx = s.x + Math.cos(obj.angle) * b * sz * 0.4;
-          const bz = s.y + Math.sin(obj.angle) * b * sz * 0.4;
-          ctx.fillStyle = b % 2 === 0 ? 'rgba(200,40,40,0.6)' : 'rgba(240,240,240,0.5)';
-          ctx.beginPath(); ctx.arc(bx, bz, sz * 0.2, 0, Math.PI * 2); ctx.fill();
+      if (spritesReady && obj.type === 'tree') {
+        // Use sprite tree
+        if (!obj.spriteName) {
+          obj.spriteName = TREE_SPRITES[Math.floor(obj.shade * TREE_SPRITES.length) % TREE_SPRITES.length];
+        }
+        SpriteLoader.draw(ctx, obj.spriteName, s.x, s.y - spriteSize * 0.3, {
+          width: spriteSize, height: spriteSize, alpha: 0.95,
+        });
+      } else if (spritesReady && obj.type === 'rock') {
+        if (!obj.spriteName) {
+          obj.spriteName = ROCK_SPRITES[Math.floor(obj.shade * ROCK_SPRITES.length) % ROCK_SPRITES.length];
+        }
+        SpriteLoader.draw(ctx, obj.spriteName, s.x, s.y, {
+          width: spriteSize * 0.8, height: spriteSize * 0.6,
+        });
+      } else if (spritesReady && obj.type === 'barrier') {
+        SpriteLoader.draw(ctx, 'tires-1', s.x, s.y, {
+          width: spriteSize * 0.7, height: spriteSize * 0.5,
+        });
+      } else {
+        // Procedural fallback
+        if (obj.type === 'tree') {
+          ctx.fillStyle = 'rgba(0,0,0,0.15)';
+          ctx.beginPath(); ctx.ellipse(s.x + 3, s.y + 3, sz * 1.2, sz * 0.6, 0.3, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#4a3520';
+          ctx.fillRect(s.x - sz * 0.1, s.y - sz * 0.3, sz * 0.2, sz * 0.6);
+          ctx.fillStyle = `rgba(30,${60 + obj.shade * 40},25,0.9)`;
+          ctx.beginPath(); ctx.arc(s.x, s.y - sz * 0.3, sz * 0.8, 0, Math.PI * 2); ctx.fill();
+        } else if (obj.type === 'rock') {
+          ctx.fillStyle = `rgba(${100 + obj.shade * 40},${90 + obj.shade * 30},${70 + obj.shade * 20},0.8)`;
+          ctx.beginPath(); ctx.ellipse(s.x, s.y, sz * 0.5, sz * 0.35, obj.shade, 0, Math.PI * 2); ctx.fill();
+        } else if (obj.type === 'barrier') {
+          for (let b = 0; b < 3; b++) {
+            const bx = s.x + Math.cos(obj.angle) * b * sz * 0.4;
+            const bz = s.y + Math.sin(obj.angle) * b * sz * 0.4;
+            ctx.fillStyle = b % 2 === 0 ? 'rgba(200,40,40,0.6)' : 'rgba(240,240,240,0.5)';
+            ctx.beginPath(); ctx.arc(bx, bz, sz * 0.2, 0, Math.PI * 2); ctx.fill();
+          }
         }
       }
     }
@@ -418,14 +458,57 @@ const Render2D = (() => {
       const s = camera.worldToScreen(e.x, e.y);
       const R = 14;
 
+      // Try sprite-based car first
+      const carSprite = spritesReady && CAR_SPRITES ? CAR_SPRITES[e.color] : null;
+      if (carSprite && SpriteLoader.has(carSprite)) {
+        const carSize = 28 * (camera.getZoom() / 40);
+        SpriteLoader.draw(ctx, carSprite, s.x, s.y, {
+          rotation: e.angle + Math.PI / 2,
+          width: carSize, height: carSize * 0.8,
+          alpha: (e.data.stunned && Math.floor(clock * 10) % 2 === 0) ? 0.4 : (e.data.finished ? 0.4 : 1),
+        });
+        // Name label + held item even with sprite
+        if (e.data.item) {
+          const itemIcons = { boost: '⚡', oil: '💧', missile: '🚀' };
+          ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillStyle = 'rgba(0,0,0,0.5)';
+          ctx.beginPath(); ctx.arc(s.x, s.y - 18, 9, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.fillText(itemIcons[e.data.item] || '?', s.x, s.y - 18);
+        }
+        if (!e.data.finished) {
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.font = '10px -apple-system, sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText(e.name || ('P' + e.id), s.x, s.y + 18);
+        }
+        // Effects still render
+        if (e.data.boosting) {
+          const tx = s.x - Math.cos(e.angle) * 15;
+          const ty = s.y - Math.sin(e.angle) * 15;
+          if (SpriteLoader.has('fire-trail-1')) {
+            SpriteLoader.draw(ctx, 'fire-trail-1', tx, ty, { rotation: e.angle + Math.PI, width: 30, height: 15, alpha: 0.8 });
+          }
+          particles.burst(tx, ty, 2, { ...ParticleSystem.PRESETS.FIRE, speed: 2, life: 0.3, size: 6 });
+        }
+        if (e.data.drifting) {
+          const dsx = s.x - Math.cos(e.angle) * 10;
+          const dsy = s.y - Math.sin(e.angle) * 10;
+          if (SpriteLoader.has('smoke-1')) {
+            SpriteLoader.draw(ctx, 'smoke-' + (1 + Math.floor(clock * 3) % 4), dsx, dsy, { width: 20, height: 18, alpha: 0.5 });
+          }
+          particles.burst(dsx, dsy, 1, { ...ParticleSystem.PRESETS.SMOKE, speed: 0.5, life: 0.4, size: 5 });
+        }
+        continue; // skip procedural blob rendering
+      }
+
       ctx.save();
       ctx.translate(s.x, s.y);
       ctx.rotate(e.angle + Math.PI / 2);
 
-      // Squash/stretch based on speed (AAA juice)
+      // Squash/stretch based on speed (AAA juice — procedural fallback)
       const spd = e.data.speed || 0;
-      const stretchX = 1.0 - spd * 0.8;  // narrower at high speed
-      const stretchY = 1.0 + spd * 0.6;  // taller at high speed
+      const stretchX = 1.0 - spd * 0.8;
+      const stretchY = 1.0 + spd * 0.6;
       ctx.scale(Math.max(0.85, stretchX), Math.min(1.15, stretchY));
 
       // Subtle bobbing (alive feeling)
