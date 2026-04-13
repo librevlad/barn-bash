@@ -17,6 +17,7 @@ const Render2D = (() => {
   // Game state
   let targetPlatR = 5, renderPlatR = 5;
   let kingZoneR = 1.5;
+  let lastStateTime = 0;
 
   // Stars (pre-generated, same count & distribution as original)
   const stars = [];
@@ -222,8 +223,20 @@ const Render2D = (() => {
     for (const e of entities.all()) {
       if (!e.visible) continue;
 
-      // Interpolate
-      e.lerp(0.15);
+      // Time-based interpolation between prev and target server states
+      // Server sends every 100ms. We interpolate from prev→target over that window.
+      const elapsed = performance.now() - lastStateTime;
+      const t = Math.min(1, elapsed / 100);
+      const prevAngle = e.data._prevAngle !== undefined ? e.data._prevAngle : e.data.rAngle;
+      const prevRadius = e.data._prevRadius !== undefined ? e.data._prevRadius : e.data.rRadius;
+      const tgtAngle = e.data.tAngle !== undefined ? e.data.tAngle : prevAngle;
+      const tgtRadius = e.data.tRadius !== undefined ? e.data.tRadius : prevRadius;
+      // Angle: shortest path
+      let da = tgtAngle - prevAngle;
+      while (da > Math.PI) da -= Math.PI * 2;
+      while (da < -Math.PI) da += Math.PI * 2;
+      e.data.rAngle = prevAngle + da * t;
+      e.data.rRadius = prevRadius + (tgtRadius - prevRadius) * t;
 
       // Convert polar (angle, radius) stored in entity to screen coords
       const gx = Math.cos(e.data.rAngle) * e.data.rRadius;
@@ -258,6 +271,7 @@ const Render2D = (() => {
   // PUBLIC API
   // ============================================================
   function updateState(state) {
+    lastStateTime = performance.now();
     targetPlatR = state.platR;
     if (state.kingZoneR) kingZoneR = state.kingZoneR;
 
@@ -274,6 +288,10 @@ const Render2D = (() => {
         e = entities.create(id, 'player');
         e.data.rAngle = pd.angle;
         e.data.rRadius = pd.radius;
+        e.data._prevAngle = pd.angle;
+        e.data._prevRadius = pd.radius;
+        e.data.tAngle = pd.angle;
+        e.data.tRadius = pd.radius;
         e.data.wasAlive = true;
         e.data.idx = i;
         e.color = pd.color;
@@ -282,9 +300,11 @@ const Render2D = (() => {
         e.data.colorRgb = hexToRgb(pd.color);
       }
 
-      // Smoothly interpolate angle and radius (same factors as original)
-      e.data.rAngle += shortAngleDiff(e.data.rAngle, pd.angle) * 0.15;
-      e.data.rRadius += (pd.radius - e.data.rRadius) * 0.18;
+      // Store previous as current before updating target
+      e.data._prevAngle = e.data.rAngle;
+      e.data._prevRadius = e.data.rRadius;
+      e.data.tAngle = pd.angle;
+      e.data.tRadius = pd.radius;
 
       e.data.dashing = pd.dashing;
       e.visible = pd.alive;

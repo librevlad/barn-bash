@@ -22,6 +22,7 @@ const Render2D = (() => {
   let dramatic = false;
   let targetWorldDist = 0, targetFoxDist = -5, targetSpeed = 0.3;
   let lastUpdateTime = 0;
+  let lastStateTime = 0;
 
   // Biome system — vibrant, saturated colors (pro quality)
   const BIOMES = [
@@ -465,8 +466,15 @@ const Render2D = (() => {
     const allEntities = entities.all();
     allEntities.forEach((e, i) => {
       if (!e.visible) return;
-      // Interpolate toward target
-      e.lerp(0.25);
+      // Time-based interpolation between prev and target server states
+      // Server sends every 100ms. We interpolate from prev→target over that window.
+      const elapsed = performance.now() - lastStateTime;
+      const t = Math.min(1, elapsed / 100);
+      const prevX = e._prevX !== undefined ? e._prevX : e.x;
+      const prevY = e._prevY !== undefined ? e._prevY : e.y;
+      const tgt = e._target || {};
+      e.x = prevX + ((tgt.x !== undefined ? tgt.x : prevX) - prevX) * t;
+      e.y = prevY + ((tgt.y !== undefined ? tgt.y : prevY) - prevY) * t;
 
       const pdata = e.data;
       if (!pdata.alive && !pdata.stumbling) return;
@@ -592,6 +600,7 @@ const Render2D = (() => {
     targetFoxDist = state.foxDist;
     targetSpeed = state.speed;
     lastUpdateTime = performance.now();
+    lastStateTime = performance.now();
     foxProx = state.foxProximity || 0;
     foxSprinting = state.foxSprinting || false;
     obstacles = state.obstacles || [];
@@ -606,7 +615,12 @@ const Render2D = (() => {
         e.x = pd.lane || 0;
         e.y = pd.y || 0;
         e.color = pd.color;
+        e._prevX = pd.lane || 0;
+        e._prevY = pd.y || 0;
       }
+      // Store previous as current before updating target
+      e._prevX = e.x;
+      e._prevY = e.y;
       e.setTarget({
         x: pd.lane || 0,     // lane position for interpolation
         y: pd.y || 0,        // jump height for interpolation

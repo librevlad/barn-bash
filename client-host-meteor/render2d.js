@@ -17,6 +17,7 @@ const Render2D = (() => {
   // Game state
   let targetPlatR = 4.5, renderPlatR = 4.5;
   let impactFlash = 0;
+  let lastStateTime = 0;
   let safeZone = { x: 0, z: 0, r: 1.2 };
   let subPhase = 'idle';
   let showSafe = false;
@@ -275,8 +276,15 @@ const Render2D = (() => {
 
     for (const e of entities.all()) {
       if (!e.visible) continue;
-      // Interpolate toward target position
-      e.lerp(0.25);
+      // Time-based interpolation between prev and target server states
+      // Server sends every 100ms. We interpolate from prev→target over that window.
+      const elapsed = performance.now() - lastStateTime;
+      const t = Math.min(1, elapsed / 100);
+      const prevX = e._prevX !== undefined ? e._prevX : e.x;
+      const prevY = e._prevY !== undefined ? e._prevY : e.y;
+      const tgt = e._target || {};
+      e.x = prevX + ((tgt.x !== undefined ? tgt.x : prevX) - prevX) * t;
+      e.y = prevY + ((tgt.y !== undefined ? tgt.y : prevY) - prevY) * t;
 
       const s = camera.worldToScreen(e.x, e.y);
       const alive = e.data.alive;
@@ -331,6 +339,7 @@ const Render2D = (() => {
   // PUBLIC API
   // ============================================================
   function updateState(state) {
+    lastStateTime = performance.now();
     targetPlatR = state.platR;
     subPhase = state.subPhase;
     showSafe = state.subPhase === 'warning';
@@ -352,7 +361,11 @@ const Render2D = (() => {
         e = entities.create(id, 'player');
         e.x = pd.x; e.y = pd.z;
         e.color = pd.color;
+        e._prevX = pd.x; e._prevY = pd.z;
       }
+      // Store previous as current before updating target
+      e._prevX = e.x;
+      e._prevY = e.y;
       e.setTarget({ x: pd.x, y: pd.z });
       e.color = pd.color;
       e.character = pd.character || null;

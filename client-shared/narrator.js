@@ -102,6 +102,30 @@ const Narrator = (() => {
     "Champion: {player}. The rest of you are footnotes.",
   ];
 
+  const TOURNAMENT_ROUND_INTRO = [
+    "Round {round}! {game} awaits...",
+    "Next up: {game}. Prepare yourselves.",
+    "Round {round} of {total}. The plot thickens.",
+    "{game}. May the odds be ever in your favor.",
+    "Time for {game}. Someone's about to regret their life choices.",
+  ];
+
+  const TOURNAMENT_STANDINGS_COMMENTARY = [
+    "{leader} takes the lead! Can anyone stop them?",
+    "The standings speak for themselves. {last} might want to try harder.",
+    "{leader} is dominating. This is getting embarrassing for {last}.",
+    "Tight race for the crown! Anyone's game.",
+    "After {round} rounds, {leader} leads with {score} points.",
+  ];
+
+  const TOURNAMENT_CHAMPION_QUIPS = [
+    "All hail {champion}, the undisputed champion!",
+    "{champion} wins the tournament! The rest of you were merely entertainment.",
+    "And the crown goes to... {champion}! What a show!",
+    "{champion} is victorious! Someone get them a trophy.",
+    "The winner of FRANTICS is... {champion}! Crowd goes mild.",
+  ];
+
   const FOX_CLOSE = [
     "The fox is getting closer. Run faster.",
     "I can hear it breathing...",
@@ -275,6 +299,24 @@ const Narrator = (() => {
 
   function custom(text, duration) {
     queueQuip(text, 200, duration || 3000);
+  }
+
+  function tournamentRoundIntro(round, total, gameName) {
+    var text = pick(TOURNAMENT_ROUND_INTRO, { round: round, total: total, game: gameName });
+    queueQuip(text, 800, 3000);
+    return text;
+  }
+
+  function tournamentStandingsCommentary(leader, last, round, score) {
+    var text = pick(TOURNAMENT_STANDINGS_COMMENTARY, { leader: leader, last: last, round: round, score: score });
+    // Don't queue — return for inline display in the overlay
+    return text;
+  }
+
+  function tournamentChampionQuip(champion) {
+    var text = pick(TOURNAMENT_CHAMPION_QUIPS, { champion: champion });
+    // Don't queue — return for inline display in the overlay
+    return text;
   }
 
   // ---- EVENT-DRIVEN API (AI-ready) ----
