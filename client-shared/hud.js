@@ -44,8 +44,9 @@ const HUD = (() => {
       .hud-player-combo { font-size: 10px; color: #FF8C00; font-weight: 700; }
       .hud-player-shield { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4488ff; margin-left: 4px; box-shadow: 0 0 6px rgba(68,136,255,0.5); }
       .hud-player-speed { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ffdd44; margin-left: 4px; box-shadow: 0 0 6px rgba(255,220,68,0.5); }
-      .hud-label { font-size: 10px; letter-spacing: 2px; color: #666; text-transform: uppercase; }
-      .hud-value { font-size: 18px; font-weight: 800; color: #eee; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
+      .hud-label { font-size: 10px; letter-spacing: 2px; color: #666; text-transform: uppercase; transition: color 0.3s; }
+      .hud-value { font-size: 18px; font-weight: 800; color: #eee; text-shadow: 0 1px 8px rgba(0,0,0,0.5); transition: transform 0.15s ease-out, color 0.3s; }
+      .hud-value.bump { transform: scale(1.2); }
       .hud-value-warn { color: #ff4422; }
       @keyframes hudBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     `;
@@ -58,10 +59,15 @@ const HUD = (() => {
     const $players = document.getElementById('hud-players');
     const $right = document.getElementById('hud-right');
 
-    // Left: game-specific info
+    // Left: game-specific info (with bump animation on value change)
     let leftHTML = '';
     if (extras.gameName) leftHTML += `<div class="hud-label">${extras.gameName}</div>`;
-    if (extras.primary) leftHTML += `<div class="hud-value">${extras.primary}</div>`;
+    if (extras.primary) {
+      const changed = $left._lastPrimary && $left._lastPrimary !== extras.primary;
+      leftHTML += `<div class="hud-value${changed ? ' bump' : ''}">${extras.primary}</div>`;
+      $left._lastPrimary = extras.primary;
+      if (changed) setTimeout(() => { const v = $left.querySelector('.hud-value'); if (v) v.classList.remove('bump'); }, 200);
+    }
     if (extras.secondary) leftHTML += `<div class="hud-label" style="color:${extras.secondaryColor || '#888'}">${extras.secondary}</div>`;
     $left.innerHTML = leftHTML;
 

@@ -100,8 +100,12 @@ const Render2D = (() => {
     const activePlayers = entities.all().filter(e => e.visible && !e.data.finished);
     if (activePlayers.length > 0) {
       camera.followGroup(activePlayers, 4);
-      // Clamp zoom: min 25 (see full track), max 50 (not too close)
-      if (camera._zoom < 25) camera._zoom = 25;
+      // Speed-based zoom: zoom out when players go fast (cinematic feel)
+      let maxSpd = 0;
+      for (const e of activePlayers) maxSpd = Math.max(maxSpd, e.data.speed || 0);
+      const speedZoomOut = maxSpd * 30; // faster = wider view
+      const minZoom = Math.max(22, 28 - speedZoomOut);
+      if (camera._zoom < minZoom) camera._zoom = minZoom;
       if (camera._zoom > 50) camera._zoom = 50;
     }
 
@@ -206,10 +210,12 @@ const Render2D = (() => {
     drawTrackPath(ctx, '#454545', tw - 14);
     drawTrackPath(ctx, 'rgba(255,200,40,0.25)', tw + 1);
 
-    // Center dashed line
+    // Animated center dashed line (moves with time for speed feel)
+    const clock = renderLoop ? renderLoop.getClock() : 0;
     ctx.strokeStyle = 'rgba(255,255,255,0.25)';
     ctx.lineWidth = 2;
     ctx.setLineDash([10, 14]);
+    ctx.lineDashOffset = -clock * 40; // animated — lines scroll along track
     ctx.beginPath();
     const s = camera.worldToScreen(track[0].x, track[0].z);
     ctx.moveTo(s.x, s.y);
@@ -416,12 +422,23 @@ const Render2D = (() => {
       ctx.translate(s.x, s.y);
       ctx.rotate(e.angle + Math.PI / 2);
 
+      // Squash/stretch based on speed (AAA juice)
+      const spd = e.data.speed || 0;
+      const stretchX = 1.0 - spd * 0.8;  // narrower at high speed
+      const stretchY = 1.0 + spd * 0.6;  // taller at high speed
+      ctx.scale(Math.max(0.85, stretchX), Math.min(1.15, stretchY));
+
+      // Subtle bobbing (alive feeling)
+      const bobY = Math.sin(clock * 6 + (e.id || 0) * 2) * 1.5;
+      ctx.translate(0, bobY);
+
       if (e.data.stunned && Math.floor(clock * 10) % 2 === 0) ctx.globalAlpha = 0.4;
       if (e.data.finished) ctx.globalAlpha = 0.4;
 
-      // Shadow
+      // Shadow (scales with height for depth)
+      const shadowScale = 1.0 - spd * 0.3;
       ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.beginPath(); ctx.ellipse(2, 3, R * 1.1, R * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(2, 3 - bobY, R * 1.1 * shadowScale, R * 0.5 * shadowScale, 0, 0, Math.PI * 2); ctx.fill();
 
       // Body glow + gradient
       ctx.shadowBlur = 15; ctx.shadowColor = e.color;
@@ -451,18 +468,27 @@ const Render2D = (() => {
 
       ctx.restore();
 
-      // Boost trail particles
+      // Boost trail — intense fire + glow halo
       if (e.data.boosting) {
         const tx = s.x - Math.cos(e.angle) * 15;
         const ty = s.y - Math.sin(e.angle) * 15;
-        particles.burst(tx, ty, 1, { ...ParticleSystem.PRESETS.FIRE, speed: 1, life: 0.2 });
+        particles.burst(tx, ty, 2, { ...ParticleSystem.PRESETS.FIRE, speed: 2, life: 0.3, size: 6 });
+        particles.burst(tx, ty, 1, { ...ParticleSystem.PRESETS.SPARKS, speed: 3, life: 0.2 });
+        // Glow halo behind player
+        ctx.save();
+        ctx.globalAlpha = 0.15;
+        ctx.shadowBlur = 25; ctx.shadowColor = e.color;
+        ctx.fillStyle = e.color;
+        ctx.beginPath(); ctx.arc(s.x, s.y, R * 2, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.restore();
       }
 
-      // Drift smoke
+      // Drift smoke — thicker, more visible
       if (e.data.drifting) {
-        const sx = s.x - Math.cos(e.angle) * 10;
-        const sy = s.y - Math.sin(e.angle) * 10;
-        particles.burst(sx, sy, 1, { ...ParticleSystem.PRESETS.SMOKE, speed: 0.3, life: 0.3, size: 4 });
+        const dsx = s.x - Math.cos(e.angle) * 10;
+        const dsy = s.y - Math.sin(e.angle) * 10;
+        particles.burst(dsx, dsy, 2, { ...ParticleSystem.PRESETS.SMOKE, speed: 0.5, life: 0.4, size: 5 });
       }
 
       // Held item indicator above player

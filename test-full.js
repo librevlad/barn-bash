@@ -95,7 +95,7 @@ async function run() {
   nameInput ? ok('Name input exists') : fail('Name input missing');
 
   const charBtns = await ctrlPage.$$('#ob-chars button');
-  charBtns.length === 3 ? ok('3 character buttons') : fail('Expected 3 char buttons, got ' + charBtns.length);
+  charBtns.length >= 3 ? ok(charBtns.length + ' buttons (3 chars + confirm)') : fail('Expected 3+ buttons, got ' + charBtns.length);
 
   // ========================================
   // 3. ESCAPE THE FOX

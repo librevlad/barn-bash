@@ -32,9 +32,9 @@
       position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%);
       font-size: 28px; font-weight: 900; letter-spacing: 3px;
       text-shadow: 0 3px 20px rgba(255,60,0,0.5);
-      pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 5;
+      pointer-events: none; opacity: 0; transition: opacity 0.25s ease-out, transform 0.25s ease-out; z-index: 5;
     }
-    #message.show { opacity: 1; }
+    #message.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
 
     /* Countdown */
     #countdown {

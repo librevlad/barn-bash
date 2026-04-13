@@ -13,7 +13,7 @@ const CharDraw = (() => {
     const bob = running && jumpY < 0.02 && !sliding ? Math.sin(clock * 8 + idx * 2) * 2.5 : 0;
     let sY = jumpY > 0.05 ? 1.2 : (jumpY > 0.01 && jumpY < 0.04 ? 0.8 : 1);
     let sX = jumpY > 0.05 ? 0.85 : (jumpY > 0.01 && jumpY < 0.04 ? 1.15 : 1);
-    if (dashing) { /* override */ }
+    if (dashing) { sX = 0.82; sY = 1.2; } // squash horizontal, stretch vertical on dash
 
     ctx.save();
     ctx.translate(x, y + bob);
