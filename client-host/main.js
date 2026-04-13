@@ -130,7 +130,7 @@ const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
 const charLabels = { cat: 'Cat', frog: 'Frog', wolf: 'Wolf' };
 
 function navigateToGame(gameId) {
-  const urls = { escapeFox: '/host-escape/', hillKing: '/host-hill/', meteor: '/host-meteor/' };
+  const urls = { escapeFox: '/host-escape/', hillKing: '/host-hill/', meteor: '/host-meteor/', race: '/host-race/' };
   if (urls[gameId]) {
     if (typeof Transitions !== 'undefined') Transitions.navigateTo(urls[gameId]);
     else window.location.href = urls[gameId];

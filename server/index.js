@@ -7,10 +7,11 @@ const Players = require('./players');
 const EscapeFoxGame = require('./escapeFoxGame');
 const HillGame = require('./hillGame');
 const MeteorGame = require('./meteorGame');
+const RaceGame = require('./raceGame');
 
 const PORT = 3000;
-const GAMES = { escapeFox: EscapeFoxGame, hillKing: HillGame, meteor: MeteorGame };
-const GAME_IDS = ['escapeFox', 'hillKing', 'meteor'];
+const GAMES = { escapeFox: EscapeFoxGame, hillKing: HillGame, meteor: MeteorGame, race: RaceGame };
+const GAME_IDS = ['escapeFox', 'hillKing', 'meteor', 'race'];
 
 // --- HTTP ---
 
@@ -67,6 +68,17 @@ function resolve(url) {
     return resolved;
   }
 
+  // Race host
+  if (url === '/host-race/')
+    return path.join(root, 'client-host-race', 'index.html');
+  if (url.startsWith('/host-race/')) {
+    const rel = url.slice('/host-race/'.length);
+    if (!rel || rel.includes('..')) return null;
+    const resolved = path.resolve(root, 'client-host-race', rel);
+    if (!resolved.startsWith(path.resolve(root, 'client-host-race'))) return null;
+    return resolved;
+  }
+
   if (url === '/' || url === '/controller/')
     return path.join(root, 'client-controller', 'index.html');
   if (url.startsWith('/controller/') && url.endsWith('.js'))
@@ -76,7 +88,7 @@ function resolve(url) {
 }
 
 const server = http.createServer((req, res) => {
-  if (req.url === '/test' || req.url === '/host' || req.url === '/controller' || req.url === '/host-escape' || req.url === '/host-hill' || req.url === '/host-meteor') {
+  if (req.url === '/test' || req.url === '/host' || req.url === '/controller' || req.url === '/host-escape' || req.url === '/host-hill' || req.url === '/host-meteor' || req.url === '/host-race') {
     res.writeHead(301, { Location: req.url + '/' });
     res.end();
     return;

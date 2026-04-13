@@ -18,6 +18,7 @@ const GESTURE_HINTS = {
   escapeFox: 'TAP jump · SWIPE ←→ lane · SWIPE ↓ slide',
   hillKing:  'TAP dash · SWIPE dir dash · HOLD shield · TAP×2 ground pound',
   meteor:    'SWIPE move · TAP dodge · HOLD sprint · SWIPE→player push',
+  race:      'SWIPE ←→ steer · TAP boost/item · HOLD drift',
 };
 
 const CHAR_NAMES = { cat: 'Cat', frog: 'Frog', wolf: 'Wolf' };
@@ -178,8 +179,12 @@ function onTap() {
     Sound.play('dash');
   } else if (gameId === 'meteor') {
     if (phase !== 'running') return;
-    send('dodge'); // boost toward safe zone
+    send('dodge');
     Sound.play('dodge');
+  } else if (gameId === 'race') {
+    if (phase !== 'running') return;
+    send('useItem');
+    Sound.play('dash');
   }
   // Visual feedback
   triggerPulse();
@@ -209,6 +214,12 @@ function onSwipe(dir) {
   } else if (gameId === 'meteor') {
     send('move', dir);
     Sound.play('dodge');
+  } else if (gameId === 'race') {
+    if (dir === 'left' || dir === 'right') {
+      send('steer', dir);
+    } else if (dir === 'down') {
+      send('dropItem');
+    }
   }
 
   // Swipe arrow flash
@@ -228,6 +239,9 @@ function onHold() {
   } else if (gameId === 'meteor') {
     send('sprint');
     $status.textContent = 'SPRINTING...';
+  } else if (gameId === 'race') {
+    send('driftStart');
+    $status.textContent = 'DRIFTING...';
   }
   navigator.vibrate?.(40);
 }
@@ -236,6 +250,8 @@ function onHoldRelease() {
   $holdRing.classList.remove('charging');
   if (gameId === 'hillKing') {
     send('shieldEnd');
+  } else if (gameId === 'race') {
+    send('driftEnd');
   }
 }
 

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Frantics — Grand Prix</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a120a; overflow: hidden; font-family: -apple-system, 'Segoe UI', sans-serif; color: #eee; }
+    canvas { display: block; }
+    #hud { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: none;
+      padding: 8px 16px; display: flex; justify-content: space-between; pointer-events: none; }
+    .hud-left { display: flex; flex-direction: column; gap: 2px; }
+    .hud-right { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
+    .hud-title { font-size: 9px; letter-spacing: 3px; color: #555; text-transform: uppercase; }
+    .hud-lap { font-size: 22px; font-weight: 800; color: #4dff4d; text-shadow: 0 0 10px rgba(77,255,77,0.3); }
+    .hud-pos { font-size: 14px; font-weight: 700; color: #ffcc00; }
+    #countdown { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      font-size: 80px; font-weight: 900; color: #fff; z-index: 20;
+      text-shadow: 0 0 30px rgba(77,255,77,0.5); display: none;
+      transition: transform 0.3s, opacity 0.3s; }
+    #message { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      font-size: 20px; font-weight: 700; color: #fff; z-index: 15;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5); opacity: 0;
+      transition: opacity 0.3s; pointer-events: none; }
+    #message.show { opacity: 1; }
+    #winner-overlay { position: fixed; inset: 0; z-index: 30;
+      background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.6s; }
+    #winner-overlay.show { opacity: 1; pointer-events: auto; }
+    .w-text { font-size: 32px; font-weight: 900; text-shadow: 0 0 20px currentColor; }
+    .w-sub { font-size: 14px; color: #888; margin-top: 8px; }
+    #controls { display: none; justify-content: center; gap: 12px; margin-top: 24px; z-index: 31; }
+    #controls button { padding: 10px 24px; border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; background: rgba(255,255,255,0.08); color: #eee;
+      font-size: 14px; cursor: pointer; font-family: inherit; }
+    #lobby { position: fixed; inset: 0; z-index: 5;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #lobby.hidden { display: none; }
+    #lobby h1 { font-size: 28px; font-weight: 800; color: #4dff4d; letter-spacing: 3px; margin-bottom: 4px; }
+    #lobby-info { font-size: 13px; color: #666; margin-bottom: 16px; }
+    #lobby-players { display: flex; gap: 8px; margin-bottom: 24px; min-height: 30px; flex-wrap: wrap; justify-content: center; }
+    #btn-start { padding: 12px 32px; font-size: 16px; font-weight: 700;
+      border: 2px solid rgba(77,255,77,0.3); border-radius: 10px;
+      background: rgba(77,255,77,0.08); color: #4dff4d; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+  <div id="hud" style="display:none">
+    <div class="hud-left">
+      <div class="hud-title">GRAND PRIX</div>
+      <div class="hud-lap" id="hud-lap">Lap 1/3</div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-pos" id="hud-pos"></div>
+      <div class="hud-title" id="hud-alive">0/0</div>
+    </div>
+  </div>
+  <div id="countdown"></div>
+  <div id="message"></div>
+  <div id="winner-overlay">
+    <div id="controls">
+      <button id="btn-again">PLAY AGAIN</button>
+      <button id="btn-lobby">LOBBY</button>
+    </div>
+  </div>
+  <div id="lobby">
+    <div class="hud-title">FRANTICS</div>
+    <h1>GRAND PRIX</h1>
+    <div id="lobby-info">Waiting for players...</div>
+    <div id="lobby-players"></div>
+    <button id="btn-start" style="display:none">START</button>
+  </div>
+  <script src="/shared/characters.js"></script>
+  <script src="/shared/narrator.js"></script>
+  <script src="/shared/sound.js"></script>
+  <script src="/shared/hud.js"></script>
+  <script src="/shared/effects.js"></script>
+  <script src="/shared/transitions.js"></script>
+  <script src="/shared/tournament.js"></script>
+  <script src="render2d.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

@@ -98,9 +98,11 @@
     .game-card[data-game="escapeFox"] .game-card-name { color: #E05020; }
     .game-card[data-game="hillKing"] .game-card-name { color: #B070FF; }
     .game-card[data-game="meteor"] .game-card-name { color: #FF6633; }
+    .game-card[data-game="race"] .game-card-name { color: #4dff4d; }
     .game-card[data-game="escapeFox"]:hover { border-color: rgba(224,80,32,0.4); box-shadow: 0 8px 24px rgba(224,80,32,0.15); }
     .game-card[data-game="hillKing"]:hover { border-color: rgba(176,112,255,0.4); box-shadow: 0 8px 24px rgba(176,112,255,0.15); }
     .game-card[data-game="meteor"]:hover { border-color: rgba(255,102,51,0.4); box-shadow: 0 8px 24px rgba(255,102,51,0.15); }
+    .game-card[data-game="race"]:hover { border-color: rgba(77,255,77,0.4); box-shadow: 0 8px 24px rgba(77,255,77,0.15); }
 
     /* Tournament */
     .tournament-card {
@@ -159,6 +161,11 @@
       <div class="game-card-icon">&#9732;</div>
       <div class="game-card-name">METEOR SHOWER</div>
       <div class="game-card-desc">Find shelter. Fast.</div>
+    </div>
+    <div class="game-card disabled" data-game="race" style="grid-column: 1 / -1">
+      <div class="game-card-icon">&#127937;</div>
+      <div class="game-card-name">GRAND PRIX</div>
+      <div class="game-card-desc">3 laps. No brakes. First wins.</div>
     </div>
   </div>
 

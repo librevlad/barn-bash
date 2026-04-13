@@ -20,6 +20,13 @@ const Narrator = (() => {
       "Some of you won't make it. I'm excited to find out who.",
       "The path ahead is treacherous. The thing behind is worse.",
     ],
+    race: [
+      "Engines ready! ...wait, they don't have engines.",
+      "Three laps. No brakes. Good luck.",
+      "On your marks. Get set. Try not to crash immediately.",
+      "The track is slippery, the items are unfair. Enjoy.",
+      "May the least crashed contestant win.",
+    ],
     hillKing: [
       "Last one standing wins. First one off... well, bye.",
       "There's only room for one on this hill. Get pushing.",

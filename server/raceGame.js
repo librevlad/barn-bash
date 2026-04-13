@@ -1,0 +1,576 @@
+// ============================================================
+// FRANTICS GRAND PRIX — Server Game Logic
+// ============================================================
+
+const TICK_MS = 50;
+const TOTAL_LAPS = 3;
+const TRACK_WIDTH = 2.5;
+const FRICTION = 0.98;
+const OFF_TRACK_FRICTION = 0.93;
+const HIT_DIST = 0.6;
+const STUN_TICKS = 15;
+const BOOST_TICKS = 20;
+const BOOST_SPEED = 0.06;
+const MINI_BOOST_CD = 30;
+const MINI_BOOST_SPEED = 0.03;
+const MINI_BOOST_TICKS = 8;
+const DRIFT_BOOST_TICKS = 15;
+const DRIFT_BOOST_SPEED = 0.04;
+const DRIFT_MIN_TICKS = 10;
+const ITEM_RESPAWN_TICKS = 200;
+const MISSILE_SPEED = 0.2;
+const RACE_TIMEOUT = 1200; // 60s
+
+// Track: waypoints forming a circuit (x, z)
+// Oval with chicanes — coordinates in game units (-10 to 10 range)
+const TRACK = [
+  { x: 0, z: -4 },     // start/finish straight
+  { x: 2, z: -4.2 },
+  { x: 4, z: -3.8 },
+  { x: 5.5, z: -3 },   // turn 1
+  { x: 6.2, z: -1.5 },
+  { x: 6, z: 0 },
+  { x: 5.5, z: 1.5 },  // chicane entry
+  { x: 4.5, z: 2.5 },
+  { x: 5, z: 3.5 },    // chicane exit
+  { x: 5.5, z: 4.5 },
+  { x: 5, z: 5.5 },    // turn 2
+  { x: 3.5, z: 6 },
+  { x: 2, z: 5.8 },
+  { x: 0, z: 5.5 },    // back straight
+  { x: -2, z: 5.8 },
+  { x: -3.5, z: 6 },
+  { x: -5, z: 5.5 },   // turn 3 (hairpin)
+  { x: -6, z: 4 },
+  { x: -6.2, z: 2 },
+  { x: -5.8, z: 0 },
+  { x: -6, z: -1.5 },
+  { x: -5.5, z: -3 },  // turn 4
+  { x: -4, z: -3.8 },
+  { x: -2, z: -4.2 },
+];
+
+// Item spawn positions (track segment index + offset)
+const ITEM_SPAWNS = [
+  { seg: 3, offset: 0 },
+  { seg: 8, offset: 0 },
+  { seg: 13, offset: 0 },
+  { seg: 18, offset: 0 },
+];
+
+const ITEM_TYPES = ['boost', 'oil', 'missile'];
+
+const TRAITS = {
+  cat:  { maxSpeed: 0.12, accel: 0.004, handling: 0.06 },
+  frog: { maxSpeed: 0.11, accel: 0.005, handling: 0.05 },
+  wolf: { maxSpeed: 0.13, accel: 0.003, handling: 0.045 },
+};
+
+class RaceGame {
+  constructor(players, broadcast) {
+    this.players = players;
+    this.broadcast = broadcast;
+    this.phase = 'lobby';
+    this.tick = 0;
+    this.winner = null;
+    this._iv = null;
+    this.items = [];       // items on track
+    this.oilSlicks = [];   // dropped oil
+    this.missiles = [];    // active missiles
+    this.finishOrder = [];
+  }
+
+  getGameId() { return 'race'; }
+
+  start() {
+    if (this.phase !== 'lobby') return;
+    if (this.players.connectedCount() < 2) return;
+
+    this.phase = 'running';
+    this.tick = 0;
+    this.winner = null;
+    this.items = [];
+    this.oilSlicks = [];
+    this.missiles = [];
+    this.finishOrder = [];
+
+    // Place players on starting grid
+    const conn = this.players.connected();
+    const startWP = TRACK[0];
+    const startAngle = Math.atan2(TRACK[1].z - TRACK[0].z, TRACK[1].x - TRACK[0].x);
+    conn.forEach((p, i) => {
+      const char = p.character || 'cat';
+      const trait = TRAITS[char] || TRAITS.cat;
+      const lateral = (i - (conn.length - 1) / 2) * 0.8;
+      p.gameData = {
+        x: startWP.x + Math.sin(startAngle) * lateral - Math.cos(startAngle) * i * 0.6,
+        z: startWP.z - Math.cos(startAngle) * lateral - Math.sin(startAngle) * i * 0.6,
+        angle: startAngle,
+        speed: 0,
+        lap: 1,
+        waypoint: 1,
+        finished: false,
+        finishTime: 0,
+        drifting: false,
+        driftTicks: 0,
+        boostTimer: 0,
+        boostCooldown: 0,
+        stunTimer: 0,
+        item: null,
+        score: 0,
+        character: char,
+        maxSpeed: trait.maxSpeed,
+        accel: trait.accel,
+        handling: trait.handling,
+        steerInput: 0, // -1 left, 0 straight, 1 right
+      };
+    });
+
+    // Spawn initial items
+    this._spawnItems();
+
+    this.broadcastState();
+    this._iv = setInterval(() => this._tick(), TICK_MS);
+  }
+
+  _tick() {
+    this.tick++;
+
+    this._updatePlayers();
+    this._updateMissiles();
+    this._checkItemPickups();
+    this._checkOilCollisions();
+    this._checkPlayerCollisions();
+    this._checkWaypoints();
+    this._respawnItems();
+
+    // Timeout
+    if (this.tick >= RACE_TIMEOUT) {
+      this._forceEnd();
+      return;
+    }
+
+    // Check if all finished
+    const conn = this.players.connected();
+    const allFinished = conn.every(p => p.gameData && (p.gameData.finished || !p.gameData.alive));
+    if (allFinished && this.finishOrder.length > 0) {
+      this._endRace();
+      return;
+    }
+
+    if (this.tick % 2 === 0) this.broadcastState();
+  }
+
+  _updatePlayers() {
+    for (const p of this.players.connected()) {
+      const g = p.gameData;
+      if (!g || g.finished) continue;
+
+      // Stun
+      if (g.stunTimer > 0) { g.stunTimer--; g.speed *= 0.9; continue; }
+
+      // Boost timer
+      if (g.boostTimer > 0) g.boostTimer--;
+      if (g.boostCooldown > 0) g.boostCooldown--;
+
+      // Steering
+      const driftMult = g.drifting ? 1.4 : 1.0;
+      g.angle += g.steerInput * g.handling * driftMult;
+
+      // Drift tracking
+      if (g.drifting) g.driftTicks++;
+
+      // Auto-accelerate
+      const maxSpd = g.maxSpeed + (g.boostTimer > 0 ? BOOST_SPEED : 0);
+      if (g.speed < maxSpd) g.speed = Math.min(maxSpd, g.speed + g.accel);
+
+      // Friction
+      const onTrack = this._isOnTrack(g.x, g.z);
+      g.speed *= onTrack ? FRICTION : OFF_TRACK_FRICTION;
+
+      // Move
+      g.x += Math.cos(g.angle) * g.speed;
+      g.z += Math.sin(g.angle) * g.speed;
+
+      // Off-track push back toward nearest track point
+      if (!onTrack) {
+        const nearest = this._nearestTrackPoint(g.x, g.z);
+        const dx = nearest.x - g.x, dz = nearest.z - g.z;
+        const d = Math.sqrt(dx * dx + dz * dz);
+        if (d > 0) {
+          g.x += (dx / d) * 0.02;
+          g.z += (dz / d) * 0.02;
+        }
+      }
+
+      // Reset steer input each tick (must be re-sent)
+      // Actually keep it continuous until player sends neutral
+    }
+  }
+
+  _updateMissiles() {
+    for (let i = this.missiles.length - 1; i >= 0; i--) {
+      const m = this.missiles[i];
+      m.life--;
+      if (m.life <= 0) { this.missiles.splice(i, 1); continue; }
+
+      // Home toward target
+      const target = this.players.get(m.targetId);
+      if (target && target.gameData && !target.gameData.finished) {
+        const dx = target.gameData.x - m.x;
+        const dz = target.gameData.z - m.z;
+        const d = Math.sqrt(dx * dx + dz * dz);
+        if (d < 0.5) {
+          // Hit!
+          target.gameData.stunTimer = STUN_TICKS;
+          target.gameData.speed *= 0.3;
+          this.broadcast({ type: 'player_stunned', playerId: m.targetId, reason: 'missile', gameId: 'race' });
+          this.missiles.splice(i, 1);
+          continue;
+        }
+        m.x += (dx / d) * MISSILE_SPEED;
+        m.z += (dz / d) * MISSILE_SPEED;
+      } else {
+        this.missiles.splice(i, 1);
+      }
+    }
+  }
+
+  _checkItemPickups() {
+    for (let i = this.items.length - 1; i >= 0; i--) {
+      const item = this.items[i];
+      if (!item.active) continue;
+      for (const p of this.players.connected()) {
+        const g = p.gameData;
+        if (!g || g.finished || g.item || g.stunTimer > 0) continue;
+        const dx = g.x - item.x, dz = g.z - item.z;
+        if (Math.sqrt(dx * dx + dz * dz) < 0.6) {
+          g.item = item.type;
+          item.active = false;
+          item.respawnAt = this.tick + ITEM_RESPAWN_TICKS;
+          this.broadcast({ type: 'item_pickup', playerId: p.id, item: item.type, gameId: 'race' });
+          break;
+        }
+      }
+    }
+  }
+
+  _checkOilCollisions() {
+    for (let i = this.oilSlicks.length - 1; i >= 0; i--) {
+      const oil = this.oilSlicks[i];
+      oil.life--;
+      if (oil.life <= 0) { this.oilSlicks.splice(i, 1); continue; }
+      for (const p of this.players.connected()) {
+        if (p.id === oil.ownerId) continue;
+        const g = p.gameData;
+        if (!g || g.finished || g.stunTimer > 0) continue;
+        const dx = g.x - oil.x, dz = g.z - oil.z;
+        if (Math.sqrt(dx * dx + dz * dz) < 0.5) {
+          g.stunTimer = STUN_TICKS;
+          g.speed *= 0.2;
+          g.angle += (Math.random() - 0.5) * 1.0; // spin out
+          this.broadcast({ type: 'player_stunned', playerId: p.id, reason: 'oil', gameId: 'race' });
+          this.oilSlicks.splice(i, 1);
+          break;
+        }
+      }
+    }
+  }
+
+  _checkPlayerCollisions() {
+    const conn = this.players.connected().filter(p => p.gameData && !p.gameData.finished);
+    for (let i = 0; i < conn.length; i++) {
+      for (let j = i + 1; j < conn.length; j++) {
+        const a = conn[i].gameData, b = conn[j].gameData;
+        if (a.stunTimer > 0 || b.stunTimer > 0) continue;
+        const dx = a.x - b.x, dz = a.z - b.z;
+        const d = Math.sqrt(dx * dx + dz * dz);
+        if (d < HIT_DIST && d > 0) {
+          // Push apart
+          const nx = dx / d, nz = dz / d;
+          a.x += nx * 0.1; a.z += nz * 0.1;
+          b.x -= nx * 0.1; b.z -= nz * 0.1;
+          // Slower player gets stunned briefly
+          if (a.speed < b.speed) { a.stunTimer = 5; a.speed *= 0.5; }
+          else if (b.speed < a.speed) { b.stunTimer = 5; b.speed *= 0.5; }
+          this.broadcast({ type: 'bump', from: conn[i].id, to: conn[j].id, gameId: 'race' });
+        }
+      }
+    }
+  }
+
+  _checkWaypoints() {
+    for (const p of this.players.connected()) {
+      const g = p.gameData;
+      if (!g || g.finished) continue;
+
+      const wp = TRACK[g.waypoint % TRACK.length];
+      const dx = g.x - wp.x, dz = g.z - wp.z;
+      if (Math.sqrt(dx * dx + dz * dz) < 2.0) {
+        g.waypoint++;
+        // Lap check
+        if (g.waypoint >= TRACK.length) {
+          g.waypoint = 0;
+          g.lap++;
+          if (g.lap > TOTAL_LAPS) {
+            g.finished = true;
+            g.finishTime = this.tick;
+            this.finishOrder.push(p.id);
+            const pos = this.finishOrder.length;
+            g.score = Math.max(0, 4 - pos); // 1st=3, 2nd=2, 3rd=1
+            this.broadcast({ type: 'race_finish', playerId: p.id, position: pos, gameId: 'race' });
+          } else {
+            this.broadcast({ type: 'lap_complete', playerId: p.id, lap: g.lap, gameId: 'race' });
+          }
+        }
+      }
+    }
+  }
+
+  _respawnItems() {
+    for (const item of this.items) {
+      if (!item.active && this.tick >= item.respawnAt) {
+        item.active = true;
+        item.type = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+      }
+    }
+  }
+
+  _spawnItems() {
+    this.items = ITEM_SPAWNS.map(spawn => {
+      const wp = TRACK[spawn.seg];
+      return {
+        x: wp.x, z: wp.z,
+        type: ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)],
+        active: true,
+        respawnAt: 0,
+      };
+    });
+  }
+
+  _isOnTrack(x, z) {
+    return this._distToTrack(x, z) < TRACK_WIDTH;
+  }
+
+  _distToTrack(x, z) {
+    let minDist = Infinity;
+    for (let i = 0; i < TRACK.length; i++) {
+      const a = TRACK[i], b = TRACK[(i + 1) % TRACK.length];
+      const d = this._distToSegment(x, z, a.x, a.z, b.x, b.z);
+      if (d < minDist) minDist = d;
+    }
+    return minDist;
+  }
+
+  _nearestTrackPoint(x, z) {
+    let minDist = Infinity, nearest = TRACK[0];
+    for (const wp of TRACK) {
+      const d = Math.sqrt((x - wp.x) ** 2 + (z - wp.z) ** 2);
+      if (d < minDist) { minDist = d; nearest = wp; }
+    }
+    return nearest;
+  }
+
+  _distToSegment(px, pz, ax, az, bx, bz) {
+    const dx = bx - ax, dz = bz - az;
+    const len2 = dx * dx + dz * dz;
+    if (len2 === 0) return Math.sqrt((px - ax) ** 2 + (pz - az) ** 2);
+    let t = ((px - ax) * dx + (pz - az) * dz) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const projX = ax + t * dx, projZ = az + t * dz;
+    return Math.sqrt((px - projX) ** 2 + (pz - projZ) ** 2);
+  }
+
+  _forceEnd() {
+    // Rank by laps + waypoint progress
+    const conn = this.players.connected().filter(p => p.gameData);
+    conn.sort((a, b) => {
+      const ga = a.gameData, gb = b.gameData;
+      if (ga.finished && !gb.finished) return -1;
+      if (!ga.finished && gb.finished) return 1;
+      if (ga.lap !== gb.lap) return gb.lap - ga.lap;
+      return gb.waypoint - ga.waypoint;
+    });
+    conn.forEach((p, i) => {
+      if (!p.gameData.finished) {
+        this.finishOrder.push(p.id);
+        p.gameData.score = Math.max(0, 4 - this.finishOrder.length);
+      }
+    });
+    this._endRace();
+  }
+
+  _endRace() {
+    this.phase = 'result';
+    this.winner = this.finishOrder.length > 0 ? this.finishOrder[0] : null;
+    clearInterval(this._iv);
+    this.broadcastState();
+    this.broadcast({ type: 'game_over', winnerId: this.winner, gameId: 'race' });
+  }
+
+  handleInput(playerId, action, msg) {
+    if (this.phase !== 'running') return;
+    const p = this.players.get(playerId);
+    if (!p || !p.gameData || p.gameData.finished) return;
+    const g = p.gameData;
+
+    if (g.stunTimer > 0) return;
+
+    switch (action) {
+      case 'steer':
+        if (msg && msg.direction === 'left') g.steerInput = -1;
+        else if (msg && msg.direction === 'right') g.steerInput = 1;
+        else g.steerInput = 0;
+        break;
+
+      case 'steerNeutral':
+        g.steerInput = 0;
+        break;
+
+      case 'useItem':
+        if (g.item) {
+          this._useItem(p);
+        } else if (g.boostCooldown <= 0) {
+          // Mini boost
+          g.boostTimer = MINI_BOOST_TICKS;
+          g.speed += MINI_BOOST_SPEED;
+          g.boostCooldown = MINI_BOOST_CD;
+        }
+        break;
+
+      case 'dropItem':
+        if (g.item === 'oil') {
+          this.oilSlicks.push({
+            x: g.x - Math.cos(g.angle) * 0.8,
+            z: g.z - Math.sin(g.angle) * 0.8,
+            ownerId: p.id, life: 400,
+          });
+          this.broadcast({ type: 'item_used', playerId: p.id, item: 'oil', gameId: 'race' });
+          g.item = null;
+        } else if (g.item) {
+          this._useItem(p);
+        }
+        break;
+
+      case 'driftStart':
+        g.drifting = true;
+        g.driftTicks = 0;
+        break;
+
+      case 'driftEnd':
+        if (g.drifting && g.driftTicks >= DRIFT_MIN_TICKS) {
+          g.boostTimer = DRIFT_BOOST_TICKS;
+          g.speed += DRIFT_BOOST_SPEED;
+          this.broadcast({ type: 'drift_boost', playerId: p.id, gameId: 'race' });
+        }
+        g.drifting = false;
+        g.driftTicks = 0;
+        break;
+    }
+  }
+
+  _useItem(player) {
+    const g = player.gameData;
+    const item = g.item;
+    g.item = null;
+
+    switch (item) {
+      case 'boost':
+        g.boostTimer = BOOST_TICKS;
+        g.speed += BOOST_SPEED;
+        this.broadcast({ type: 'item_used', playerId: player.id, item: 'boost', gameId: 'race' });
+        break;
+
+      case 'oil':
+        this.oilSlicks.push({
+          x: g.x - Math.cos(g.angle) * 0.8,
+          z: g.z - Math.sin(g.angle) * 0.8,
+          ownerId: player.id, life: 400,
+        });
+        this.broadcast({ type: 'item_used', playerId: player.id, item: 'oil', gameId: 'race' });
+        break;
+
+      case 'missile': {
+        // Find player ahead
+        let targetId = null, bestProgress = -1;
+        for (const other of this.players.connected()) {
+          if (other.id === player.id || !other.gameData || other.gameData.finished) continue;
+          const og = other.gameData;
+          const progress = og.lap * TRACK.length + og.waypoint;
+          const myProgress = g.lap * TRACK.length + g.waypoint;
+          if (progress > myProgress && progress > bestProgress) {
+            bestProgress = progress;
+            targetId = other.id;
+          }
+        }
+        // If no one ahead, target nearest
+        if (!targetId) {
+          let minDist = Infinity;
+          for (const other of this.players.connected()) {
+            if (other.id === player.id || !other.gameData || other.gameData.finished) continue;
+            const dx = other.gameData.x - g.x, dz = other.gameData.z - g.z;
+            const d = Math.sqrt(dx * dx + dz * dz);
+            if (d < minDist) { minDist = d; targetId = other.id; }
+          }
+        }
+        if (targetId) {
+          this.missiles.push({ x: g.x, z: g.z, targetId, life: 100 });
+          this.broadcast({ type: 'item_used', playerId: player.id, item: 'missile', target: targetId, gameId: 'race' });
+        }
+        break;
+      }
+    }
+  }
+
+  restart() {
+    clearInterval(this._iv);
+    this.phase = 'lobby';
+    this.winner = null;
+    this.items = [];
+    this.oilSlicks = [];
+    this.missiles = [];
+    this.finishOrder = [];
+    this.players.resetGameData();
+    this.broadcastState();
+  }
+
+  broadcastState() {
+    this.broadcast({ type: 'state', gameId: 'race', gameState: this.getState() });
+  }
+
+  getState() {
+    const players = {};
+    for (const p of this.players.all()) {
+      const g = p.gameData;
+      players[p.id] = {
+        connected: p.connected, color: p.color, name: p.name || ('Player ' + p.id),
+        character: p.character || (g ? g.character : null) || null,
+        x: g ? g.x || 0 : 0,
+        z: g ? g.z || 0 : 0,
+        angle: g ? g.angle || 0 : 0,
+        speed: g ? g.speed || 0 : 0,
+        lap: g ? g.lap || 1 : 1,
+        finished: g ? !!g.finished : false,
+        drifting: g ? !!g.drifting : false,
+        boosting: g ? (g.boostTimer > 0) : false,
+        stunned: g ? (g.stunTimer > 0) : false,
+        item: g ? g.item : null,
+        score: g ? g.score || 0 : 0,
+      };
+    }
+    return {
+      phase: this.phase,
+      track: TRACK,
+      trackWidth: TRACK_WIDTH,
+      totalLaps: TOTAL_LAPS,
+      items: this.items.filter(i => i.active),
+      oilSlicks: this.oilSlicks.map(o => ({ x: o.x, z: o.z })),
+      missiles: this.missiles.map(m => ({ x: m.x, z: m.z, targetId: m.targetId })),
+      finishOrder: this.finishOrder,
+      winner: this.winner,
+      players,
+    };
+  }
+}
+
+module.exports = RaceGame;
