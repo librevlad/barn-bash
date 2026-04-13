@@ -15,10 +15,10 @@ let gameId = 'escapeFox', tapped = false;
 
 const GAME_NAMES = { escapeFox: 'ESCAPE THE FOX', hillKing: 'KING OF THE HILL', meteor: 'METEOR SHOWER' };
 const GESTURE_HINTS = {
-  escapeFox: 'TAP jump · SWIPE ←→ lane · SWIPE ↓ slide',
-  hillKing:  'TAP dash · SWIPE dir dash · HOLD shield · TAP×2 ground pound',
-  meteor:    'SWIPE move · TAP dodge · HOLD sprint · SWIPE→player push',
-  race:      'SWIPE ←→ steer · TAP boost/item · HOLD drift',
+  escapeFox: 'TAP = jump · SWIPE ←→ = change lane · SWIPE ↓ = slide under',
+  hillKing:  'TAP = dash attack · HOLD = shield · SWIPE = directional dash',
+  meteor:    'TAP = dodge to safety · SWIPE = move · HOLD = sprint',
+  race:      'SWIPE ←→ = steer · TAP = boost or use item · HOLD = drift',
 };
 
 const CHAR_NAMES = { cat: 'Cat', frog: 'Frog', wolf: 'Wolf' };
@@ -67,11 +67,15 @@ for (const [id, label] of Object.entries(CHAR_NAMES)) {
     $obChars.querySelectorAll('button').forEach(b => b.style.borderColor = 'rgba(255,255,255,0.15)');
     btn.style.borderColor = '#fff';
     navigator.vibrate?.([15]);
-    // Auto-proceed after character select
-    setTimeout(finishOnboarding, 400);
   });
   $obChars.appendChild(btn);
 }
+// Confirm button for character selection
+const confirmBtn = document.createElement('button');
+confirmBtn.textContent = 'JOIN THE SHOW';
+confirmBtn.style.cssText = 'display:block;width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff3366,#cc33ff);color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;';
+confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); finishOnboarding(); });
+$obChars.appendChild(confirmBtn);
 if (selectedChar) $obCharQuip.textContent = CHAR_QUIPS[selectedChar] || '';
 
 $obNameBtn.addEventListener('click', () => {
@@ -101,7 +105,14 @@ function connectWS() {
   ws = new WebSocket('ws://' + location.host);
   ws.onopen = () => ws.send(JSON.stringify({ type: 'join', name: myName, character: selectedChar }));
   ws.onmessage = onMessage;
-  ws.onclose = () => { $info.textContent = 'Disconnected'; phase = ''; };
+  ws.onclose = () => {
+    $info.textContent = 'Disconnected';
+    $status.textContent = 'Tap to reconnect';
+    $score.textContent = '💔';
+    phase = '';
+    document.body.style.background = '#333';
+    document.body.onclick = () => { document.body.onclick = null; location.reload(); };
+  };
 }
 
 // ============================================================
@@ -316,8 +327,9 @@ function onMessage(e) {
               $result.className = '';
             }
           } else if (phase === 'lobby') {
-            $score.textContent = '0';
-            $status.textContent = 'Waiting for start...';
+            const charEmoji = { cat: '🐱', frog: '🐸', wolf: '🐺' };
+            $score.textContent = charEmoji[selectedChar] || '?';
+            $status.textContent = 'Ready! Waiting for host...';
             $result.textContent = ''; $result.className = '';
           }
         }
@@ -419,7 +431,15 @@ function onMessage(e) {
       break;
 
     case 'dramatic_finish':
-      navigator.vibrate?.([20, 10, 20]);
+      $result.textContent = '⚡ FINAL TWO!'; $result.className = 'correct';
+      navigator.vibrate?.([30, 15, 30, 15, 30]);
+      setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 2000);
+      break;
+
+    case 'sudden_death':
+      $result.textContent = '💀 SUDDEN DEATH'; $result.className = 'wrong';
+      navigator.vibrate?.([50, 20, 50, 20, 50]);
+      setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 3000);
       break;
 
     case 'teetering':

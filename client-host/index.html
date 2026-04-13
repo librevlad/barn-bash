@@ -91,6 +91,8 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
     .game-card.disabled { opacity: 0.25; pointer-events: none; }
+    .game-card.disabled::after { content: 'Need 2+ players'; position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #666; letter-spacing: 1px; }
+    .game-card { position: relative; }
     .game-card-icon { font-size: 32px; margin-bottom: 10px; }
     .game-card-name { font-size: 14px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 5px; }
     .game-card-desc { font-size: 11px; color: #777; line-height: 1.5; }
@@ -133,9 +135,10 @@
 
   <div id="narrator-idle"></div>
 
-  <div class="connect-url" id="connect-url">
+  <div class="connect-url" id="connect-url" style="cursor:pointer" onclick="navigator.clipboard.writeText(document.getElementById('connect-url-value').textContent).then(()=>{this.querySelector('.connect-url-label').textContent='Copied!';setTimeout(()=>this.querySelector('.connect-url-label').textContent='Join the show',1500)})">
     <div class="connect-url-label">Join the show</div>
     <div class="connect-url-value" id="connect-url-value"></div>
+    <div style="font-size:9px;color:#444;margin-top:3px">click to copy</div>
   </div>
 
   <div class="contestants-label" id="contestants-label">Tonight's Contestants</div>

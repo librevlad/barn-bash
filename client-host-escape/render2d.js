@@ -26,7 +26,7 @@ const Render2D = (() => {
   // Biome system — vibrant, saturated colors (pro quality)
   const BIOMES = [
     { name: 'forest', sky: ['#1e3560','#0c1a30'], ground: ['#2d7a42','#1a5a2a'], tree: '#35884a' },
-    { name: 'cave',   sky: ['#0e0e20','#060612'], ground: ['#4a4a5e','#303048'], tree: '#5a5a70' },
+    { name: 'cave',   sky: ['#1a1a30','#0e0e1e'], ground: ['#4a4a5e','#353050'], tree: '#5a5a70' },
     { name: 'snow',   sky: ['#5a70a0','#3a4a70'], ground: ['#a0b5cc','#7a90aa'], tree: '#7aaa80' },
     { name: 'volcano',sky: ['#601a08','#351005'], ground: ['#7a3020','#4a1a0a'], tree: '#884030' },
   ];
