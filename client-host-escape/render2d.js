@@ -222,7 +222,8 @@ const Render2D = (() => {
         ctx.fillStyle = lighten(bc.tree, 15);
         ctx.beginPath(); ctx.moveTo(0, -t.h * 0.75); ctx.lineTo(-t.h * 0.18, -t.h * 0.42); ctx.lineTo(t.h * 0.18, -t.h * 0.42); ctx.fill();
         // Snow cap in snow biome
-        if (bc.tree === '#7aaa80') {
+        const biomeIdx = Math.floor(Math.max(0, worldDist) / 30) % BIOMES.length;
+        if (BIOMES[biomeIdx].name === 'snow' || BIOMES[(biomeIdx + 1) % BIOMES.length].name === 'snow') {
           ctx.fillStyle = 'rgba(255,255,255,0.2)';
           ctx.beginPath(); ctx.moveTo(0, -t.h); ctx.lineTo(-t.h * 0.12, -t.h * 0.85); ctx.lineTo(t.h * 0.12, -t.h * 0.85); ctx.fill();
         }

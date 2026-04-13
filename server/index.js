@@ -206,9 +206,18 @@ function handleTournamentGameEnd(msg) {
   // Clear safety timeout
   if (tournament._gameTimeout) { clearTimeout(tournament._gameTimeout); tournament._gameTimeout = null; }
 
+  // Prevent double-invocation
+  if (tournament.phase !== 'playing') return;
+
   // Award points: winner gets 3, everyone else alive gets 1
   if (msg.winnerId) {
     tournament.scores[msg.winnerId] = (tournament.scores[msg.winnerId] || 0) + 3;
+  }
+  // Survivors get 1 point each
+  for (const p of players.connected()) {
+    if (p.gameData && p.gameData.alive && p.id !== msg.winnerId) {
+      tournament.scores[p.id] = (tournament.scores[p.id] || 0) + 1;
+    }
   }
 
   // Show standings

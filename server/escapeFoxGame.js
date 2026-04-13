@@ -187,12 +187,12 @@ class EscapeFoxGame {
     }
     if (this.tick === FOX_LEAP_TICK && !this.foxMilestones.leap) {
       this.foxMilestones.leap = true;
-      // Leap forward but cap so fox can't overshoot all players
-      const maxPlayerDist = Math.max(...this.players.connected()
-        .filter(p => p.gameData && p.gameData.alive)
-        .map(p => this.worldDist + p.gameData.distOffset));
-      const leapTarget = this.foxDist + FOX_LEAP_DIST;
-      this.foxDist = Math.min(leapTarget, maxPlayerDist - FOX_CATCH_DIST - 0.5);
+      const alivePlayers = this.players.connected().filter(p => p.gameData && p.gameData.alive);
+      if (alivePlayers.length > 0) {
+        const maxPlayerDist = Math.max(...alivePlayers.map(p => this.worldDist + p.gameData.distOffset));
+        const leapTarget = this.foxDist + FOX_LEAP_DIST;
+        this.foxDist = Math.min(leapTarget, maxPlayerDist - FOX_CATCH_DIST - 0.5);
+      }
       this.broadcast({ type: 'fox_leap', gameId: 'escapeFox' });
     }
 
@@ -380,7 +380,7 @@ class EscapeFoxGame {
         if (obs.type === 'high') wasDangerous = !gd.sliding;
         else wasDangerous = gd.y < HIT_HEIGHT + 0.05;
 
-        if (!wasDangerous) {
+        if (wasDangerous) {
           gd.nearMissCombo++;
           gd.combo++;
           gd.score += 5 * gd.combo;

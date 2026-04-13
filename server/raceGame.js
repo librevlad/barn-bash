@@ -153,7 +153,7 @@ class RaceGame {
 
     // Check if all finished
     const conn = this.players.connected();
-    const allFinished = conn.every(p => p.gameData && (p.gameData.finished || !p.gameData.alive));
+    const allFinished = conn.every(p => p.gameData && p.gameData.finished);
     if (allFinished && this.finishOrder.length > 0) {
       this._endRace();
       return;

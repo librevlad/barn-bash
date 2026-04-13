@@ -282,7 +282,12 @@ class MeteorGame {
         return Math.sqrt(dx * dx + dz * dz);
       }));
 
-      if (!g.singed && closestDist < (allSafeZones[0].r + SINGED_THRESHOLD)) {
+      // Use closest zone's radius, not first zone's
+      const closestZoneR = allSafeZones.reduce((best, sz) => {
+        const d = Math.sqrt((g.x - sz.x) ** 2 + (g.z - sz.z) ** 2);
+        return d < best.d ? { d, r: sz.r } : best;
+      }, { d: Infinity, r: allSafeZones[0].r }).r;
+      if (!g.singed && closestDist < (closestZoneR + SINGED_THRESHOLD)) {
         g.singed = true;
         g.combo = 0;
         this.broadcast({ type: 'singed', playerId: p.id, gameId: 'meteor' });
@@ -371,7 +376,7 @@ class MeteorGame {
     if (g.cd > 0) return;
 
     const speed = g.sprinting
-      ? SPRINT_SPEED + g.speedBonus
+      ? SPRINT_SPEED + (g.moveSpeed - MOVE_SPEED)
       : (g.sprintBoost > 0 ? g.moveSpeed * 1.5 : g.moveSpeed);
 
     if (action === 'move' && msg && msg.direction) {

@@ -11,12 +11,14 @@ const Tournament = (() => {
   const GAME_NAMES = {
     escapeFox: 'ESCAPE THE FOX',
     hillKing: 'KING OF THE HILL',
-    meteor: 'METEOR SHOWER'
+    meteor: 'METEOR SHOWER',
+    race: 'GRAND PRIX'
   };
   const GAME_URLS = {
     escapeFox: '/host-escape/',
     hillKing: '/host-hill/',
-    meteor: '/host-meteor/'
+    meteor: '/host-meteor/',
+    race: '/host-race/'
   };
 
   function createOverlay() {
