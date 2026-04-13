@@ -281,7 +281,7 @@ class RaceGame {
         const dx = g.x - item.x, dz = g.z - item.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
         // Fixed radius pickup — no magnetism (items stay at spawn positions)
-        if (dist < 2.0) {
+        if (dist < 2.5) {
           g.item = item.type;
           g.itemTimer = 0;
           item.active = false;

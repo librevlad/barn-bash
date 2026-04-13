@@ -465,6 +465,16 @@ const Render2D = (() => {
         particles.burst(sx, sy, 1, { ...ParticleSystem.PRESETS.SMOKE, speed: 0.3, life: 0.3, size: 4 });
       }
 
+      // Held item indicator above player
+      if (e.data.item) {
+        const itemIcons = { boost: '⚡', oil: '💧', missile: '🚀' };
+        ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.beginPath(); ctx.arc(s.x, s.y - R - 12, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.fillText(itemIcons[e.data.item] || '?', s.x, s.y - R - 12);
+      }
+
       // Name label
       if (!e.data.finished) {
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
