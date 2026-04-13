@@ -35,6 +35,10 @@ function resolve(url) {
   if (url.startsWith('/shared/') && url.endsWith('.js'))
     return path.join(root, 'client-shared', path.basename(url));
 
+  // Engine modules
+  if (url.startsWith('/engine/') && url.endsWith('.js'))
+    return path.join(root, 'engine', path.basename(url));
+
   // Escape host — full subpath serving
   if (url === '/host-escape/')
     return path.join(root, 'client-host-escape', 'index.html');
