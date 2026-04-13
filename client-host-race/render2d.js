@@ -467,8 +467,21 @@ const Render2D = (() => {
 
     for (const e of entities.all()) {
       if (!e.visible) continue;
-      // Interpolate
-      e.lerp(0.25);
+      // Time-based interpolation between prev and target server states
+      // Server sends every 100ms. We interpolate from prev→target over that window.
+      const elapsed = performance.now() - lastStateTime;
+      const t = Math.min(1, elapsed / 100); // 0→1 over 100ms window
+      const prevX = e._prevX !== undefined ? e._prevX : e.x;
+      const prevY = e._prevY !== undefined ? e._prevY : e.y;
+      const prevA = e._prevAngle !== undefined ? e._prevAngle : e.angle;
+      const tgt = e._target || {};
+      e.x = prevX + ((tgt.x !== undefined ? tgt.x : prevX) - prevX) * t;
+      e.y = prevY + ((tgt.y !== undefined ? tgt.y : prevY) - prevY) * t;
+      // Angle: shortest path
+      let da = ((tgt.angle !== undefined ? tgt.angle : prevA) - prevA);
+      while (da > Math.PI) da -= Math.PI * 2;
+      while (da < -Math.PI) da += Math.PI * 2;
+      e.angle = prevA + da * t;
 
       const s = camera.worldToScreen(e.x, e.y);
       const R = 14;
@@ -652,6 +665,8 @@ const Render2D = (() => {
   // ============================================================
   // PUBLIC API
   // ============================================================
+  let lastStateTime = 0;
+
   function updateState(state) {
     track = state.track || [];
     trackWidth = state.trackWidth || 2.5;
@@ -659,15 +674,21 @@ const Render2D = (() => {
     items = state.items || [];
     oilSlicks = state.oilSlicks || [];
     missiles = state.missiles || [];
+    lastStateTime = performance.now();
 
-    // Update entities from server state
+    // Update entities — store previous position for smooth interpolation
     for (const [id, pd] of Object.entries(state.players)) {
       let e = entities.get(id);
       if (!e) {
         e = entities.create(id, 'player');
-        e.x = pd.x; e.y = pd.z;
+        e.x = pd.x; e.y = pd.z; e.angle = pd.angle;
         e.color = pd.color;
+        e._prevX = pd.x; e._prevY = pd.z; e._prevAngle = pd.angle;
       }
+      // Store previous as current before updating target
+      e._prevX = e.x;
+      e._prevY = e.y;
+      e._prevAngle = e.angle;
       e.setTarget({
         x: pd.x, y: pd.z, angle: pd.angle,
       });
