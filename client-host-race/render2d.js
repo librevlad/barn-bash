@@ -41,21 +41,8 @@ const Render2D = (() => {
     camera.setPosition(0, 1);
     camera.setZoom(40);
 
-    // Load sprites
-    if (typeof SpriteLoader !== 'undefined' && typeof SPRITE_ATLAS !== 'undefined') {
-      SpriteLoader.loadSheet('main', SPRITE_ATLAS.sheet).then(function () {
-        var defs = [];
-        for (var name in SPRITE_ATLAS.sprites) {
-          var s = SPRITE_ATLAS.sprites[name];
-          defs.push({ name: name, x: s.x, y: s.y, w: s.w, h: s.h });
-        }
-        SpriteLoader.defineAll('main', defs);
-        spritesReady = true;
-        console.log('Sprites loaded:', SpriteLoader.getProgress().loaded);
-      }).catch(function (e) {
-        console.warn('Sprites failed to load, using procedural fallback:', e.message);
-      });
-    }
+    // Sprites disabled — using enhanced procedural rendering
+    spritesReady = false;
 
     // Setup scene layers
     scene.createLayer('grass', 0);
@@ -333,47 +320,75 @@ const Render2D = (() => {
     for (const obj of trackObjects) {
       const s = camera.worldToScreen(obj.x, obj.z);
       if (s.x < -80 || s.x > W + 80 || s.y < -80 || s.y > H + 80) continue;
-      const sz = obj.size * zoom * 0.3;
-      const spriteSize = sz * 4; // sprites are larger than procedural
+      const sz = obj.size * zoom * 0.4; // slightly bigger
 
-      if (spritesReady && obj.type === 'tree') {
-        // Use sprite tree
-        if (!obj.spriteName) {
-          obj.spriteName = TREE_SPRITES[Math.floor(obj.shade * TREE_SPRITES.length) % TREE_SPRITES.length];
-        }
-        SpriteLoader.draw(ctx, obj.spriteName, s.x, s.y - spriteSize * 0.3, {
-          width: spriteSize, height: spriteSize, alpha: 0.95,
-        });
-      } else if (spritesReady && obj.type === 'rock') {
-        if (!obj.spriteName) {
-          obj.spriteName = ROCK_SPRITES[Math.floor(obj.shade * ROCK_SPRITES.length) % ROCK_SPRITES.length];
-        }
-        SpriteLoader.draw(ctx, obj.spriteName, s.x, s.y, {
-          width: spriteSize * 0.8, height: spriteSize * 0.6,
-        });
-      } else if (spritesReady && obj.type === 'barrier') {
-        SpriteLoader.draw(ctx, 'tires-1', s.x, s.y, {
-          width: spriteSize * 0.7, height: spriteSize * 0.5,
-        });
-      } else {
-        // Procedural fallback
-        if (obj.type === 'tree') {
+      if (obj.type === 'tree') {
+        const tr = sz * 1.2; // tree radius
+        // Ground shadow (ellipse, offset)
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath(); ctx.ellipse(s.x + 3, s.y + 4, tr * 1.1, tr * 0.5, 0.2, 0, Math.PI * 2); ctx.fill();
+
+        // Trunk
+        ctx.fillStyle = '#5a3a1a';
+        ctx.fillRect(s.x - sz * 0.12, s.y - sz * 0.2, sz * 0.24, sz * 0.5);
+
+        // Canopy — gradient (dark bottom, bright top)
+        const g = Math.floor(60 + obj.shade * 50);
+        const canopyGrad = ctx.createRadialGradient(s.x - tr * 0.2, s.y - tr * 0.5, tr * 0.1, s.x, s.y - tr * 0.2, tr);
+        canopyGrad.addColorStop(0, `rgb(${50 + g * 0.3},${g + 40},${30 + g * 0.2})`);
+        canopyGrad.addColorStop(0.6, `rgb(${30 + g * 0.2},${g + 10},${20 + g * 0.1})`);
+        canopyGrad.addColorStop(1, `rgb(${15 + g * 0.1},${g - 15},${10})`);
+        ctx.fillStyle = canopyGrad;
+        ctx.beginPath(); ctx.arc(s.x, s.y - tr * 0.3, tr, 0, Math.PI * 2); ctx.fill();
+
+        // Secondary canopy blob (depth)
+        ctx.fillStyle = `rgba(${40 + g * 0.3},${g + 30},${25 + g * 0.15},0.7)`;
+        ctx.beginPath(); ctx.arc(s.x - tr * 0.3, s.y - tr * 0.5, tr * 0.6, 0, Math.PI * 2); ctx.fill();
+
+        // Highlight spot
+        ctx.fillStyle = `rgba(${70 + g * 0.3},${g + 60},${40 + g * 0.2},0.4)`;
+        ctx.beginPath(); ctx.arc(s.x + tr * 0.15, s.y - tr * 0.55, tr * 0.35, 0, Math.PI * 2); ctx.fill();
+
+        // Outline
+        ctx.strokeStyle = `rgba(${15},${g - 20},${8},0.3)`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(s.x, s.y - tr * 0.3, tr, 0, Math.PI * 2); ctx.stroke();
+
+      } else if (obj.type === 'rock') {
+        const rr = sz * 0.7;
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.beginPath(); ctx.ellipse(s.x + 2, s.y + 2, rr * 0.9, rr * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+        // Rock body with gradient
+        const rockGrad = ctx.createRadialGradient(s.x - rr * 0.2, s.y - rr * 0.2, 0, s.x, s.y, rr);
+        const rb = Math.floor(80 + obj.shade * 50);
+        rockGrad.addColorStop(0, `rgb(${rb + 30},${rb + 20},${rb + 10})`);
+        rockGrad.addColorStop(0.7, `rgb(${rb},${rb - 10},${rb - 20})`);
+        rockGrad.addColorStop(1, `rgb(${rb - 20},${rb - 30},${rb - 35})`);
+        ctx.fillStyle = rockGrad;
+        ctx.beginPath(); ctx.ellipse(s.x, s.y, rr, rr * 0.65, obj.shade * 0.5, 0, Math.PI * 2); ctx.fill();
+        // Specular
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.beginPath(); ctx.ellipse(s.x - rr * 0.2, s.y - rr * 0.15, rr * 0.25, rr * 0.18, -0.3, 0, Math.PI * 2); ctx.fill();
+        // Outline
+        ctx.strokeStyle = `rgba(${rb - 40},${rb - 50},${rb - 55},0.4)`;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.ellipse(s.x, s.y, rr, rr * 0.65, obj.shade * 0.5, 0, Math.PI * 2); ctx.stroke();
+
+      } else if (obj.type === 'barrier') {
+        // Tire stack — stacked circles
+        for (let b = 0; b < 3; b++) {
+          const bx = s.x + Math.cos(obj.angle) * b * sz * 0.45;
+          const by = s.y + Math.sin(obj.angle) * b * sz * 0.45;
+          const br = sz * 0.22;
+          // Tire shadow
           ctx.fillStyle = 'rgba(0,0,0,0.15)';
-          ctx.beginPath(); ctx.ellipse(s.x + 3, s.y + 3, sz * 1.2, sz * 0.6, 0.3, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = '#4a3520';
-          ctx.fillRect(s.x - sz * 0.1, s.y - sz * 0.3, sz * 0.2, sz * 0.6);
-          ctx.fillStyle = `rgba(30,${60 + obj.shade * 40},25,0.9)`;
-          ctx.beginPath(); ctx.arc(s.x, s.y - sz * 0.3, sz * 0.8, 0, Math.PI * 2); ctx.fill();
-        } else if (obj.type === 'rock') {
-          ctx.fillStyle = `rgba(${100 + obj.shade * 40},${90 + obj.shade * 30},${70 + obj.shade * 20},0.8)`;
-          ctx.beginPath(); ctx.ellipse(s.x, s.y, sz * 0.5, sz * 0.35, obj.shade, 0, Math.PI * 2); ctx.fill();
-        } else if (obj.type === 'barrier') {
-          for (let b = 0; b < 3; b++) {
-            const bx = s.x + Math.cos(obj.angle) * b * sz * 0.4;
-            const bz = s.y + Math.sin(obj.angle) * b * sz * 0.4;
-            ctx.fillStyle = b % 2 === 0 ? 'rgba(200,40,40,0.6)' : 'rgba(240,240,240,0.5)';
-            ctx.beginPath(); ctx.arc(bx, bz, sz * 0.2, 0, Math.PI * 2); ctx.fill();
-          }
+          ctx.beginPath(); ctx.ellipse(bx + 1, by + 2, br * 1.1, br * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+          // Tire body
+          ctx.fillStyle = b % 2 === 0 ? '#cc3333' : '#eee';
+          ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.stroke();
         }
       }
     }
