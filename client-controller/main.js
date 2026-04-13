@@ -16,7 +16,7 @@ let gameId = 'escapeFox', tapped = false;
 const GAME_NAMES = { escapeFox: 'ESCAPE THE FOX', hillKing: 'KING OF THE HILL', meteor: 'METEOR SHOWER' };
 const GESTURE_HINTS = {
   escapeFox: 'TAP = jump · SWIPE ←→ = change lane · SWIPE ↓ = slide under',
-  hillKing:  'SWIPE = move · TAP = dash attack · HOLD = shield',
+  hillKing:  'SWIPE = move · SWIPE DOWN = slam · TAP = dash · HOLD = shield',
   meteor:    'TAP = dodge to safety · SWIPE = move · HOLD = sprint',
   race:      'SWIPE ←→ = steer · TAP = boost or use item · HOLD = drift',
 };
@@ -171,9 +171,15 @@ function onSwipe(dir) {
       Sound.play('slide');
     }
   } else if (gameId === 'hillKing') {
-    // Swipe = direct movement (orbit + radius control)
-    send('move', dir);
-    Sound.play('dodge');
+    if (dir === 'down') {
+      // Swipe down = ground pound (AoE slam)
+      send('groundPound');
+      Sound.play('slam');
+    } else {
+      // Swipe left/right/up = direct movement (orbit + radius control)
+      send('move', dir);
+      Sound.play('dodge');
+    }
   } else if (gameId === 'meteor') {
     send('move', dir);
     Sound.play('dodge');

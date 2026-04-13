@@ -258,6 +258,17 @@ class HillGame {
       return;
     }
 
+    // Time limit: if sudden death has run 500+ ticks (25s), highest score wins
+    if (this.tick >= SUDDEN_DEATH_TICK + 500 && still.length >= 2) {
+      this.phase = 'result';
+      still.sort((a, b) => (b.gameData.score || 0) - (a.gameData.score || 0));
+      this.winner = still[0].id;
+      clearInterval(this._iv);
+      this.broadcastState();
+      this.broadcast({ type: 'game_over', winnerId: this.winner, gameId: 'hillKing', byScore: true });
+      return;
+    }
+
     if (this.tick % 2 === 0) this.broadcastState();
   }
 

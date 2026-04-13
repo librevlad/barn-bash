@@ -264,6 +264,24 @@ const Render2D = (() => {
         running: false,
         character: e.character,
       });
+
+      // Score label below player
+      if (e.data.score > 0) {
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = 'rgba(255,200,50,0.9)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(e.data.score, s.x, s.y + 28);
+      }
+
+      // Name label above player
+      if (e.data.name) {
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(e.data.name, s.x, s.y - 28);
+      }
     }
   }
 
@@ -307,6 +325,8 @@ const Render2D = (() => {
       e.data.tRadius = pd.radius;
 
       e.data.dashing = pd.dashing;
+      e.data.score = pd.score || 0;
+      e.data.name = pd.name || null;
       e.visible = pd.alive;
       e.color = pd.color;
       e.character = pd.character || null;
