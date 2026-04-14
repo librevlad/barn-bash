@@ -64,9 +64,14 @@ const ITEM_SPAWNS = [
 const ITEM_TYPES = ['boost', 'oil', 'missile'];
 
 const TRAITS = {
-  cat:  { maxSpeed: 0.115, accel: 0.004, handling: 0.065 }, // balanced — best handling
-  frog: { maxSpeed: 0.11,  accel: 0.005, handling: 0.055 }, // quick recovery — best accel
-  wolf: { maxSpeed: 0.125, accel: 0.003, handling: 0.045 }, // raw speed — worst turning
+  cat:     { maxSpeed: 0.115, accel: 0.004, handling: 0.065 }, // agile — best handling
+  frog:    { maxSpeed: 0.11,  accel: 0.005, handling: 0.055 }, // bouncy — best accel
+  wolf:    { maxSpeed: 0.125, accel: 0.003, handling: 0.045 }, // power — raw speed
+  bear:    { maxSpeed: 0.105, accel: 0.003, handling: 0.04  }, // tank — slowest, heaviest
+  bunny:   { maxSpeed: 0.12,  accel: 0.006, handling: 0.06  }, // speed — fast accel
+  pig:     { maxSpeed: 0.11,  accel: 0.004, handling: 0.05  }, // endurance — balanced
+  chicken: { maxSpeed: 0.115, accel: 0.005, handling: 0.055 }, // chaos — erratic
+  raccoon: { maxSpeed: 0.115, accel: 0.004, handling: 0.058 }, // trickster — sneaky
 };
 
 class RaceGame {

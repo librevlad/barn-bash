@@ -471,7 +471,7 @@ const Render2D = (() => {
   // ============================================================
   function drawPlayers(ctx) {
     const clock = renderLoop ? renderLoop.getClock() : 0;
-    const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
+    const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺', bear: '🐻', bunny: '🐰', pig: '🐷', chicken: '🐔', raccoon: '🦝' };
 
     for (const e of entities.all()) {
       if (!e.visible) continue;

@@ -99,6 +99,11 @@ const CHAR_REACTIONS = {
   cat: ['"A cat. How... predictable."', '"Cats always land on their feet. Let\'s test that."'],
   frog: ['"A frog? This should be... slimy."', '"Ribbit ribbit. That\'s frog for \'I\'m doomed.\'"'],
   wolf: ['"A wolf. Bold choice. I respect hunger."', '"Fangs won\'t save you here, wolf."'],
+  bear: ['"A bear. This should be... heavy."', '"Slow and steady. Emphasis on slow."'],
+  bunny: ['"A bunny! How adorable. How doomed."', '"Fast little thing. I like a moving target."'],
+  pig: ['"A pig. Stubborn. I can work with that."', '"Oink oink. That\'s pig for \'I regret nothing.\'"'],
+  chicken: ['"A chicken! Brave choice. Or not."', '"Why did the chicken join the game show? We\'re about to find out."'],
+  raccoon: ['"A raccoon. Watch your pockets, everyone."', '"Sneaky. I respect that. Mostly because I am too."'],
 };
 const GENERIC_REACTIONS = [
   '"{name} has entered the arena."',
@@ -128,8 +133,8 @@ function showJoinReaction(msg) {
 // ============================================================
 // LOBBY RENDERING
 // ============================================================
-const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
-const charLabels = { cat: 'Cat', frog: 'Frog', wolf: 'Wolf' };
+const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺', bear: '🐻', bunny: '🐰', pig: '🐷', chicken: '🐔', raccoon: '🦝' };
+const charLabels = { cat: 'Cat', frog: 'Frog', wolf: 'Wolf', bear: 'Bear', bunny: 'Bunny', pig: 'Pig', chicken: 'Chicken', raccoon: 'Raccoon' };
 
 function navigateToGame(gameId) {
   const urls = { escapeFox: '/host-escape/', hillKing: '/host-hill/', meteor: '/host-meteor/', race: '/host-race/' };

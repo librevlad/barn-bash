@@ -7,7 +7,7 @@
 
 const HUD = (() => {
   let container = null;
-  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
+  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺', bear: '🐻', bunny: '🐰', pig: '🐷', chicken: '🐔', raccoon: '🦝' };
 
   function init() {
     if (container) return;

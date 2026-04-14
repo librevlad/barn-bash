@@ -63,9 +63,14 @@ const PATTERNS = [
 
 // Character traits
 const TRAITS = {
-  cat:  { jumpBonus: 0.03, maxJumps: MAX_JUMPS, slideBonus: 0, label: 'High Jumper' },
-  frog: { jumpBonus: 0,    maxJumps: 3,         slideBonus: 0, label: 'Triple Jump' },
-  wolf: { jumpBonus: 0,    maxJumps: MAX_JUMPS, slideBonus: 4, label: 'Long Slide' },
+  cat:     { jumpBonus: 0.03, maxJumps: MAX_JUMPS, slideBonus: 0, label: 'High Jumper' },
+  frog:    { jumpBonus: 0,    maxJumps: 3,         slideBonus: 0, label: 'Triple Jump' },
+  wolf:    { jumpBonus: 0,    maxJumps: MAX_JUMPS, slideBonus: 4, label: 'Long Slide' },
+  bear:    { jumpBonus: 0,    maxJumps: MAX_JUMPS, slideBonus: 2, label: 'Tough' },
+  bunny:   { jumpBonus: 0.02, maxJumps: 3,         slideBonus: 0, label: 'Quick Feet' },
+  pig:     { jumpBonus: 0,    maxJumps: MAX_JUMPS, slideBonus: 6, label: 'Iron Slide' },
+  chicken: { jumpBonus: 0.04, maxJumps: MAX_JUMPS, slideBonus: 0, label: 'Panic Jump' },
+  raccoon: { jumpBonus: 0.01, maxJumps: MAX_JUMPS, slideBonus: 2, label: 'Nimble' },
 };
 const VALID_CHARS = Object.keys(TRAITS);
 

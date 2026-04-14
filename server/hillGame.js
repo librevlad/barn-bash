@@ -49,9 +49,14 @@ const ICE_FRICTION = 0.95;
 
 // Character traits
 const TRAITS = {
-  cat:  { orbitBonus: 0.004, pushBonus: 0, gpoundBonus: 0 },
-  frog: { orbitBonus: 0,     pushBonus: 0, gpoundBonus: 0.5 },
-  wolf: { orbitBonus: 0,     pushBonus: 0.13, gpoundBonus: 0 },
+  cat:     { orbitBonus: 0.004, pushBonus: 0,    gpoundBonus: 0 },
+  frog:    { orbitBonus: 0,     pushBonus: 0,    gpoundBonus: 0.5 },
+  wolf:    { orbitBonus: 0,     pushBonus: 0.13, gpoundBonus: 0 },
+  bear:    { orbitBonus: 0,     pushBonus: 0.2,  gpoundBonus: 0.3 },
+  bunny:   { orbitBonus: 0.006, pushBonus: 0,    gpoundBonus: 0 },
+  pig:     { orbitBonus: 0,     pushBonus: 0.05, gpoundBonus: 0.2 },
+  chicken: { orbitBonus: 0.003, pushBonus: 0,    gpoundBonus: 0.8 },
+  raccoon: { orbitBonus: 0.003, pushBonus: 0.08, gpoundBonus: 0 },
 };
 
 class HillGame {

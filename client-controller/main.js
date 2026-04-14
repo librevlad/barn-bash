@@ -21,12 +21,23 @@ const GESTURE_HINTS = {
   race:      'SWIPE ←→ = steer · TAP = boost or use item · HOLD = drift',
 };
 
-const CHAR_NAMES = { cat: 'Cat', frog: 'Frog', wolf: 'Wolf' };
-const CHAR_TRAITS = { cat: 'High Jumper', frog: 'Triple Jump', wolf: 'Long Slide' };
+const CHAR_NAMES = {
+  cat: 'Cat', frog: 'Frog', wolf: 'Wolf', bear: 'Bear',
+  bunny: 'Bunny', pig: 'Pig', chicken: 'Chicken', raccoon: 'Raccoon',
+};
+const CHAR_TRAITS = {
+  cat: 'Agile', frog: 'Bouncy', wolf: 'Powerful', bear: 'Tank',
+  bunny: 'Speedy', pig: 'Endurance', chicken: 'Chaotic', raccoon: 'Trickster',
+};
 const CHAR_QUIPS = {
-  cat: '"A cat. How... predictable."',
-  frog: '"A frog? This should be... slimy."',
-  wolf: '"A wolf. Bold choice. I respect hunger."',
+  cat: '"Cats always land on their feet. Let\'s test that."',
+  frog: '"Ribbit ribbit. That\'s frog for \'I\'m doomed.\'"',
+  wolf: '"Fangs won\'t save you here, wolf."',
+  bear: '"A bear. Slow but... ow. That hurt."',
+  bunny: '"Fast little thing. Let\'s see how far that gets you."',
+  pig: '"Stubborn, aren\'t we? I like that. It\'ll make it funnier."',
+  chicken: '"A chicken! In a game show! What could go wrong?"',
+  raccoon: '"A raccoon. Sneaky. I\'ll be watching you."',
 };
 let selectedChar = null;
 let myName = null;
@@ -59,7 +70,8 @@ if (saved) {
 for (const [id, label] of Object.entries(CHAR_NAMES)) {
   const btn = document.createElement('button');
   btn.dataset.char = id;
-  btn.innerHTML = `<span style="font-size:18px;margin-right:8px">${id === 'cat' ? '🐱' : id === 'frog' ? '🐸' : '🐺'}</span> ${label} <span style="color:#888;font-size:11px;margin-left:4px">(${CHAR_TRAITS[id]})</span>`;
+  const EMOJIS = { cat:'🐱', frog:'🐸', wolf:'🐺', bear:'🐻', bunny:'🐰', pig:'🐷', chicken:'🐔', raccoon:'🦝' };
+  btn.innerHTML = `<span style="font-size:18px;margin-right:8px">${EMOJIS[id] || '?'}</span> ${label} <span style="color:#888;font-size:11px;margin-left:4px">(${CHAR_TRAITS[id]})</span>`;
   btn.style.cssText = 'display:flex;align-items:center;width:100%;padding:12px 14px;border:2px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.03);color:#eee;font-size:14px;cursor:pointer;font-family:inherit;text-align:left;';
   if (selectedChar === id) btn.style.borderColor = '#fff';
   btn.addEventListener('click', (e) => {
@@ -82,7 +94,7 @@ if (selectedChar) $obCharQuip.textContent = CHAR_QUIPS[selectedChar] || '';
 
 // Quick-join: skip onboarding if returning player
 if (quickJoinAvailable) {
-  const charEmoji = { cat: '🐱', frog: '🐸', wolf: '🐺' };
+  const charEmoji = { cat:'🐱', frog:'🐸', wolf:'🐺', bear:'🐻', bunny:'🐰', pig:'🐷', chicken:'🐔', raccoon:'🦝' };
   const quickBtn = document.createElement('button');
   quickBtn.innerHTML = `${charEmoji[selectedChar] || '?'} Play as <b>${myName}</b>`;
   quickBtn.style.cssText = 'display:block;width:90%;max-width:280px;margin:10px auto 0;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff3366,#cc33ff);color:white;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;';
@@ -363,7 +375,7 @@ function onMessage(e) {
               $result.className = '';
             }
           } else if (phase === 'lobby') {
-            const charEmoji = { cat: '🐱', frog: '🐸', wolf: '🐺' };
+            const charEmoji = { cat:'🐱', frog:'🐸', wolf:'🐺', bear:'🐻', bunny:'🐰', pig:'🐷', chicken:'🐔', raccoon:'🦝' };
             $score.textContent = charEmoji[selectedChar] || '?';
             $status.textContent = 'Ready! Waiting for host...';
             $result.textContent = ''; $result.className = '';

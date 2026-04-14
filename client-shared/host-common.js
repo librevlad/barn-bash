@@ -5,7 +5,7 @@
 // Include via <script src="/shared/host-common.js"></script>
 
 const HostCommon = (() => {
-  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
+  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺', bear: '🐻', bunny: '🐰', pig: '🐷', chicken: '🐔', raccoon: '🦝' };
   const gameUrls = {
     escapeFox: '/host-escape/',
     hillKing: '/host-hill/',

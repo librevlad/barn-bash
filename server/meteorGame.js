@@ -47,9 +47,14 @@ const RADAR_PREVIEW_TICKS = 20;
 
 // Character traits
 const TRAITS = {
-  cat:  { speedBonus: 0.09, dodgeBonus: 0, pushBonus: 0 },
-  frog: { speedBonus: 0,    dodgeBonus: 0.14, pushBonus: 0 },
-  wolf: { speedBonus: 0,    dodgeBonus: 0, pushBonus: 0.2 },
+  cat:     { speedBonus: 0.09, dodgeBonus: 0,    pushBonus: 0 },
+  frog:    { speedBonus: 0,    dodgeBonus: 0.14, pushBonus: 0 },
+  wolf:    { speedBonus: 0,    dodgeBonus: 0,    pushBonus: 0.2 },
+  bear:    { speedBonus: 0,    dodgeBonus: 0,    pushBonus: 0.3 },
+  bunny:   { speedBonus: 0.12, dodgeBonus: 0.08, pushBonus: 0 },
+  pig:     { speedBonus: 0.04, dodgeBonus: 0.06, pushBonus: 0.1 },
+  chicken: { speedBonus: 0.06, dodgeBonus: 0.12, pushBonus: 0 },
+  raccoon: { speedBonus: 0.06, dodgeBonus: 0,    pushBonus: 0.15 },
 };
 
 class MeteorGame {

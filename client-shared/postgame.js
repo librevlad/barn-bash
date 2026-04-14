@@ -8,7 +8,7 @@ const PostGame = (() => {
   let overlay = null;
   let countdownTimer = null;
 
-  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
+  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺', bear: '🐻', bunny: '🐰', pig: '🐷', chicken: '🐔', raccoon: '🦝' };
 
   function createOverlay() {
     if (overlay) return;

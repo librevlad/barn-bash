@@ -181,7 +181,7 @@ function showWinner(winnerId) {
   if (typeof HUD !== 'undefined') HUD.hide();
   $hud.style.display = 'none';
   $message.classList.remove('show');
-  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺' };
+  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺', bear: '🐻', bunny: '🐰', pig: '🐷', chicken: '🐔', raccoon: '🦝' };
   const p = winnerId ? state.players[winnerId] : null;
   if (p) {
     const icon = charIcons[p.character] || '';

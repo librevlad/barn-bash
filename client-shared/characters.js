@@ -128,6 +128,82 @@ const CharDraw = (() => {
       ctx.beginPath(); ctx.moveTo(-R * 0.5, -R * 0.7); ctx.lineTo(-R * 0.6, -R * 1.0); ctx.lineTo(-R * 0.35, -R * 0.8); ctx.fill();
       ctx.beginPath(); ctx.moveTo(R * 0.5, -R * 0.7); ctx.lineTo(R * 0.6, -R * 1.0); ctx.lineTo(R * 0.35, -R * 0.8); ctx.fill();
       ctx.globalAlpha = 1;
+    } else if (character === 'bear') {
+      // Round small ears
+      ctx.fillStyle = darken(color, 15);
+      ctx.beginPath(); ctx.arc(-R * 0.55, -R * 0.85, R * 0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(R * 0.55, -R * 0.85, R * 0.3, 0, Math.PI * 2); ctx.fill();
+      // Inner ears
+      ctx.fillStyle = lighten(color, 20);
+      ctx.beginPath(); ctx.arc(-R * 0.55, -R * 0.85, R * 0.15, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(R * 0.55, -R * 0.85, R * 0.15, 0, Math.PI * 2); ctx.fill();
+      // Tan muzzle patch
+      ctx.fillStyle = lighten(color, 35);
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath(); ctx.ellipse(0, R * 0.15, R * 0.45, R * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (character === 'bunny') {
+      // Long upright ears
+      ctx.fillStyle = darken(color, 10);
+      ctx.beginPath();
+      ctx.ellipse(-R * 0.3, -R * 1.25, R * 0.15, R * 0.55, -0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(R * 0.3, -R * 1.25, R * 0.15, R * 0.55, 0.1, 0, Math.PI * 2); ctx.fill();
+      // Pink inner ears
+      ctx.fillStyle = 'rgba(255,150,170,0.4)';
+      ctx.beginPath();
+      ctx.ellipse(-R * 0.3, -R * 1.25, R * 0.08, R * 0.4, -0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(R * 0.3, -R * 1.25, R * 0.08, R * 0.4, 0.1, 0, Math.PI * 2); ctx.fill();
+      // Cotton tail (back)
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.beginPath(); ctx.arc(0, R * 0.7, R * 0.2, 0, Math.PI * 2); ctx.fill();
+    } else if (character === 'pig') {
+      // Small round ears
+      ctx.fillStyle = darken(color, 15);
+      ctx.beginPath(); ctx.arc(-R * 0.5, -R * 0.75, R * 0.22, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(R * 0.5, -R * 0.75, R * 0.22, 0, Math.PI * 2); ctx.fill();
+      // Snout
+      ctx.fillStyle = darken(color, 8);
+      ctx.beginPath(); ctx.ellipse(0, R * 0.15, R * 0.3, R * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+      // Nostrils
+      ctx.fillStyle = darken(color, 30);
+      ctx.beginPath(); ctx.ellipse(-R * 0.1, R * 0.18, R * 0.06, R * 0.04, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(R * 0.1, R * 0.18, R * 0.06, R * 0.04, 0, 0, Math.PI * 2); ctx.fill();
+      // Rosy cheeks
+      ctx.fillStyle = 'rgba(255,100,120,0.15)';
+      ctx.beginPath(); ctx.ellipse(-R * 0.45, R * 0.1, R * 0.18, R * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(R * 0.45, R * 0.1, R * 0.18, R * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+    } else if (character === 'chicken') {
+      // Red comb on top
+      ctx.fillStyle = '#cc3333';
+      ctx.beginPath(); ctx.arc(-R * 0.15, -R * 1.1, R * 0.14, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -R * 1.2, R * 0.16, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(R * 0.15, -R * 1.1, R * 0.14, 0, Math.PI * 2); ctx.fill();
+      // Red wattle
+      ctx.beginPath(); ctx.ellipse(0, R * 0.45, R * 0.08, R * 0.14, 0, 0, Math.PI * 2); ctx.fill();
+      // Small wings on sides
+      ctx.fillStyle = darken(color, 10);
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath(); ctx.ellipse(-R * 0.85, R * 0.1, R * 0.25, R * 0.4, -0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(R * 0.85, R * 0.1, R * 0.25, R * 0.4, 0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (character === 'raccoon') {
+      // Pointed ears
+      ctx.fillStyle = darken(color, 15);
+      ctx.beginPath(); ctx.moveTo(-R * 0.5, -R * 0.65); ctx.lineTo(-R * 0.6, -R * 1.25); ctx.lineTo(-R * 0.15, -R * 0.8); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(R * 0.5, -R * 0.65); ctx.lineTo(R * 0.6, -R * 1.25); ctx.lineTo(R * 0.15, -R * 0.8); ctx.fill();
+      // Dark mask around eyes
+      ctx.fillStyle = 'rgba(30,30,40,0.45)';
+      ctx.beginPath(); ctx.ellipse(-R * 0.32, -R * 0.15, R * 0.28, R * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(R * 0.32, -R * 0.15, R * 0.28, R * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+      // Striped markings on body
+      ctx.strokeStyle = darken(color, 20);
+      ctx.lineWidth = R * 0.06;
+      ctx.globalAlpha = 0.2;
+      ctx.beginPath(); ctx.arc(0, R * 0.1, R * 0.7, 0.5, 2.6); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, R * 0.25, R * 0.6, 0.6, 2.5); ctx.stroke();
+      ctx.globalAlpha = 1;
     }
 
     // === EYES ===
@@ -197,10 +273,24 @@ const CharDraw = (() => {
       ctx.beginPath(); ctx.moveTo(-R * 0.12, mouthY + R * 0.02); ctx.lineTo(-R * 0.08, mouthY + R * 0.22); ctx.lineTo(-R * 0.04, mouthY + R * 0.02); ctx.fill();
       ctx.beginPath(); ctx.moveTo(R * 0.04, mouthY + R * 0.02); ctx.lineTo(R * 0.08, mouthY + R * 0.22); ctx.lineTo(R * 0.12, mouthY + R * 0.02); ctx.fill();
     }
-    // === CAT NOSE ===
+    // === CHARACTER MOUTH FEATURES ===
     if (character === 'cat') {
+      // Triangle nose
       ctx.fillStyle = darken(color, 30);
       ctx.beginPath(); ctx.moveTo(0, mouthY - R * 0.12); ctx.lineTo(-R * 0.08, mouthY - R * 0.04); ctx.lineTo(R * 0.08, mouthY - R * 0.04); ctx.fill();
+    } else if (character === 'bear') {
+      // Round nose
+      ctx.fillStyle = '#1a1a2a';
+      ctx.beginPath(); ctx.ellipse(0, mouthY - R * 0.1, R * 0.1, R * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+    } else if (character === 'bunny') {
+      // Buck teeth
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath(); ctx.rect(-R * 0.08, mouthY, R * 0.07, R * 0.14); ctx.fill();
+      ctx.beginPath(); ctx.rect(R * 0.01, mouthY, R * 0.07, R * 0.14); ctx.fill();
+    } else if (character === 'chicken') {
+      // Beak
+      ctx.fillStyle = '#dd9922';
+      ctx.beginPath(); ctx.moveTo(-R * 0.12, mouthY - R * 0.05); ctx.lineTo(0, mouthY + R * 0.15); ctx.lineTo(R * 0.12, mouthY - R * 0.05); ctx.fill();
     }
 
     // === BLUSH (subtle) ===

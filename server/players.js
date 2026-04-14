@@ -1,5 +1,5 @@
 const COLORS = ['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#e67e22','#1abc9c','#e84393'];
-const VALID_CHARACTERS = ['cat', 'frog', 'wolf'];
+const VALID_CHARACTERS = ['cat', 'frog', 'wolf', 'bear', 'bunny', 'pig', 'chicken', 'raccoon'];
 
 class Players {
   constructor() {
