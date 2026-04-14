@@ -110,17 +110,16 @@
       position: relative;
       width: 680px; max-width: 92vw;
       aspect-ratio: 691 / 361;
-      background: url('/assets/frame.png') center/100% 100% no-repeat,
-                  linear-gradient(180deg, #f0e4c8 0%, #e8d8b0 100%);
-      background-origin: border-box;
+      background: url('/assets/frame.png') center/100% 100% no-repeat;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      padding: 10% 10% 12% 10%; /* inset to stay inside wooden frame */
+      padding: 8% 12% 6% 12%;
     }
     .modal-title {
-      font-size: 18px; font-weight: 900; letter-spacing: 3px;
-      color: #5a3a1a; text-transform: uppercase; margin-bottom: 12px;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+      font-size: 20px; font-weight: 900; letter-spacing: 4px;
+      color: #4a2a0a; text-transform: uppercase; margin-bottom: 4px;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+      font-family: 'Georgia', 'Palatino', serif;
     }
     .modal-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -137,9 +136,9 @@
       border-color: rgba(100,70,30,0.5);
     }
     .modal-card:active { transform: scale(0.96); }
-    .modal-card-icon { font-size: 24px; margin-bottom: 4px; }
-    .modal-card-name { font-size: 13px; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px; }
-    .modal-card-desc { font-size: 9px; color: rgba(80,50,20,0.6); }
+    .modal-card-icon { font-size: 22px; margin-bottom: 2px; }
+    .modal-card-name { font-size: 14px; font-weight: 900; letter-spacing: 1.5px; margin-bottom: 2px; font-family: 'Georgia', serif; }
+    .modal-card-desc { font-size: 9px; color: rgba(80,50,20,0.5); font-style: italic; }
     .modal-card[data-game="escapeFox"] .modal-card-name { color: #c04010; }
     .modal-card[data-game="hillKing"] .modal-card-name { color: #7040b0; }
     .modal-card[data-game="meteor"] .modal-card-name { color: #c05010; }
@@ -152,18 +151,20 @@
     }
     .modal-tournament:hover { background: rgba(180,140,40,0.25); transform: translateY(-2px); }
     .modal-tournament:active { transform: scale(0.96); }
-    .modal-tournament-name { font-size: 13px; font-weight: 900; color: #8a6a10; letter-spacing: 2px; }
-    .modal-tournament-desc { font-size: 9px; color: rgba(80,50,20,0.5); margin-top: 2px; }
+    .modal-tournament-name { font-size: 14px; font-weight: 900; color: #7a5a08; letter-spacing: 3px; font-family: 'Georgia', serif; }
+    .modal-tournament-desc { font-size: 9px; color: rgba(80,50,20,0.5); margin-top: 2px; font-style: italic; }
     .modal-close {
-      margin-top: 10px; padding: 6px 20px;
-      background: rgba(100,70,30,0.15); border: 2px solid rgba(100,70,30,0.3);
-      border-radius: 8px; color: #5a3a1a; font-size: 12px; font-weight: 700;
-      cursor: pointer; font-family: inherit; transition: all 0.15s;
+      margin-top: 8px; padding: 6px 24px;
+      background: rgba(100,70,30,0.12); border: 2px solid rgba(100,70,30,0.25);
+      border-radius: 8px; color: #5a3a1a; font-size: 13px; font-weight: 800;
+      cursor: pointer; font-family: 'Georgia', serif; transition: all 0.15s;
+      letter-spacing: 1px;
     }
-    .modal-close:hover { background: rgba(100,70,30,0.25); }
+    .modal-close:hover { background: rgba(100,70,30,0.22); transform: scale(1.03); }
+    .modal-close:active { transform: scale(0.97); }
     .modal-need {
-      font-size: 11px; color: #993322; margin-bottom: 8px; display: none;
-      font-weight: 700;
+      font-size: 11px; color: #993322; margin-bottom: 6px; display: none;
+      font-weight: 700; font-style: italic;
     }
   </style>
 </head>
