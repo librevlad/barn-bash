@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html><head><title>Slicer</title></head>
+<body style="background:#222;color:#eee;font-family:monospace">
+<pre id="log"></pre>
+<div id="previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px"></div>
+<script>
+const log = s => { document.getElementById('log').textContent += s + '\n'; };
+
+// Final coordinates
+const BUTTONS = {
+  'play-normal':      {x:160, y:60,  w:240, h:185},
+  'play-hover':       {x:160, y:305, w:240, h:150},
+  'play-pressed':     {x:160, y:520, w:240, h:130},
+  'customize-normal': {x:500, y:60,  w:310, h:185},
+  'customize-hover':  {x:500, y:305, w:310, h:150},
+  'customize-pressed':{x:500, y:520, w:310, h:130},
+  'settings-normal':  {x:878, y:60,  w:290, h:185},
+  'settings-hover':   {x:878, y:305, w:290, h:150},
+  'settings-pressed': {x:878, y:520, w:290, h:130},
+};
+
+const img = new Image();
+img.src = '/assets/buttons.png';
+img.onload = () => {
+  log('Loaded: ' + img.width + 'x' + img.height);
+  window._results = {};
+
+  for (const [name, r] of Object.entries(BUTTONS)) {
+    const c = document.createElement('canvas');
+    c.width = r.w; c.height = r.h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+
+    // Remove bg: known bg color from spritesheet (light gray ~235)
+    const id = ctx.getImageData(0, 0, r.w, r.h);
+    const d = id.data;
+    const bgR = 235, bgG = 235, bgB = 237;
+    for (let i = 0; i < d.length; i += 4) {
+      const dr = Math.abs(d[i]-bgR), dg = Math.abs(d[i+1]-bgG), db = Math.abs(d[i+2]-bgB);
+      const maxD = Math.max(dr, dg, db);
+      if (maxD < 15) d[i+3] = 0;
+      else if (maxD < 30) d[i+3] = Math.round(255 * (maxD - 15) / 15);
+    }
+    ctx.putImageData(id, 0, 0);
+
+    window._results[name] = c.toDataURL('image/png');
+    log(name + ': ' + r.w + 'x' + r.h);
+
+    const div = document.createElement('div');
+    div.style.cssText = 'display:inline-block;background:#444;padding:6px;border-radius:8px;text-align:center';
+    div.innerHTML = '<div style="font-size:10px;color:#aaa;margin-bottom:4px">' + name + '</div>';
+    const p = new Image(); p.src = window._results[name]; p.style.height = '55px';
+    div.appendChild(p);
+    document.getElementById('previews').appendChild(div);
+  }
+  log('Done!');
+
+  // Debug: draw crop rectangles on full spritesheet
+  const dbg = document.createElement('canvas');
+  dbg.width = img.width; dbg.height = img.height;
+  dbg.style.cssText = 'width:100%;max-width:1200px;margin-top:20px;border:1px solid #555';
+  const dctx = dbg.getContext('2d');
+  dctx.drawImage(img, 0, 0);
+  dctx.strokeStyle = 'red'; dctx.lineWidth = 3;
+  for (const [name, r] of Object.entries(BUTTONS)) {
+    dctx.strokeRect(r.x, r.y, r.w, r.h);
+    dctx.fillStyle = 'red'; dctx.font = '14px monospace';
+    dctx.fillText(name, r.x + 4, r.y + 16);
+  }
+  document.body.appendChild(dbg);
+};
+
+</script>
+</body></html>
