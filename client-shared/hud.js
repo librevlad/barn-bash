@@ -99,10 +99,11 @@ const HUD = (() => {
       let comboText = '';
       if (p.combo > 1) comboText = `<span class="hud-player-combo">x${p.combo}</span>`;
 
+      // Compact: emoji + color dot + score (name shown above blob on field)
       playersHTML += `
         <div class="${cls}" style="border-color:${p.color}22">
           <span class="hud-player-icon">${icon}</span>
-          <span class="hud-player-name" style="color:${p.color}">${name}</span>
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin:0 2px"></span>
           ${scoreText}${comboText}${badges}
         </div>
       `;

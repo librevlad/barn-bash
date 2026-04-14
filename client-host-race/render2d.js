@@ -620,11 +620,13 @@ const Render2D = (() => {
         ctx.fillText(itemIcons[e.data.item] || '?', s.x, s.y - R - 12);
       }
 
-      // Name label
-      if (!e.data.finished) {
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = '10px -apple-system, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(e.name || ('P' + e.id), s.x, s.y + R + 12);
+      // Name label above player
+      if (!e.data.finished && e.name) {
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(e.name, s.x, s.y - R - 8);
       }
     }
   }
