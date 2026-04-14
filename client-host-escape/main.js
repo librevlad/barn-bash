@@ -126,7 +126,10 @@ ws.onmessage = (e) => {
       }
       break;
     case 'gameSelected':
-      if (msg.gameId !== 'escapeFox') (typeof Transitions !== 'undefined' ? Transitions.navigateTo('/host/') : window.location.href = '/host/');
+      if (msg.gameId !== 'escapeFox') {
+        const url = HostCommon.gameUrls[msg.gameId] || '/host/';
+        typeof Transitions !== 'undefined' ? Transitions.navigateTo(url) : window.location.href = url;
+      }
       break;
   }
 };

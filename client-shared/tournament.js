@@ -379,6 +379,7 @@ const Tournament = (() => {
 
       case 'tournamentEnd':
         renderChampion(msg);
+        active = false; // reset so PostGame works for subsequent non-tournament games
         // Navigate to lobby after champion display (8s dramatic hold)
         setTimeout(function() { window.location.href = '/host/'; }, 8000);
         return true;

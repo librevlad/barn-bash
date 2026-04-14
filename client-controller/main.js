@@ -636,6 +636,10 @@ function onMessage(e) {
         $result.textContent = '💀'; $result.className = 'wrong';
         $status.textContent = 'Nobody survived!';
       }
+      // Show instruction after brief delay
+      setTimeout(() => {
+        if (phase === 'result') $gestHint.textContent = 'Waiting for host...';
+      }, 2000);
       break;
   }
 }

@@ -110,7 +110,9 @@ ws.onmessage = (e) => {
       break;
 
     case 'gameSelected':
-      if (msg.gameId !== 'race') window.location.href = '/host/';
+      if (msg.gameId !== 'race') {
+        window.location.href = HostCommon.gameUrls[msg.gameId] || '/host/';
+      }
       break;
   }
 };

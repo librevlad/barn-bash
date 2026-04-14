@@ -147,8 +147,8 @@ let currentGame = new EscapeFoxGame(players, broadcast);
 // --- Tournament logic ---
 
 function startTournament() {
-  // Shuffle game order, 4 rounds
-  const shuffled = [...GAME_IDS].sort(() => Math.random() - 0.5);
+  // Shuffle game order, pick 3 of 4 for variety
+  const shuffled = [...GAME_IDS].sort(() => Math.random() - 0.5).slice(0, 3);
   tournament = {
     round: 0,
     totalRounds: 3,

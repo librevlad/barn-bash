@@ -139,7 +139,9 @@ ws.onmessage = (e) => {
       } else { showWinner(msg.winnerId); }
       break;
     case 'gameSelected':
-      if (msg.gameId !== 'hillKing') window.location.href = '/host/';
+      if (msg.gameId !== 'hillKing') {
+        window.location.href = HostCommon.gameUrls[msg.gameId] || '/host/';
+      }
       break;
   }
 };
