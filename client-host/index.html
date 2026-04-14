@@ -18,52 +18,46 @@
       background: url('/assets/bg.png') center/cover no-repeat;
     }
 
-    /* Hotspot buttons — positioned over the PLAY/CUSTOMIZE/SETTINGS areas in bg.png */
-    .hotspot {
-      position: absolute;
-      cursor: pointer;
-      border: none; background: transparent;
-      z-index: 10;
-      border-radius: 14px;
-      transition: transform 0.15s, box-shadow 0.15s;
+    /* Sprite buttons from buttons.png
+       Layout: 3 columns (PLAY, CUSTOMIZE, SETTINGS) x 3 rows (Normal, Hover, Pressed)
+       Each button ~30% wide, ~28% tall in the spritesheet */
+    .btn-bar {
+      position: fixed; bottom: 3vh; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 16px; z-index: 10;
     }
-    /* Animated glow pulse */
-    .hotspot::after {
-      content: ''; position: absolute; inset: -4px;
-      border-radius: 18px;
-      background: transparent;
-      box-shadow: 0 0 15px 3px rgba(255,255,255,0.15);
-      animation: btnPulse 2s ease-in-out infinite;
-      pointer-events: none;
+    .sprite-btn {
+      width: 180px; height: 70px;
+      background-image: url('/assets/buttons.png');
+      background-size: 300% 300%; /* 3 cols x 3 rows */
+      background-repeat: no-repeat;
+      border: none; cursor: pointer;
+      border-radius: 12px;
+      transition: transform 0.1s, filter 0.15s;
+      image-rendering: auto;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+      animation: btnFloat 3s ease-in-out infinite;
     }
-    .hotspot:hover {
-      transform: scale(1.04);
-      box-shadow: 0 0 30px 8px rgba(255,220,100,0.3);
-    }
-    .hotspot:hover::after {
-      box-shadow: 0 0 25px 6px rgba(255,220,100,0.4);
-      animation: none;
-    }
-    .hotspot:active {
-      transform: scale(0.96);
-      box-shadow: 0 0 10px 2px rgba(255,255,255,0.2);
-    }
-    #btn-play::after { box-shadow: 0 0 15px 3px rgba(100,255,100,0.2); animation-delay: 0s; }
-    #btn-customize::after { box-shadow: 0 0 15px 3px rgba(255,200,50,0.2); animation-delay: 0.7s; }
-    #btn-settings::after { box-shadow: 0 0 15px 3px rgba(150,180,255,0.2); animation-delay: 1.4s; }
-    #btn-play:hover { box-shadow: 0 0 35px 10px rgba(100,255,100,0.35); }
-    #btn-customize:hover { box-shadow: 0 0 35px 10px rgba(255,200,50,0.35); }
-    #btn-settings:hover { box-shadow: 0 0 35px 10px rgba(150,180,255,0.35); }
+    .sprite-btn:hover { transform: scale(1.06); filter: drop-shadow(0 6px 20px rgba(255,220,100,0.5)) brightness(1.1); }
+    .sprite-btn:active { transform: scale(0.95); filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
 
-    @keyframes btnPulse {
-      0%, 100% { opacity: 0.4; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.02); }
-    }
+    /* Normal state positions (row 0) */
+    #btn-play       { background-position: 0% 0%; animation-delay: 0s; }
+    #btn-customize  { background-position: 50% 0%; animation-delay: 0.5s; }
+    #btn-settings   { background-position: 100% 0%; animation-delay: 1s; }
+    /* Hover state (row 1) */
+    #btn-play:hover       { background-position: 0% 50%; }
+    #btn-customize:hover  { background-position: 50% 50%; }
+    #btn-settings:hover   { background-position: 100% 50%; }
+    /* Pressed state (row 2) */
+    #btn-play:active       { background-position: 0% 100%; }
+    #btn-customize:active  { background-position: 50% 100%; }
+    #btn-settings:active   { background-position: 100% 100%; }
 
-    /* Button positions (% of viewport — tuned to bg.png layout) */
-    #btn-play       { left: 18%;  bottom: 2.5%; width: 20%; height: 9%; }
-    #btn-customize  { left: 40%;  bottom: 2.5%; width: 22%; height: 9%; }
-    #btn-settings   { left: 63%;  bottom: 2.5%; width: 20%; height: 9%; }
+    @keyframes btnFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    .sprite-btn:hover { animation: none; } /* stop float on hover */
 
     /* Top bar: connect URL + player count */
     #top-bar {
@@ -166,10 +160,12 @@
 <body>
   <div id="bg"></div>
 
-  <!-- Invisible hotspot buttons over bg.png -->
-  <div class="hotspot" id="btn-play"></div>
-  <div class="hotspot" id="btn-customize"></div>
-  <div class="hotspot" id="btn-settings"></div>
+  <!-- Sprite buttons from buttons.png -->
+  <div class="btn-bar">
+    <button class="sprite-btn" id="btn-play"></button>
+    <button class="sprite-btn" id="btn-customize"></button>
+    <button class="sprite-btn" id="btn-settings"></button>
+  </div>
 
   <!-- Top bar: URL + players -->
   <div id="top-bar">
