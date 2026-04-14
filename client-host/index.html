@@ -145,18 +145,19 @@
       text-align: center; pointer-events: none;
     }
     .card-label .card-name {
-      font-size: 15px; font-weight: 900; letter-spacing: 2px;
+      font-size: 12px; font-weight: 900; letter-spacing: 1.5px;
       color: #fff; text-transform: uppercase;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.7), 0 0 10px rgba(0,0,0,0.4);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5);
       font-family: 'Georgia', serif;
-      line-height: 1.1;
+      line-height: 1.2; white-space: nowrap;
     }
     .card-label .card-desc {
-      font-size: 9px; color: rgba(255,255,255,0.85);
-      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
-      margin-top: 2px; font-style: italic;
+      font-size: 8px; color: rgba(255,255,255,0.8);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      margin-top: 1px; font-style: italic;
+      white-space: nowrap;
     }
-    .card-label .card-icon { font-size: 18px; margin-bottom: 2px; }
+    .card-label .card-icon { font-size: 16px; margin-bottom: 1px; }
     .modal-bottom {
       display: flex; gap: 6px; align-items: center; width: 100%;
       flex-shrink: 0; height: 50px;
@@ -202,19 +203,19 @@
       <div class="modal-grid">
         <button class="modal-btn" data-game="escapeFox">
           <img src="/assets/game-escape-normal.png" data-n="/assets/game-escape-normal.png" data-h="/assets/game-escape-hover.png" data-p="/assets/game-escape-pressed.png">
-          <div class="card-label"><span class="card-icon">🦊</span><span class="card-name">Escape<br>the Fox</span><span class="card-desc">Run. Don't look back.</span></div>
+          <div class="card-label"><span class="card-icon">🦊</span><span class="card-name">Escape the Fox</span><span class="card-desc">Run. Don't look back.</span></div>
         </button>
         <button class="modal-btn" data-game="hillKing">
           <img src="/assets/game-hill-normal.png" data-n="/assets/game-hill-normal.png" data-h="/assets/game-hill-hover.png" data-p="/assets/game-hill-pressed.png">
-          <div class="card-label"><span class="card-icon">👑</span><span class="card-name">King of<br>the Hill</span><span class="card-desc">Push or be pushed.</span></div>
+          <div class="card-label"><span class="card-icon">👑</span><span class="card-name">King of the Hill</span><span class="card-desc">Push or be pushed.</span></div>
         </button>
         <button class="modal-btn" data-game="meteor">
           <img src="/assets/game-meteor-normal.png" data-n="/assets/game-meteor-normal.png" data-h="/assets/game-meteor-hover.png" data-p="/assets/game-meteor-pressed.png">
-          <div class="card-label"><span class="card-icon">☄️</span><span class="card-name">Meteor<br>Shower</span><span class="card-desc">Find shelter. Fast.</span></div>
+          <div class="card-label"><span class="card-icon">☄️</span><span class="card-name">Meteor Shower</span><span class="card-desc">Find shelter. Fast.</span></div>
         </button>
         <button class="modal-btn" data-game="race">
           <img src="/assets/game-race-normal.png" data-n="/assets/game-race-normal.png" data-h="/assets/game-race-hover.png" data-p="/assets/game-race-pressed.png">
-          <div class="card-label"><span class="card-icon">🏁</span><span class="card-name">Grand<br>Prix</span><span class="card-desc">3 laps. No brakes.</span></div>
+          <div class="card-label"><span class="card-icon">🏁</span><span class="card-name">Grand Prix</span><span class="card-desc">3 laps. No brakes.</span></div>
         </button>
       </div>
       <div class="modal-bottom">
