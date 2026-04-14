@@ -64,9 +64,9 @@ const ITEM_SPAWNS = [
 const ITEM_TYPES = ['boost', 'oil', 'missile'];
 
 const TRAITS = {
-  cat:  { maxSpeed: 0.12, accel: 0.004, handling: 0.06 },
-  frog: { maxSpeed: 0.11, accel: 0.005, handling: 0.05 },
-  wolf: { maxSpeed: 0.13, accel: 0.003, handling: 0.045 },
+  cat:  { maxSpeed: 0.115, accel: 0.004, handling: 0.065 }, // balanced — best handling
+  frog: { maxSpeed: 0.11,  accel: 0.005, handling: 0.055 }, // quick recovery — best accel
+  wolf: { maxSpeed: 0.125, accel: 0.003, handling: 0.045 }, // raw speed — worst turning
 };
 
 class RaceGame {
