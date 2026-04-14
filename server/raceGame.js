@@ -8,7 +8,7 @@ const TOTAL_LAPS = 3;
 const TRACK_WIDTH = 2.5;
 const FRICTION = 0.98;
 const OFF_TRACK_FRICTION = 0.88; // much harsher off-track
-const HIT_DIST = 0.6;
+const HIT_DIST = 1.0;
 const STUN_TICKS = 15;
 const BOOST_TICKS = 20;
 const BOOST_SPEED = 0.06;
@@ -20,7 +20,7 @@ const DRIFT_BOOST_SPEED = 0.04;
 const DRIFT_MIN_TICKS = 10;
 const ITEM_RESPAWN_TICKS = 200;
 const MISSILE_SPEED = 0.2;
-const RACE_TIMEOUT = 1200; // 60s
+const RACE_TIMEOUT = 1800; // 90s (3 laps ~21s each + items/collisions)
 
 // Track: waypoints forming a circuit (x, z)
 // Oval with chicanes — coordinates in game units (-10 to 10 range)
@@ -183,9 +183,11 @@ class RaceGame {
       if (g.boostTimer > 0) g.boostTimer--;
       if (g.boostCooldown > 0) g.boostCooldown--;
 
+      // Track check (once per player per tick)
+      const onTrack = this._isOnTrack(g.x, g.z);
+
       // Auto-steer ONLY when off-track (recovery assist, not autopilot)
-      const onTrackNow = this._isOnTrack(g.x, g.z);
-      if (!onTrackNow) {
+      if (!onTrack) {
         const nextWP = TRACK[g.waypoint % TRACK.length];
         const toWPx = nextWP.x - g.x, toWPz = nextWP.z - g.z;
         const toWPdist = Math.sqrt(toWPx * toWPx + toWPz * toWPz);
@@ -194,25 +196,25 @@ class RaceGame {
           let angleDiff = targetAngle - g.angle;
           while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
           while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-          g.angle += angleDiff * 0.05; // strong correction only when lost
+          g.angle += angleDiff * 0.05;
         }
       }
 
-      // Player steering — decay toward 0 (one swipe = one turn, not infinite)
+      // Player steering — decay toward 0 (one swipe = ~500ms turn, not 950ms)
       const driftMult = g.drifting ? 1.4 : 1.0;
       g.angle += g.steerInput * g.handling * driftMult;
-      g.steerInput *= 0.85;
+      g.steerInput *= 0.75;
       if (Math.abs(g.steerInput) < 0.05) g.steerInput = 0;
 
       // Drift tracking
       if (g.drifting) g.driftTicks++;
 
-      // Auto-accelerate
-      const maxSpd = g.maxSpeed + (g.boostTimer > 0 ? BOOST_SPEED : 0);
+      // Auto-accelerate (boost type determines speed cap bonus)
+      const boostAdd = g.boostTimer > 0 ? (g.boostType === 'mini' ? MINI_BOOST_SPEED : g.boostType === 'drift' ? DRIFT_BOOST_SPEED : BOOST_SPEED) : 0;
+      const maxSpd = g.maxSpeed + boostAdd;
       if (g.speed < maxSpd) g.speed = Math.min(maxSpd, g.speed + g.accel);
 
       // Friction (much harsher off-track)
-      const onTrack = this._isOnTrack(g.x, g.z);
       g.speed *= onTrack ? FRICTION : OFF_TRACK_FRICTION;
 
       // Move
@@ -324,10 +326,11 @@ class RaceGame {
         const dx = a.x - b.x, dz = a.z - b.z;
         const d = Math.sqrt(dx * dx + dz * dz);
         if (d < HIT_DIST && d > 0) {
-          // Push apart
+          // Push apart — proportional to overlap so they actually separate
+          const overlap = (HIT_DIST - d) / 2;
           const nx = dx / d, nz = dz / d;
-          a.x += nx * 0.1; a.z += nz * 0.1;
-          b.x -= nx * 0.1; b.z -= nz * 0.1;
+          a.x += nx * overlap; a.z += nz * overlap;
+          b.x -= nx * overlap; b.z -= nz * overlap;
           // Slower player gets stunned briefly
           if (a.speed < b.speed) { a.stunTimer = 5; a.speed *= 0.5; }
           else if (b.speed < a.speed) { b.stunTimer = 5; b.speed *= 0.5; }
@@ -401,16 +404,20 @@ class RaceGame {
     });
   }
 
+  _getClosedTrackPath() {
+    // Close the loop: add first point at the end so segment [23→0] is checked
+    const path = TRACK.map(wp => ({ x: wp.x, y: wp.z }));
+    path.push(path[0]);
+    return path;
+  }
+
   _isOnTrack(x, z) {
-    // Use Physics2D.nearestPointOnPath for accurate track distance
-    const trackPath = TRACK.map(wp => ({ x: wp.x, y: wp.z }));
-    const nearest = Physics2D.nearestPointOnPath(x, z, trackPath);
+    const nearest = Physics2D.nearestPointOnPath(x, z, this._getClosedTrackPath());
     return nearest.dist < TRACK_WIDTH;
   }
 
   _nearestTrackPoint(x, z) {
-    const trackPath = TRACK.map(wp => ({ x: wp.x, y: wp.z }));
-    const nearest = Physics2D.nearestPointOnPath(x, z, trackPath);
+    const nearest = Physics2D.nearestPointOnPath(x, z, this._getClosedTrackPath());
     return { x: nearest.x, z: nearest.y };
   }
 
@@ -464,8 +471,9 @@ class RaceGame {
         if (g.item) {
           this._useItem(p);
         } else if (g.boostCooldown <= 0) {
-          // Mini boost
+          // Mini boost (weaker cap than item boost)
           g.boostTimer = MINI_BOOST_TICKS;
+          g.boostType = 'mini';
           g.speed += MINI_BOOST_SPEED;
           g.boostCooldown = MINI_BOOST_CD;
         }
@@ -493,6 +501,7 @@ class RaceGame {
       case 'driftEnd':
         if (g.drifting && g.driftTicks >= DRIFT_MIN_TICKS) {
           g.boostTimer = DRIFT_BOOST_TICKS;
+          g.boostType = 'drift';
           g.speed += DRIFT_BOOST_SPEED;
           this.broadcast({ type: 'drift_boost', playerId: p.id, gameId: 'race' });
         }
@@ -506,10 +515,12 @@ class RaceGame {
     const g = player.gameData;
     const item = g.item;
     g.item = null;
+    g.itemTimer = 0; // reset so next pickup starts fresh
 
     switch (item) {
       case 'boost':
         g.boostTimer = BOOST_TICKS;
+        g.boostType = 'item';
         g.speed += BOOST_SPEED;
         this.broadcast({ type: 'item_used', playerId: player.id, item: 'boost', gameId: 'race' });
         break;
