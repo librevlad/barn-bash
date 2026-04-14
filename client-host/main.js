@@ -1,8 +1,6 @@
 const ws = new WebSocket('ws://' + location.host);
 
 const $lobbyPlayers = document.getElementById('lobby-players');
-const $gameGrid = document.getElementById('game-grid');
-const $btnTournament = document.getElementById('btn-tournament');
 const $narratorIdle = document.getElementById('narrator-idle');
 const $connectUrl = document.getElementById('connect-url');
 const $connectUrlValue = document.getElementById('connect-url-value');
@@ -102,10 +100,7 @@ $btnSettings.addEventListener('click', () => {
   idleTimer = setTimeout(() => startIdleNarrator(), 4000);
 });
 
-// Modal close
-document.getElementById('modal-close').addEventListener('click', () => {
-  $gameModal.classList.remove('show');
-});
+// Close modal on backdrop click
 $gameModal.addEventListener('click', (e) => {
   if (e.target === $gameModal) $gameModal.classList.remove('show');
 });
@@ -209,22 +204,30 @@ function updateLobby(players) {
   if (playerCount >= 2) $modalNeed.style.display = 'none';
 }
 
-// Game card clicks (inside modal)
-$gameGrid.querySelectorAll('.modal-card').forEach(card => {
-  card.addEventListener('click', () => {
+// Game hotspot clicks (inside modal image)
+document.querySelectorAll('.modal-hot[data-game]').forEach(hot => {
+  hot.addEventListener('mouseenter', () => Sound.play('nearMiss'));
+  hot.addEventListener('click', () => {
     if (playerCount < 2) { Sound.play('stumble'); return; }
     Sound.play('countdownGo');
     stopIdleNarrator();
     $gameModal.classList.remove('show');
-    ws.send(JSON.stringify({ type: 'selectGame', gameId: card.dataset.game }));
+    ws.send(JSON.stringify({ type: 'selectGame', gameId: hot.dataset.game }));
   });
 });
 
-// Tournament
-$btnTournament.addEventListener('click', () => {
+// Tournament hotspot
+document.getElementById('mh-tournament').addEventListener('mouseenter', () => Sound.play('nearMiss'));
+document.getElementById('mh-tournament').addEventListener('click', () => {
   if (playerCount < 2) { Sound.play('stumble'); return; }
   Sound.play('winner');
   stopIdleNarrator();
   $gameModal.classList.remove('show');
   ws.send(JSON.stringify({ type: 'startTournament' }));
+});
+
+// Back hotspot
+document.getElementById('mh-back').addEventListener('mouseenter', () => Sound.play('nearMiss'));
+document.getElementById('mh-back').addEventListener('click', () => {
+  $gameModal.classList.remove('show');
 });

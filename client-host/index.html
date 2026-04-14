@@ -99,7 +99,7 @@
       pointer-events: none;
     }
 
-    /* Game select modal — wooden frame from modal.png */
+    /* Game select modal — full image from variant-C (carnival tickets) */
     #game-modal {
       display: none; position: fixed; inset: 0; z-index: 50;
       background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
@@ -108,63 +108,46 @@
     #game-modal.show { display: flex; }
     .modal-box {
       position: relative;
-      width: 680px; max-width: 92vw;
-      aspect-ratio: 691 / 361;
-      background: url('/assets/frame.png') center/100% 100% no-repeat;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 8% 12% 6% 12%;
+      width: 720px; max-width: 95vw;
+      aspect-ratio: 1440 / 736;
+      background: url('/assets/modal-game-select.png') center/100% 100% no-repeat;
+      border-radius: 16px;
+      overflow: hidden;
     }
-    .modal-title {
-      font-size: 20px; font-weight: 900; letter-spacing: 4px;
-      color: #4a2a0a; text-transform: uppercase; margin-bottom: 4px;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.4);
-      font-family: 'Georgia', 'Palatino', serif;
+    /* Hotspots over the game tickets in the image */
+    .modal-hot {
+      position: absolute; cursor: pointer;
+      border: none; background: transparent;
+      border-radius: 8px;
+      transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
     }
-    .modal-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-      width: 100%;
+    .modal-hot:hover {
+      background: rgba(255,255,255,0.2);
+      box-shadow: 0 0 20px 6px rgba(255,220,80,0.4);
+      transform: scale(1.03);
     }
-    .modal-card {
-      background: rgba(0,0,0,0.08); border: 2px solid rgba(100,70,30,0.2);
-      border-radius: 10px; padding: 12px 10px; cursor: pointer;
-      transition: all 0.15s; text-align: center;
+    .modal-hot:active {
+      transform: scale(0.96);
+      background: rgba(0,0,0,0.1);
     }
-    .modal-card:hover {
-      background: rgba(0,0,0,0.15); transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      border-color: rgba(100,70,30,0.5);
-    }
-    .modal-card:active { transform: scale(0.96); }
-    .modal-card-icon { font-size: 22px; margin-bottom: 2px; }
-    .modal-card-name { font-size: 14px; font-weight: 900; letter-spacing: 1.5px; margin-bottom: 2px; font-family: 'Georgia', serif; }
-    .modal-card-desc { font-size: 9px; color: rgba(80,50,20,0.5); font-style: italic; }
-    .modal-card[data-game="escapeFox"] .modal-card-name { color: #c04010; }
-    .modal-card[data-game="hillKing"] .modal-card-name { color: #7040b0; }
-    .modal-card[data-game="meteor"] .modal-card-name { color: #c05010; }
-    .modal-card[data-game="race"] .modal-card-name { color: #208020; }
-    .modal-tournament {
-      grid-column: 1 / -1; margin-top: 4px;
-      background: rgba(180,140,40,0.15); border: 2px solid rgba(180,140,40,0.4);
-      border-radius: 10px; padding: 10px; cursor: pointer;
-      transition: all 0.15s; text-align: center;
-    }
-    .modal-tournament:hover { background: rgba(180,140,40,0.25); transform: translateY(-2px); }
-    .modal-tournament:active { transform: scale(0.96); }
-    .modal-tournament-name { font-size: 14px; font-weight: 900; color: #7a5a08; letter-spacing: 3px; font-family: 'Georgia', serif; }
-    .modal-tournament-desc { font-size: 9px; color: rgba(80,50,20,0.5); margin-top: 2px; font-style: italic; }
-    .modal-close {
-      margin-top: 8px; padding: 6px 24px;
-      background: rgba(100,70,30,0.12); border: 2px solid rgba(100,70,30,0.25);
-      border-radius: 8px; color: #5a3a1a; font-size: 13px; font-weight: 800;
-      cursor: pointer; font-family: 'Georgia', serif; transition: all 0.15s;
-      letter-spacing: 1px;
-    }
-    .modal-close:hover { background: rgba(100,70,30,0.22); transform: scale(1.03); }
-    .modal-close:active { transform: scale(0.97); }
+    /* Ticket positions (% of 1440x736 image) */
+    /* Escape Fox: top-left ticket */
+    #mh-escape   { left: 5%;  top: 18%; width: 44%; height: 28%; }
+    /* King of Hill: top-right ticket */
+    #mh-hill     { left: 51%; top: 18%; width: 44%; height: 28%; }
+    /* Meteor: bottom-left ticket */
+    #mh-meteor   { left: 5%;  top: 50%; width: 44%; height: 28%; }
+    /* Grand Prix: bottom-right ticket */
+    #mh-race     { left: 51%; top: 50%; width: 44%; height: 28%; }
+    /* Tournament bar at bottom */
+    #mh-tournament { left: 22%; top: 82%; width: 56%; height: 12%; border-radius: 12px; }
+    /* Back button bottom-left */
+    #mh-back     { left: 3%;  top: 83%; width: 16%; height: 11%; border-radius: 10px; }
     .modal-need {
-      font-size: 11px; color: #993322; margin-bottom: 6px; display: none;
-      font-weight: 700; font-style: italic;
+      position: absolute; top: 14%; left: 50%; transform: translateX(-50%);
+      font-size: 11px; color: #cc2200; font-weight: 800;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+      display: none; z-index: 2;
     }
   </style>
 </head>
@@ -192,38 +175,16 @@
   <!-- Narrator -->
   <div id="narrator-idle"></div>
 
-  <!-- Game select modal -->
+  <!-- Game select modal — carnival tickets image + hotspots -->
   <div id="game-modal">
     <div class="modal-box">
-      <div class="modal-title">Choose a Game</div>
       <div class="modal-need" id="modal-need">Need 2+ players to start</div>
-      <div class="modal-grid" id="game-grid">
-        <div class="modal-card" data-game="escapeFox">
-          <div class="modal-card-icon">&#129418;</div>
-          <div class="modal-card-name">ESCAPE THE FOX</div>
-          <div class="modal-card-desc">Run. Don't look back.</div>
-        </div>
-        <div class="modal-card" data-game="hillKing">
-          <div class="modal-card-icon">&#128081;</div>
-          <div class="modal-card-name">KING OF THE HILL</div>
-          <div class="modal-card-desc">Push or be pushed.</div>
-        </div>
-        <div class="modal-card" data-game="meteor">
-          <div class="modal-card-icon">&#9732;</div>
-          <div class="modal-card-name">METEOR SHOWER</div>
-          <div class="modal-card-desc">Find shelter. Fast.</div>
-        </div>
-        <div class="modal-card" data-game="race">
-          <div class="modal-card-icon">&#127937;</div>
-          <div class="modal-card-name">GRAND PRIX</div>
-          <div class="modal-card-desc">3 laps. No brakes.</div>
-        </div>
-        <div class="modal-tournament" id="btn-tournament">
-          <div class="modal-tournament-name">&#127942; TOURNAMENT</div>
-          <div class="modal-tournament-desc">3 rounds. One champion.</div>
-        </div>
-      </div>
-      <button class="modal-close" id="modal-close">Back</button>
+      <div class="modal-hot" id="mh-escape" data-game="escapeFox"></div>
+      <div class="modal-hot" id="mh-hill" data-game="hillKing"></div>
+      <div class="modal-hot" id="mh-meteor" data-game="meteor"></div>
+      <div class="modal-hot" id="mh-race" data-game="race"></div>
+      <div class="modal-hot" id="mh-tournament"></div>
+      <div class="modal-hot" id="mh-back"></div>
     </div>
   </div>
 
