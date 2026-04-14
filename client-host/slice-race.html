@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html><head><title>Race Sprites Slicer</title></head>
+<body style="background:#222;color:#eee;font-family:monospace;padding:16px">
+<pre id="log"></pre>
+<div id="previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+<script>
+const log = s => { document.getElementById('log').textContent += s + '\n'; };
+
+// race-sprites.png is 1536x1024
+// Extract useful regions:
+const REGIONS = {
+  'race-track': {x: 210, y: 80, w: 850, h: 580},   // Just the track island
+  'car-red':    {x: 30, y: 15, w: 100, h: 70},
+  'car-orange': {x: 140, y: 15, w: 100, h: 70},
+  'car-blue':   {x: 20, y: 390, w: 100, h: 70},
+  'car-yellow': {x: 345, y: 770, w: 140, h: 110},
+  'car-red2':   {x: 495, y: 770, w: 140, h: 110},
+};
+
+const img = new Image();
+img.src = '/assets/race-sprites.png';
+img.onload = () => {
+  log('Loaded: ' + img.width + 'x' + img.height);
+  window._results = {};
+
+  // No bg removal — the image has white bg, but we're cutting specific regions
+  for (const [name, r] of Object.entries(REGIONS)) {
+    const c = document.createElement('canvas');
+    c.width = r.w; c.height = r.h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+
+    // Remove white bg (pixels close to white)
+    const id = ctx.getImageData(0, 0, r.w, r.h);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const R = d[i], G = d[i+1], B = d[i+2];
+      if (R > 245 && G > 245 && B > 245) d[i+3] = 0;
+      else if (R > 230 && G > 230 && B > 230) d[i+3] = Math.round(255 * (1 - (Math.min(R,G,B) - 230) / 15));
+    }
+    ctx.putImageData(id, 0, 0);
+
+    window._results[name] = c.toDataURL('image/png');
+    log(name + ': ' + r.w + 'x' + r.h);
+
+    const div = document.createElement('div');
+    div.style.cssText = 'background:#444;padding:6px;border-radius:8px;text-align:center';
+    div.innerHTML = '<div style="font-size:10px;color:#aaa">' + name + '</div>';
+    const p = new Image(); p.src = window._results[name]; p.style.height = '80px';
+    div.appendChild(p);
+    document.getElementById('previews').appendChild(div);
+  }
+
+  // Debug overlay
+  const dbg = document.createElement('canvas');
+  dbg.width = img.width; dbg.height = img.height;
+  dbg.style.cssText = 'width:100%;max-width:1000px;margin-top:16px;border:1px solid #555';
+  const dctx = dbg.getContext('2d');
+  dctx.drawImage(img, 0, 0);
+  dctx.strokeStyle = '#0f0'; dctx.lineWidth = 3;
+  for (const [name, r] of Object.entries(REGIONS)) {
+    dctx.strokeRect(r.x, r.y, r.w, r.h);
+    dctx.fillStyle = '#0f0'; dctx.font = '14px monospace';
+    dctx.fillText(name, r.x + 4, r.y + 16);
+  }
+  document.body.appendChild(dbg);
+  log('\\nDone!');
+};
+</script>
+</body></html>
