@@ -169,7 +169,7 @@ function updateHUD(s) {
     const ga = a[1], gb = b[1];
     if (ga.finished && !gb.finished) return -1;
     if (!ga.finished && gb.finished) return 1;
-    return (gb.lap * 100 + (gb.waypoint || 0)) - (ga.lap * 100 + (ga.waypoint || 0));
+    return (gb.waypoint || 0) - (ga.waypoint || 0);
   });
   const posTexts = sorted.slice(0, 3).map(([id, p], i) => {
     return ordinal(i + 1) + ' ' + (p.name || 'P' + id);

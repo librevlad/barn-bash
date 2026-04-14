@@ -53,10 +53,12 @@ const TRACK = [
 
 // Item spawn positions (track segment index + offset)
 const ITEM_SPAWNS = [
-  { seg: 3, offset: 0 },
-  { seg: 8, offset: 0 },
-  { seg: 13, offset: 0 },
-  { seg: 18, offset: 0 },
+  { seg: 1, offset: 0 },   // near start straight
+  { seg: 5, offset: 0 },   // right side
+  { seg: 9, offset: 0 },   // upper right
+  { seg: 13, offset: 0 },  // back straight
+  { seg: 17, offset: 0 },  // upper left
+  { seg: 21, offset: 0 },  // left side
 ];
 
 const ITEM_TYPES = ['boost', 'oil', 'missile'];
@@ -278,8 +280,8 @@ class RaceGame {
         if (!g || g.finished || g.item || g.stunTimer > 0) continue;
         const dx = g.x - item.x, dz = g.z - item.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
-        // Fixed radius pickup — no magnetism (items stay at spawn positions)
-        if (dist < 2.5) {
+        // Fixed radius pickup — generous radius so edge-of-track players can grab
+        if (dist < 3.0) {
           g.item = item.type;
           g.itemTimer = 0;
           item.active = false;
@@ -340,18 +342,22 @@ class RaceGame {
       const g = p.gameData;
       if (!g || g.finished) continue;
 
-      // Check current waypoint only (advance one at a time for accurate lap counting)
+      // Target waypoint index on the track (wraps around)
       const wpIdx = g.waypoint % TRACK.length;
       const wp = TRACK[wpIdx];
       const dx = g.x - wp.x, dz = g.z - wp.z;
       const wpDist = Math.sqrt(dx * dx + dz * dz);
 
-      if (wpDist < 3.0) {
-        const newWP = g.waypoint + 1;
+      // Finish line (waypoint 0) uses tighter radius so lap triggers
+      // right at the checkered line, not 3 units before it
+      const isFinishWP = (wpIdx === 0 && g.waypoint > 0);
+      const checkRadius = isFinishWP ? 2.0 : 3.0;
 
-        // Lap boundary check: crossing from last waypoints to first
-        if (newWP >= TRACK.length) {
-          g.waypoint = newWP - TRACK.length;
+      if (wpDist < checkRadius) {
+        g.waypoint++;
+
+        // Lap complete when we've passed ALL waypoints and crossed finish (wp 0)
+        if (isFinishWP) {
           g.lap++;
           if (g.lap > TOTAL_LAPS) {
             g.finished = true;
@@ -363,8 +369,6 @@ class RaceGame {
           } else {
             this.broadcast({ type: 'lap_complete', playerId: p.id, lap: g.lap, gameId: 'race' });
           }
-        } else {
-          g.waypoint = newWP;
         }
       }
     }
@@ -525,8 +529,8 @@ class RaceGame {
         for (const other of this.players.connected()) {
           if (other.id === player.id || !other.gameData || other.gameData.finished) continue;
           const og = other.gameData;
-          const progress = og.lap * TRACK.length + og.waypoint;
-          const myProgress = g.lap * TRACK.length + g.waypoint;
+          const progress = og.waypoint;
+          const myProgress = g.waypoint;
           if (progress > myProgress && progress > bestProgress) {
             bestProgress = progress;
             targetId = other.id;
@@ -579,6 +583,7 @@ class RaceGame {
         angle: g ? g.angle || 0 : 0,
         speed: g ? g.speed || 0 : 0,
         lap: g ? g.lap || 1 : 1,
+        waypoint: g ? g.waypoint || 0 : 0,
         finished: g ? !!g.finished : false,
         drifting: g ? !!g.drifting : false,
         boosting: g ? (g.boostTimer > 0) : false,
