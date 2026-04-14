@@ -49,12 +49,6 @@ ws.onmessage = (e) => {
       if (typeof FX !== 'undefined') { FX.shake(12); FX.screenFlash('#ff2200', 0.3); FX.elimBurst(640, 400, state.players[msg.playerId]?.color || '#f44'); }
       Narrator.elimination(pname(msg.playerId));
       break;
-    case 'fox_caught':
-      Sound.play('eliminated');
-      Render2D.triggerElim();
-      if (typeof FX !== 'undefined') { FX.shake(18); FX.screenFlash('#ff0000', 0.5); FX.setVignette(0.8); }
-      Narrator.custom('The fox feasts tonight.');
-      break;
     case 'speed_burst':
       Narrator.speedBurst();
       if (typeof FX !== 'undefined') { FX.screenFlash('#ff6600', 0.1); FX.textPopup(640, 200, 'SPEED UP!', '#ff6600'); }

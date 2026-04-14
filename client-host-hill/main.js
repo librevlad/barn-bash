@@ -54,8 +54,14 @@ ws.onmessage = (e) => {
     case 'shieldBlock':
       Narrator.shieldBlock(pname(msg.playerId));
       break;
+    case 'shrink_warning':
+      Sound.play('foxGrowl');
+      if (typeof FX !== 'undefined') FX.screenFlash('#ff4400', 0.15);
+      showMsg('Arena about to shrink!', 1200);
+      break;
     case 'platform_shrink':
       Sound.play('shrink');
+      if (typeof FX !== 'undefined') FX.shake(4);
       showMsg('Arena shrinking!', 1500);
       break;
     case 'teetering':
@@ -77,6 +83,9 @@ ws.onmessage = (e) => {
       break;
     case 'anchor_block':
       showMsg(pname(msg.playerId) + ' is ANCHORED!', 1000);
+      break;
+    case 'powerup_spawned':
+      Sound.play('coinPickup');
       break;
     case 'powerup_collected': {
       const labels = { anchor: 'ANCHOR', superDash: 'SUPER DASH', gravityBomb: 'GRAVITY BOMB' };
