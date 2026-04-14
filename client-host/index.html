@@ -108,42 +108,44 @@
     #game-modal.show { display: flex; }
     .modal-box {
       position: relative;
-      width: 640px; max-width: 92vw;
+      width: 750px; max-width: 95vw;
+      height: 400px; max-height: 80vh;
       background: url('/assets/frame.png') center/100% 100% no-repeat;
-      aspect-ratio: 691 / 361;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      padding: 7% 8% 5% 8%;
-      gap: 6px;
+      padding: 28px 44px 18px 44px;
+      gap: 3px;
     }
     .modal-title {
-      font-size: 18px; font-weight: 900; letter-spacing: 3px;
+      font-size: 16px; font-weight: 900; letter-spacing: 3px;
       color: #4a2a0a; text-transform: uppercase;
       text-shadow: 0 1px 0 rgba(255,255,255,0.4);
       font-family: 'Georgia', serif;
-      margin-bottom: 2px;
+      flex-shrink: 0;
     }
     .modal-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
-      width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+      width: 100%; flex: 1; min-height: 0;
     }
     .modal-btn {
       border: none; cursor: pointer; background: none; padding: 0;
       transition: transform 0.1s, filter 0.12s;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      overflow: hidden;
     }
-    .modal-btn img { display: block; width: 100%; height: auto; border-radius: 6px; }
+    .modal-btn img { display: block; width: 100%; height: 100%; object-fit: fill; }
     .modal-btn:hover { transform: scale(1.04); filter: drop-shadow(0 4px 12px rgba(255,200,50,0.4)) brightness(1.05); }
     .modal-btn:active { transform: scale(0.95); filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3)); }
     .modal-bottom {
-      display: flex; gap: 8px; align-items: center; width: 100%;
+      display: flex; gap: 6px; align-items: center; width: 100%;
+      flex-shrink: 0; height: 50px;
     }
-    .modal-bottom .modal-btn { flex: 1; }
-    .modal-bottom .modal-btn-back { flex: 0 0 auto; }
-    .modal-bottom .modal-btn-back img { width: 44px; height: 44px; }
+    .modal-bottom .modal-btn { flex: 1; height: 100%; }
+    .modal-bottom .modal-btn-back { flex: 0 0 50px; height: 50px; }
+    .modal-bottom .modal-btn-back img { width: 50px; height: 50px; object-fit: contain; }
     .modal-need {
       font-size: 10px; color: #993322; font-weight: 700; font-style: italic;
-      display: none;
+      display: none; flex-shrink: 0;
     }
   </style>
 </head>
