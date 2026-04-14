@@ -421,8 +421,16 @@ function onMessage(e) {
 
     case 'powerup_collected':
       if (msg.playerId === playerId) {
-        const labels = { shield: 'SHIELD!', speedBoost: 'SPEED!', coin: '+COIN' };
-        const sounds = { shield: 'shieldPickup', speedBoost: 'speedPickup', coin: 'coinPickup' };
+        const labels = {
+          shield: 'SHIELD!', speedBoost: 'SPEED!', sprintBoost: 'SPRINT!',
+          radar: 'RADAR!', coin: '+COIN',
+          anchor: 'ANCHOR!', superDash: 'SUPER DASH!', gravityBomb: 'BOMB!',
+        };
+        const sounds = {
+          shield: 'shieldPickup', speedBoost: 'speedPickup', sprintBoost: 'speedPickup',
+          radar: 'coinPickup', coin: 'coinPickup',
+          anchor: 'shieldPickup', superDash: 'speedPickup', gravityBomb: 'coinPickup',
+        };
         $result.textContent = labels[msg.powerup] || ''; $result.className = 'correct';
         Sound.play(sounds[msg.powerup]);
         navigator.vibrate?.([10, 5, 10]);
@@ -531,6 +539,19 @@ function onMessage(e) {
       if (msg.to === playerId) {
         $result.textContent = 'BUMPED!'; $result.className = 'wrong';
         navigator.vibrate?.([40, 30, 40]);
+        setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 800);
+      } else if (msg.from === playerId) {
+        $result.textContent = 'HIT!'; $result.className = 'correct';
+        navigator.vibrate?.([15]);
+        setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 600);
+      }
+      break;
+
+    case 'shieldBlock':
+      if (msg.playerId === playerId) {
+        $result.textContent = 'BLOCKED!'; $result.className = 'correct';
+        Sound.play('shieldPickup');
+        navigator.vibrate?.([20, 10, 20]);
         setTimeout(() => { $result.textContent = ''; $result.className = ''; }, 800);
       }
       break;
