@@ -93,9 +93,10 @@ img.onload = () => {
   for (let ci = 0; ci < 3; ci++) {
     const regions = rawRegions[ci];
     if (!regions || regions.length < 3) continue;
-    // Find max dimensions across states
-    const maxW = Math.max(...regions.map(r => r.w));
-    const maxH = Math.max(...regions.map(r => r.h));
+    // Find max dimensions across states + padding for decorations that extend beyond detected bounds
+    const PAD = 10;
+    const maxW = Math.max(...regions.map(r => r.w)) + PAD * 2;
+    const maxH = Math.max(...regions.map(r => r.h)) + PAD * 2;
     log(names[ci] + ' normalized to ' + maxW + 'x' + maxH);
 
     for (const reg of regions) {
@@ -103,10 +104,14 @@ img.onload = () => {
       const c = document.createElement('canvas');
       c.width = maxW; c.height = maxH;
       const ctx = c.getContext('2d');
-      // Center the button content in the normalized canvas
-      const offX = Math.round((maxW - reg.w) / 2);
-      const offY = Math.round((maxH - reg.h) / 2);
-      ctx.drawImage(img, reg.x, reg.y, reg.w, reg.h, offX, offY, reg.w, reg.h);
+      // Draw with extended source region (PAD extra on each side from spritesheet)
+      const srcX = Math.max(0, reg.x - PAD);
+      const srcY = Math.max(0, reg.y - PAD);
+      const srcW = Math.min(W - srcX, reg.w + PAD * 2);
+      const srcH = Math.min(H - srcY, reg.h + PAD * 2);
+      const offX = Math.round((maxW - srcW) / 2);
+      const offY = Math.round((maxH - srcH) / 2);
+      ctx.drawImage(img, srcX, srcY, srcW, srcH, offX, offY, srcW, srcH);
 
       // Remove pink bg
       const id = ctx.getImageData(0, 0, maxW, maxH);
