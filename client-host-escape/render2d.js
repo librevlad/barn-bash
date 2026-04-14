@@ -519,6 +519,15 @@ const Render2D = (() => {
       }
       ctx.restore();
 
+      // Name label above player (after restore so it's always full opacity)
+      if (e.name) {
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(e.name, px, sy - 26 - jumpY * SCALE);
+      }
+
       // Dust particles at feet via ParticleSystem
       if (pdata.alive && jumpY < 0.02) {
         particles.burst(px, py + 2, 1, {

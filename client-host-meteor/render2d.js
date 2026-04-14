@@ -19,6 +19,7 @@ const Render2D = (() => {
   let impactFlash = 0;
   let lastStateTime = 0;
   let safeZone = { x: 0, z: 0, r: 1.2 };
+  let nextSafeZone = null; // radar preview
   let subPhase = 'idle';
   let showSafe = false;
   let warnProgress = 0;
@@ -237,6 +238,23 @@ const Render2D = (() => {
   // LAYER: SAFE ZONE
   // ============================================================
   function drawSafeZone(ctx) {
+    // Radar preview: ghost of next safe zone (blue, subtle)
+    if (nextSafeZone && !showSafe) {
+      const SCALE = camera.getZoom();
+      const ns = camera.worldToScreen(nextSafeZone.x, nextSafeZone.z);
+      const nr = (nextSafeZone.r || 1.2) * SCALE;
+      const clock = renderLoop ? renderLoop.getClock() : 0;
+      const pulse = 0.15 + Math.sin(clock * 3) * 0.05;
+      ctx.strokeStyle = `rgba(100,180,255,${pulse})`;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath(); ctx.arc(ns.x, ns.y, nr, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = `rgba(100,180,255,${pulse * 0.3})`;
+      ctx.font = '9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('RADAR', ns.x, ns.y - nr - 4);
+    }
     if (!showSafe) return;
     const SCALE = camera.getZoom();
     const s = camera.worldToScreen(safeZone.x, safeZone.z);
@@ -302,6 +320,15 @@ const Render2D = (() => {
       }
 
       CharDraw.blob(ctx, s.x, s.y, 22, e.color, { idx: e.data.idx, clock, expression: expr, running: false, character: e.character });
+
+      // Name label above player
+      if (e.data.name) {
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(e.data.name, s.x, s.y - 28);
+      }
     }
   }
 
@@ -344,6 +371,7 @@ const Render2D = (() => {
     subPhase = state.subPhase;
     showSafe = state.subPhase === 'warning';
     if (state.safeZone) safeZone = state.safeZone;
+    nextSafeZone = state.nextSafeZone || null;
     // Timer progress: subTick counts down, higher = more time left
     if (state.subPhase === 'warning' && state.subTick !== undefined) {
       const maxTicks = Math.max(30, 50 - (state.wave || 1) * 2);
@@ -372,6 +400,7 @@ const Render2D = (() => {
       e.visible = pd.connected;
       e.data.alive = pd.alive;
       e.data.safe = pd.safe;
+      e.data.name = pd.name || null;
       e.data.idx = i;
     });
   }

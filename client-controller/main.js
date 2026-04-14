@@ -15,7 +15,7 @@ let gameId = 'escapeFox', tapped = false;
 
 const GAME_NAMES = { escapeFox: 'ESCAPE THE FOX', hillKing: 'KING OF THE HILL', meteor: 'METEOR SHOWER', race: 'GRAND PRIX' };
 const GESTURE_HINTS = {
-  escapeFox: 'TAP = jump · SWIPE ←→ = change lane · SWIPE ↓ = slide under',
+  escapeFox: 'TAP = jump · SWIPE ↑ = high jump · SWIPE ←→ = lane · SWIPE ↓ = slide',
   hillKing:  'SWIPE = move · SWIPE DOWN = slam · TAP = dash · HOLD = shield',
   meteor:    'TAP = dodge to safety · SWIPE = move · HOLD = sprint',
   race:      'SWIPE ←→ = steer · TAP = boost or use item · HOLD = drift',
@@ -124,6 +124,8 @@ input.onTap(() => onTap());
 input.onSwipe(({ direction }) => onSwipe(direction));
 input.onHold(() => onHold());
 input.onHoldRelease(() => onHoldRelease());
+input.onPressStart(() => onPressStart());
+input.onPressEnd(() => onPressEnd());
 
 // ============================================================
 // GESTURE HANDLERS
@@ -164,8 +166,10 @@ function onSwipe(dir) {
       Sound.play('dash');
     } else if (dir === 'up') {
       jumpCount++;
-      send('jump');
+      // Swipe up = high jump (hold boost for ~400ms)
+      send('jumpStart');
       Sound.play(jumpCount > 1 ? 'jump2' : 'jump');
+      setTimeout(() => send('jumpEnd'), 400);
     } else if (dir === 'down') {
       send('slide');
       Sound.play('slide');
@@ -222,6 +226,14 @@ function onHoldRelease() {
   } else if (gameId === 'race') {
     send('driftEnd');
   }
+}
+
+function onPressStart() {
+  // Reserved for future per-game press events
+}
+
+function onPressEnd() {
+  // Reserved for future per-game press events
 }
 
 function send(action, direction) {

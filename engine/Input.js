@@ -41,6 +41,8 @@
     this._swipeCb = null;
     this._holdCb = null;
     this._holdReleaseCb = null;
+    this._pressStartCb = null;
+    this._pressEndCb = null;
 
     this._ptrStart = null;
     this._ptrStartTime = 0;
@@ -72,6 +74,12 @@
 
   /** @param {function(): void} cb */
   InputManager.prototype.onHoldRelease = function (cb) { this._holdReleaseCb = cb; return this; };
+
+  /** @param {function(): void} cb — fires immediately on pointerdown */
+  InputManager.prototype.onPressStart = function (cb) { this._pressStartCb = cb; return this; };
+
+  /** @param {function(): void} cb — fires on pointerup/cancel regardless of gesture type */
+  InputManager.prototype.onPressEnd = function (cb) { this._pressEndCb = cb; return this; };
 
   /* ---- Enable / disable ---- */
 
@@ -106,6 +114,8 @@
     this._ptrStartTime = Date.now();
     this._isHolding = false;
 
+    if (this._pressStartCb) this._pressStartCb();
+
     var self = this;
     this._holdTimer = setTimeout(function () {
       self._isHolding = true;
@@ -132,6 +142,7 @@
       if (this._holdReleaseCb) this._holdReleaseCb();
       this._ptrStart = null;
       this._isHolding = false;
+      if (this._pressEndCb) this._pressEndCb();
       return;
     }
 
@@ -159,9 +170,11 @@
 
     this._ptrStart = null;
     this._isHolding = false;
+    if (this._pressEndCb) this._pressEndCb();
   };
 
   InputManager.prototype._handleCancel = function () {
+    if (this._ptrStart && this._pressEndCb) this._pressEndCb();
     this._reset();
   };
 
