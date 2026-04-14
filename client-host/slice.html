@@ -80,16 +80,36 @@ img.onload = () => {
   const states = ['normal', 'hover', 'pressed'];
   window._results = {};
 
+  // First pass: collect raw regions per button
+  const rawRegions = {}; // rawRegions[buttonIdx] = [{x,y,w,h}, ...]
   buttonRows.slice(0, 3).forEach((row, ri) => {
     row.cols.forEach((col, ci) => {
-      const key = names[ci] + '-' + states[ri];
+      if (!rawRegions[ci]) rawRegions[ci] = [];
+      rawRegions[ci].push({ x: col.x, y: row.y, w: col.w, h: row.h, state: states[ri] });
+    });
+  });
+
+  // Second pass: normalize — each button's 3 states get the same canvas size
+  for (let ci = 0; ci < 3; ci++) {
+    const regions = rawRegions[ci];
+    if (!regions || regions.length < 3) continue;
+    // Find max dimensions across states
+    const maxW = Math.max(...regions.map(r => r.w));
+    const maxH = Math.max(...regions.map(r => r.h));
+    log(names[ci] + ' normalized to ' + maxW + 'x' + maxH);
+
+    for (const reg of regions) {
+      const key = names[ci] + '-' + reg.state;
       const c = document.createElement('canvas');
-      c.width = col.w; c.height = row.h;
+      c.width = maxW; c.height = maxH;
       const ctx = c.getContext('2d');
-      ctx.drawImage(img, col.x, row.y, col.w, row.h, 0, 0, col.w, row.h);
+      // Center the button content in the normalized canvas
+      const offX = Math.round((maxW - reg.w) / 2);
+      const offY = Math.round((maxH - reg.h) / 2);
+      ctx.drawImage(img, reg.x, reg.y, reg.w, reg.h, offX, offY, reg.w, reg.h);
 
       // Remove pink bg
-      const id = ctx.getImageData(0, 0, col.w, row.h);
+      const id = ctx.getImageData(0, 0, maxW, maxH);
       const d = id.data;
       for (let i = 0; i < d.length; i += 4) {
         const dr = Math.abs(d[i]-bgR), dg = Math.abs(d[i+1]-bgG), db = Math.abs(d[i+2]-bgB);
@@ -100,17 +120,16 @@ img.onload = () => {
       ctx.putImageData(id, 0, 0);
 
       window._results[key] = c.toDataURL('image/png');
-      log(key + ': ' + col.w + 'x' + row.h + ' @ (' + col.x + ',' + row.y + ')');
+      log(key + ': ' + maxW + 'x' + maxH + ' (src ' + reg.w + 'x' + reg.h + ')');
 
-      // Preview
       const div = document.createElement('div');
       div.style.cssText = 'background:#444;padding:6px;border-radius:8px;text-align:center';
       div.innerHTML = '<div style="font-size:10px;color:#aaa;margin-bottom:4px">'+key+'</div>';
       const p = new Image(); p.src = window._results[key]; p.style.height = '55px';
       div.appendChild(p);
       document.getElementById('previews').appendChild(div);
-    });
-  });
+    }
+  }
 
   // Debug overlay
   const dbg = document.createElement('canvas');
