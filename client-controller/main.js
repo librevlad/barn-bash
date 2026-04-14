@@ -43,13 +43,15 @@ const $obNameBtn = document.getElementById('ob-name-btn');
 const $obChars = document.getElementById('ob-chars');
 const $obCharQuip = document.getElementById('ob-char-quip');
 
-// Load from localStorage
+// Load from localStorage — if both name and character saved, offer quick-join
 const saved = localStorage.getItem('frantics_player');
+let quickJoinAvailable = false;
 if (saved) {
   try {
     const s = JSON.parse(saved);
-    if (s.name) $obName.value = s.name;
+    if (s.name) { $obName.value = s.name; myName = s.name; }
     if (s.character) selectedChar = s.character;
+    if (s.name && s.character) quickJoinAvailable = true;
   } catch {}
 }
 
@@ -77,6 +79,21 @@ confirmBtn.style.cssText = 'display:block;width:100%;margin-top:14px;padding:12p
 confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); finishOnboarding(); });
 $obChars.appendChild(confirmBtn);
 if (selectedChar) $obCharQuip.textContent = CHAR_QUIPS[selectedChar] || '';
+
+// Quick-join: skip onboarding if returning player
+if (quickJoinAvailable) {
+  const charEmoji = { cat: '🐱', frog: '🐸', wolf: '🐺' };
+  const quickBtn = document.createElement('button');
+  quickBtn.innerHTML = `${charEmoji[selectedChar] || '?'} Play as <b>${myName}</b>`;
+  quickBtn.style.cssText = 'display:block;width:90%;max-width:280px;margin:10px auto 0;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff3366,#cc33ff);color:white;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;';
+  quickBtn.addEventListener('click', (e) => { e.stopPropagation(); finishOnboarding(); });
+  $obStepName.insertBefore(quickBtn, $obStepName.firstChild);
+  // Add "or change" link
+  const changeLink = document.createElement('div');
+  changeLink.textContent = 'or enter a new name below';
+  changeLink.style.cssText = 'font-size:11px;color:#666;text-align:center;margin:8px 0 12px;';
+  quickBtn.after(changeLink);
+}
 
 $obNameBtn.addEventListener('click', () => {
   const name = $obName.value.trim();
