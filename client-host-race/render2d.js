@@ -254,6 +254,7 @@ const Render2D = (() => {
           ctx.lineTo(f.x + perpX * t + ax + Math.cos(angle) * 6, f.y + perpY * t + az + Math.sin(angle) * 6);
           ctx.fill();
         }
+      }
       // "FINISH" label above checkered line
       ctx.save();
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
