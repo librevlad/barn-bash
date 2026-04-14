@@ -1,74 +1,133 @@
 <!DOCTYPE html>
-<html><head><title>Slicer</title></head>
-<body style="background:#222;color:#eee;font-family:monospace">
+<html><head><title>Button Slicer — Auto</title></head>
+<body style="background:#222;color:#eee;font-family:monospace;padding:16px">
 <pre id="log"></pre>
 <div id="previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px"></div>
 <script>
 const log = s => { document.getElementById('log').textContent += s + '\n'; };
 
-// Final coordinates
-const BUTTONS = {
-  'play-normal':      {x:160, y:60,  w:240, h:185},
-  'play-hover':       {x:160, y:305, w:240, h:150},
-  'play-pressed':     {x:160, y:520, w:240, h:130},
-  'customize-normal': {x:500, y:60,  w:310, h:185},
-  'customize-hover':  {x:500, y:305, w:310, h:150},
-  'customize-pressed':{x:500, y:520, w:310, h:130},
-  'settings-normal':  {x:878, y:60,  w:290, h:185},
-  'settings-hover':   {x:878, y:305, w:290, h:150},
-  'settings-pressed': {x:878, y:520, w:290, h:130},
-};
-
 const img = new Image();
 img.src = '/assets/buttons.png';
 img.onload = () => {
-  log('Loaded: ' + img.width + 'x' + img.height);
+  const W = img.width, H = img.height;
+  log('Loaded: ' + W + 'x' + H);
+
+  const scan = document.createElement('canvas');
+  scan.width = W; scan.height = H;
+  const sctx = scan.getContext('2d');
+  sctx.drawImage(img, 0, 0);
+  const px = sctx.getImageData(0, 0, W, H).data;
+
+  // Sample bg color from corner (0,0)
+  const bgR = px[0], bgG = px[1], bgB = px[2];
+  log('BG color: rgb(' + bgR + ',' + bgG + ',' + bgB + ')');
+
+  function isBg(i) {
+    return Math.abs(px[i]-bgR) < 25 && Math.abs(px[i+1]-bgG) < 25 && Math.abs(px[i+2]-bgB) < 25;
+  }
+
+  // Find row bands (horizontal strips with content)
+  const rowAct = [];
+  for (let y = 0; y < H; y++) {
+    let c = 0;
+    for (let x = 0; x < W; x++) if (!isBg((y*W+x)*4)) c++;
+    rowAct.push(c);
+  }
+  const bands = [];
+  let inB = false, bS = 0;
+  for (let y = 0; y < H; y++) {
+    if (rowAct[y] > 80 && !inB) { inB = true; bS = y; }
+    if (rowAct[y] <= 80 && inB) { inB = false; if (y-bS > 30) bands.push({y:bS, h:y-bS}); }
+  }
+  if (inB && H-bS > 30) bands.push({y:bS, h:H-bS});
+  log('Row bands: ' + bands.length);
+  bands.forEach((b,i) => log('  row'+i+': y='+b.y+' h='+b.h));
+
+  // Find column regions within each band
+  function findCols(yS, yE) {
+    const cols = [];
+    let inC = false, cS = 0;
+    for (let x = 0; x < W; x++) {
+      let c = 0;
+      for (let y = yS; y < yE; y++) if (!isBg((y*W+x)*4)) c++;
+      if (c > 5 && !inC) { inC = true; cS = x; }
+      if (c <= 5 && inC) { inC = false; if (x-cS > 40) cols.push({x:cS, w:x-cS}); }
+    }
+    if (inC && W-cS > 40) cols.push({x:cS, w:W-cS});
+    return cols;
+  }
+
+  // Find button rows (bands with exactly 3 columns)
+  const buttonRows = [];
+  for (const band of bands) {
+    const cols = findCols(band.y, band.y + band.h);
+    // Filter: real buttons are > 150px wide, decorations are smaller
+    const bigCols = cols.filter(c => c.w > 150);
+    if (bigCols.length >= 3) {
+      buttonRows.push({ y: band.y, h: band.h, cols: bigCols.slice(0, 3) });
+      log('  → button row: ' + bigCols.map(c => 'x='+c.x+' w='+c.w).join(', '));
+    }
+  }
+  log('Button rows found: ' + buttonRows.length);
+
+  if (buttonRows.length < 3) {
+    log('ERROR: Expected 3 button rows, got ' + buttonRows.length);
+    // Try merging close bands
+    log('Trying with merged bands...');
+  }
+
+  const names = ['play', 'customize', 'settings'];
+  const states = ['normal', 'hover', 'pressed'];
   window._results = {};
 
-  for (const [name, r] of Object.entries(BUTTONS)) {
-    const c = document.createElement('canvas');
-    c.width = r.w; c.height = r.h;
-    const ctx = c.getContext('2d');
-    ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+  buttonRows.slice(0, 3).forEach((row, ri) => {
+    row.cols.forEach((col, ci) => {
+      const key = names[ci] + '-' + states[ri];
+      const c = document.createElement('canvas');
+      c.width = col.w; c.height = row.h;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, col.x, row.y, col.w, row.h, 0, 0, col.w, row.h);
 
-    // Remove bg: known bg color from spritesheet (light gray ~235)
-    const id = ctx.getImageData(0, 0, r.w, r.h);
-    const d = id.data;
-    const bgR = 235, bgG = 235, bgB = 237;
-    for (let i = 0; i < d.length; i += 4) {
-      const dr = Math.abs(d[i]-bgR), dg = Math.abs(d[i+1]-bgG), db = Math.abs(d[i+2]-bgB);
-      const maxD = Math.max(dr, dg, db);
-      if (maxD < 15) d[i+3] = 0;
-      else if (maxD < 30) d[i+3] = Math.round(255 * (maxD - 15) / 15);
-    }
-    ctx.putImageData(id, 0, 0);
+      // Remove pink bg
+      const id = ctx.getImageData(0, 0, col.w, row.h);
+      const d = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const dr = Math.abs(d[i]-bgR), dg = Math.abs(d[i+1]-bgG), db = Math.abs(d[i+2]-bgB);
+        const maxD = Math.max(dr, dg, db);
+        if (maxD < 20) d[i+3] = 0;
+        else if (maxD < 40) d[i+3] = Math.round(255 * (maxD-20) / 20);
+      }
+      ctx.putImageData(id, 0, 0);
 
-    window._results[name] = c.toDataURL('image/png');
-    log(name + ': ' + r.w + 'x' + r.h);
+      window._results[key] = c.toDataURL('image/png');
+      log(key + ': ' + col.w + 'x' + row.h + ' @ (' + col.x + ',' + row.y + ')');
 
-    const div = document.createElement('div');
-    div.style.cssText = 'display:inline-block;background:#444;padding:6px;border-radius:8px;text-align:center';
-    div.innerHTML = '<div style="font-size:10px;color:#aaa;margin-bottom:4px">' + name + '</div>';
-    const p = new Image(); p.src = window._results[name]; p.style.height = '55px';
-    div.appendChild(p);
-    document.getElementById('previews').appendChild(div);
-  }
-  log('Done!');
+      // Preview
+      const div = document.createElement('div');
+      div.style.cssText = 'background:#444;padding:6px;border-radius:8px;text-align:center';
+      div.innerHTML = '<div style="font-size:10px;color:#aaa;margin-bottom:4px">'+key+'</div>';
+      const p = new Image(); p.src = window._results[key]; p.style.height = '55px';
+      div.appendChild(p);
+      document.getElementById('previews').appendChild(div);
+    });
+  });
 
-  // Debug: draw crop rectangles on full spritesheet
+  // Debug overlay
   const dbg = document.createElement('canvas');
-  dbg.width = img.width; dbg.height = img.height;
+  dbg.width = W; dbg.height = H;
   dbg.style.cssText = 'width:100%;max-width:1200px;margin-top:20px;border:1px solid #555';
   const dctx = dbg.getContext('2d');
   dctx.drawImage(img, 0, 0);
-  dctx.strokeStyle = 'red'; dctx.lineWidth = 3;
-  for (const [name, r] of Object.entries(BUTTONS)) {
-    dctx.strokeRect(r.x, r.y, r.w, r.h);
-    dctx.fillStyle = 'red'; dctx.font = '14px monospace';
-    dctx.fillText(name, r.x + 4, r.y + 16);
-  }
+  dctx.strokeStyle = '#0f0'; dctx.lineWidth = 3;
+  buttonRows.forEach((row, ri) => {
+    row.cols.forEach((col, ci) => {
+      dctx.strokeRect(col.x, row.y, col.w, row.h);
+      dctx.fillStyle = '#0f0'; dctx.font = '14px monospace';
+      dctx.fillText(names[ci]+'-'+states[ri], col.x+4, row.y+16);
+    });
+  });
   document.body.appendChild(dbg);
+  log('\\nDone!');
 };
-
 </script>
 </body></html>
