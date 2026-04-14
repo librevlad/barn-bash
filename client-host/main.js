@@ -204,20 +204,30 @@ function updateLobby(players) {
   if (playerCount >= 2) $modalNeed.style.display = 'none';
 }
 
-// Game hotspot clicks (inside modal image)
-document.querySelectorAll('.modal-hot[data-game]').forEach(hot => {
-  hot.addEventListener('mouseenter', () => Sound.play('nearMiss'));
-  hot.addEventListener('click', () => {
+// Modal sprite buttons — state switching + preload
+document.querySelectorAll('.modal-btn img').forEach(img => {
+  [img.dataset.h, img.dataset.p].forEach(src => { if (src) { const i = new Image(); i.src = src; } });
+});
+document.querySelectorAll('.modal-btn').forEach(btn => {
+  const img = btn.querySelector('img');
+  btn.addEventListener('mouseenter', () => { if (img.dataset.h) img.src = img.dataset.h; Sound.play('nearMiss'); });
+  btn.addEventListener('mouseleave', () => { if (img.dataset.n) img.src = img.dataset.n; });
+  btn.addEventListener('mousedown', () => { if (img.dataset.p) img.src = img.dataset.p; });
+  btn.addEventListener('mouseup', () => { if (img.dataset.h) img.src = img.dataset.h; });
+});
+
+// Game card clicks
+document.querySelectorAll('.modal-btn[data-game]').forEach(btn => {
+  btn.addEventListener('click', () => {
     if (playerCount < 2) { Sound.play('stumble'); return; }
     Sound.play('countdownGo');
     stopIdleNarrator();
     $gameModal.classList.remove('show');
-    ws.send(JSON.stringify({ type: 'selectGame', gameId: hot.dataset.game }));
+    ws.send(JSON.stringify({ type: 'selectGame', gameId: btn.dataset.game }));
   });
 });
 
-// Tournament hotspot
-document.getElementById('mh-tournament').addEventListener('mouseenter', () => Sound.play('nearMiss'));
+// Tournament
 document.getElementById('mh-tournament').addEventListener('click', () => {
   if (playerCount < 2) { Sound.play('stumble'); return; }
   Sound.play('winner');
@@ -226,8 +236,7 @@ document.getElementById('mh-tournament').addEventListener('click', () => {
   ws.send(JSON.stringify({ type: 'startTournament' }));
 });
 
-// Back hotspot
-document.getElementById('mh-back').addEventListener('mouseenter', () => Sound.play('nearMiss'));
+// Back
 document.getElementById('mh-back').addEventListener('click', () => {
   $gameModal.classList.remove('show');
 });

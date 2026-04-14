@@ -99,7 +99,7 @@
       pointer-events: none;
     }
 
-    /* Game select modal — full image from variant-C (carnival tickets) */
+    /* Game select modal — frame + sprite buttons */
     #game-modal {
       display: none; position: fixed; inset: 0; z-index: 50;
       background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
@@ -108,46 +108,42 @@
     #game-modal.show { display: flex; }
     .modal-box {
       position: relative;
-      width: 720px; max-width: 95vw;
-      aspect-ratio: 1440 / 736;
-      background: url('/assets/modal-game-select.png') center/100% 100% no-repeat;
-      border-radius: 16px;
-      overflow: hidden;
+      width: 640px; max-width: 92vw;
+      background: url('/assets/frame.png') center/100% 100% no-repeat;
+      aspect-ratio: 691 / 361;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 7% 8% 5% 8%;
+      gap: 6px;
     }
-    /* Hotspots over the game tickets in the image */
-    .modal-hot {
-      position: absolute; cursor: pointer;
-      border: none; background: transparent;
-      border-radius: 8px;
-      transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
+    .modal-title {
+      font-size: 18px; font-weight: 900; letter-spacing: 3px;
+      color: #4a2a0a; text-transform: uppercase;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+      font-family: 'Georgia', serif;
+      margin-bottom: 2px;
     }
-    .modal-hot:hover {
-      background: rgba(255,255,255,0.2);
-      box-shadow: 0 0 20px 6px rgba(255,220,80,0.4);
-      transform: scale(1.03);
+    .modal-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      width: 100%;
     }
-    .modal-hot:active {
-      transform: scale(0.96);
-      background: rgba(0,0,0,0.1);
+    .modal-btn {
+      border: none; cursor: pointer; background: none; padding: 0;
+      transition: transform 0.1s, filter 0.12s;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     }
-    /* Ticket positions (% of 1440x736 image) */
-    /* Escape Fox: top-left ticket */
-    #mh-escape   { left: 5%;  top: 18%; width: 44%; height: 28%; }
-    /* King of Hill: top-right ticket */
-    #mh-hill     { left: 51%; top: 18%; width: 44%; height: 28%; }
-    /* Meteor: bottom-left ticket */
-    #mh-meteor   { left: 5%;  top: 50%; width: 44%; height: 28%; }
-    /* Grand Prix: bottom-right ticket */
-    #mh-race     { left: 51%; top: 50%; width: 44%; height: 28%; }
-    /* Tournament bar at bottom */
-    #mh-tournament { left: 22%; top: 82%; width: 56%; height: 12%; border-radius: 12px; }
-    /* Back button bottom-left */
-    #mh-back     { left: 3%;  top: 83%; width: 16%; height: 11%; border-radius: 10px; }
+    .modal-btn img { display: block; width: 100%; height: auto; border-radius: 6px; }
+    .modal-btn:hover { transform: scale(1.04); filter: drop-shadow(0 4px 12px rgba(255,200,50,0.4)) brightness(1.05); }
+    .modal-btn:active { transform: scale(0.95); filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3)); }
+    .modal-bottom {
+      display: flex; gap: 8px; align-items: center; width: 100%;
+    }
+    .modal-bottom .modal-btn { flex: 1; }
+    .modal-bottom .modal-btn-back { flex: 0 0 auto; }
+    .modal-bottom .modal-btn-back img { width: 44px; height: 44px; }
     .modal-need {
-      position: absolute; top: 14%; left: 50%; transform: translateX(-50%);
-      font-size: 11px; color: #cc2200; font-weight: 800;
-      text-shadow: 0 1px 2px rgba(255,255,255,0.6);
-      display: none; z-index: 2;
+      font-size: 10px; color: #993322; font-weight: 700; font-style: italic;
+      display: none;
     }
   </style>
 </head>
@@ -175,16 +171,21 @@
   <!-- Narrator -->
   <div id="narrator-idle"></div>
 
-  <!-- Game select modal — carnival tickets image + hotspots -->
+  <!-- Game select modal — frame + sprite buttons -->
   <div id="game-modal">
     <div class="modal-box">
+      <div class="modal-title">Choose a Game</div>
       <div class="modal-need" id="modal-need">Need 2+ players to start</div>
-      <div class="modal-hot" id="mh-escape" data-game="escapeFox"></div>
-      <div class="modal-hot" id="mh-hill" data-game="hillKing"></div>
-      <div class="modal-hot" id="mh-meteor" data-game="meteor"></div>
-      <div class="modal-hot" id="mh-race" data-game="race"></div>
-      <div class="modal-hot" id="mh-tournament"></div>
-      <div class="modal-hot" id="mh-back"></div>
+      <div class="modal-grid">
+        <button class="modal-btn" data-game="escapeFox"><img src="/assets/game-escape-normal.png" data-n="/assets/game-escape-normal.png" data-h="/assets/game-escape-hover.png" data-p="/assets/game-escape-pressed.png"></button>
+        <button class="modal-btn" data-game="hillKing"><img src="/assets/game-hill-normal.png" data-n="/assets/game-hill-normal.png" data-h="/assets/game-hill-hover.png" data-p="/assets/game-hill-pressed.png"></button>
+        <button class="modal-btn" data-game="meteor"><img src="/assets/game-meteor-normal.png" data-n="/assets/game-meteor-normal.png" data-h="/assets/game-meteor-hover.png" data-p="/assets/game-meteor-pressed.png"></button>
+        <button class="modal-btn" data-game="race"><img src="/assets/game-race-normal.png" data-n="/assets/game-race-normal.png" data-h="/assets/game-race-hover.png" data-p="/assets/game-race-pressed.png"></button>
+      </div>
+      <div class="modal-bottom">
+        <button class="modal-btn modal-btn-back" id="mh-back"><img src="/assets/game-back-normal.png" data-n="/assets/game-back-normal.png" data-h="/assets/game-back-hover.png" data-p="/assets/game-back-pressed.png"></button>
+        <button class="modal-btn" id="mh-tournament"><img src="/assets/game-tourn-normal.png" data-n="/assets/game-tourn-normal.png" data-h="/assets/game-tourn-hover.png" data-p="/assets/game-tourn-pressed.png"></button>
+      </div>
     </div>
   </div>
 
