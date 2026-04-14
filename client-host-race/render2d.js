@@ -254,7 +254,15 @@ const Render2D = (() => {
           ctx.lineTo(f.x + perpX * t + ax + Math.cos(angle) * 6, f.y + perpY * t + az + Math.sin(angle) * 6);
           ctx.fill();
         }
-      }
+      // "FINISH" label above checkered line
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      const labelY = f.y - Math.abs(perpY) * 0.5 - 12;
+      ctx.fillText('FINISH', f.x, labelY);
+      ctx.restore();
     }
   }
 

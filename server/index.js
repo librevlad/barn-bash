@@ -389,6 +389,10 @@ wss.on('connection', (ws) => {
     if (playerId) {
       players.remove(playerId);
       currentGame.broadcastState();
+      // Safety: if all players left during a running game, reset to lobby
+      if (players.connectedCount() === 0 && currentGame.phase === 'running') {
+        currentGame.restart();
+      }
     }
   });
 });
