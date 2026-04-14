@@ -129,7 +129,7 @@ function runCountdown() {
   let i = 0;
   $countdown.style.display = 'block';
   function next() {
-    if (i >= steps.length) { $countdown.style.display = 'none'; $hud.style.display = ''; return; }
+    if (i >= steps.length) { $countdown.style.display = 'none'; return; }
     $countdown.textContent = steps[i];
     $countdown.style.transform = 'translate(-50%, -50%) scale(1.6)';
     $countdown.style.opacity = '1';
