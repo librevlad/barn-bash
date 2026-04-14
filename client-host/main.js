@@ -63,7 +63,7 @@ document.addEventListener('click', () => { Sound.startMusic('lobby'); }, { once:
 // HOTSPOT BUTTONS — with hover sound + click sound + narrator
 // ============================================================
 // Hover sound for all buttons
-document.querySelectorAll('.sprite-btn').forEach(btn => {
+document.querySelectorAll('.hotspot').forEach(btn => {
   btn.addEventListener('mouseenter', () => Sound.play('nearMiss'));
 });
 // Also hover on modal cards
