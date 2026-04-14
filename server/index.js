@@ -36,6 +36,8 @@ function resolve(url) {
     return path.join(root, 'client-host', 'slice-back.html');
   if (url === '/host/slice-tourn')
     return path.join(root, 'client-host', 'slice-tourn.html');
+  if (url === '/host/slice-ticket')
+    return path.join(root, 'client-host', 'slice-ticket.html');
   if (url.startsWith('/host/') && url.endsWith('.js'))
     return path.join(root, 'client-host', path.basename(url));
 
