@@ -525,7 +525,7 @@ const Render2D = (() => {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(e.name, px, sy - 26 - jumpY * SCALE);
+        ctx.fillText(e.name, px, sy - 26 - jumpY * 80);
       }
 
       // Dust particles at feet via ParticleSystem
