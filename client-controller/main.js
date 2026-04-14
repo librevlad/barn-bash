@@ -389,18 +389,27 @@ function onMessage(e) {
         const me = msg.gameState.players[playerId];
         if (me) {
           if (phase === 'running') {
-            const lapText = 'Lap ' + (me.lap || 1) + '/' + (msg.gameState.totalLaps || 3);
-            $score.textContent = lapText;
+            const totalLaps = msg.gameState.totalLaps || 3;
             if (me.finished) {
-              $status.textContent = 'FINISHED! #' + (me.position || '?');
-            } else if (me.item) {
-              $status.textContent = me.item.toUpperCase() + ' ready! TAP to use';
-            } else if (me.stunned) {
-              $status.textContent = 'STUNNED...';
-            } else if (me.drifting) {
-              $status.textContent = 'DRIFTING...';
+              // Show finish position from finishOrder
+              const fo = msg.gameState.finishOrder || [];
+              const pos = fo.indexOf(playerId) + 1;
+              $score.textContent = '#' + (pos || '?');
+              $status.textContent = 'FINISHED!';
             } else {
-              $status.textContent = '';
+              const displayLap = Math.min(me.lap || 1, totalLaps);
+              $score.textContent = 'Lap ' + displayLap + '/' + totalLaps;
+            }
+            if (!me.finished) {
+              if (me.item) {
+                $status.textContent = me.item.toUpperCase() + ' ready! TAP to use';
+              } else if (me.stunned) {
+                $status.textContent = 'STUNNED...';
+              } else if (me.drifting) {
+                $status.textContent = 'DRIFTING...';
+              } else {
+                $status.textContent = '';
+              }
             }
             $cdWrap.style.display = 'none';
           } else if (phase === 'lobby') {
