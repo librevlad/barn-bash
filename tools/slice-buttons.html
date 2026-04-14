@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head><title>Button Slicer</title></head>
+<body>
+<pre id="log"></pre>
+<div id="previews"></div>
+<script>
+const log = s => { document.getElementById('log').textContent += s + '\n'; console.log(s); };
+
+const img = new Image();
+img.src = '/assets/buttons.png';
+img.onload = async () => {
+  const W = img.width, H = img.height;
+  log('Loaded: ' + W + 'x' + H);
+
+  // Scan canvas
+  const scan = document.createElement('canvas');
+  scan.width = W; scan.height = H;
+  const sctx = scan.getContext('2d');
+  sctx.drawImage(img, 0, 0);
+  const px = sctx.getImageData(0, 0, W, H).data;
+
+  function isWhitish(i) { return px[i] > 235 && px[i+1] > 235 && px[i+2] > 235; }
+
+  // Row scan
+  function rowActivity(y) {
+    let c = 0;
+    for (let x = 0; x < W; x++) if (!isWhitish((y*W+x)*4)) c++;
+    return c;
+  }
+
+  // Find horizontal bands
+  const bands = [];
+  let inB = false, bStart = 0;
+  for (let y = 0; y < H; y++) {
+    const a = rowActivity(y);
+    if (a > 150 && !inB) { inB = true; bStart = y; }
+    if (a <= 150 && inB) { inB = false; if (y - bStart > 40) bands.push({y: bStart, h: y - bStart}); }
+  }
+  if (inB && H - bStart > 40) bands.push({y: bStart, h: H - bStart});
+
+  log('Bands: ' + bands.length);
+  bands.forEach((b,i) => log('  ' + i + ': y=' + b.y + ' h=' + b.h));
+
+  // Column scan within each band
+  function colActivity(x, yS, yE) {
+    let c = 0;
+    for (let y = yS; y < yE; y++) if (!isWhitish((y*W+x)*4)) c++;
+    return c;
+  }
+
+  function findCols(yS, yE) {
+    const cols = [];
+    let inC = false, cStart = 0;
+    for (let x = 0; x < W; x++) {
+      const a = colActivity(x, yS, yE);
+      if (a > 8 && !inC) { inC = true; cStart = x; }
+      if (a <= 8 && inC) { inC = false; if (x - cStart > 60) cols.push({x: cStart, w: x - cStart}); }
+    }
+    if (inC && W - cStart > 60) cols.push({x: cStart, w: W - cStart});
+    return cols;
+  }
+
+  bands.forEach((b, i) => {
+    const cols = findCols(b.y, b.y + b.h);
+    log('Band ' + i + ' columns: ' + cols.map(c => 'x='+c.x+' w='+c.w).join(', '));
+  });
+
+  // Cut buttons: use the detected regions
+  // Expect: band 0 = title, band 1..3 or more = button rows with labels
+  // Filter bands: only keep bands with 3 columns (those are button rows)
+  const buttonRows = bands.filter(b => {
+    const cols = findCols(b.y, b.y + b.h);
+    return cols.length >= 3;
+  });
+
+  log('\\nButton rows: ' + buttonRows.length);
+
+  const names = ['play', 'customize', 'settings'];
+  const states = ['normal', 'hover', 'pressed'];
+  const previews = document.getElementById('previews');
+  const results = {};
+
+  buttonRows.forEach((band, rowIdx) => {
+    if (rowIdx >= 3) return;
+    const cols = findCols(band.y, band.y + band.h);
+    log(states[rowIdx] + ' row: y=' + band.y + ' h=' + band.h + ' cols=' + cols.length);
+
+    cols.forEach((col, colIdx) => {
+      if (colIdx >= 3) return;
+      const key = names[colIdx] + '-' + states[rowIdx];
+
+      // Trim: find tight bounds within this region
+      let minY = band.y + band.h, maxY = band.y, minX = col.x + col.w, maxX = col.x;
+      for (let y = band.y; y < band.y + band.h; y++) {
+        for (let x = col.x; x < col.x + col.w; x++) {
+          if (!isWhitish((y*W+x)*4)) {
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+          }
+        }
+      }
+      // Pad by 2px
+      minX = Math.max(0, minX - 2);
+      minY = Math.max(0, minY - 2);
+      maxX = Math.min(W, maxX + 3);
+      maxY = Math.min(H, maxY + 3);
+
+      const cw = maxX - minX, ch = maxY - minY;
+      const c = document.createElement('canvas');
+      c.width = cw; c.height = ch;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, minX, minY, cw, ch, 0, 0, cw, ch);
+
+      // Remove white bg
+      const id = ctx.getImageData(0, 0, cw, ch);
+      const d = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i] > 245 && d[i+1] > 245 && d[i+2] > 245) d[i+3] = 0;
+        else if (d[i] > 230 && d[i+1] > 230 && d[i+2] > 230) {
+          d[i+3] = Math.round(255 * (1 - ((d[i]+d[i+1]+d[i+2])/3 - 230) / 25));
+        }
+      }
+      ctx.putImageData(id, 0, 0);
+
+      const dataUrl = c.toDataURL('image/png');
+      results[key] = { dataUrl, w: cw, h: ch, region: {x: minX, y: minY, w: cw, h: ch} };
+
+      log('  ' + key + ': ' + cw + 'x' + ch + ' @ ' + minX + ',' + minY);
+
+      // Show preview
+      const div = document.createElement('div');
+      div.style.cssText = 'display:inline-block;margin:4px;background:#333;padding:4px;border-radius:8px';
+      div.innerHTML = '<div style="font-size:10px;color:#aaa;text-align:center">' + key + '</div>';
+      const preview = new Image();
+      preview.src = dataUrl;
+      preview.style.height = '60px';
+      div.appendChild(preview);
+      previews.appendChild(div);
+    });
+  });
+
+  // Store for download
+  window._btnResults = results;
+  log('\\nDone! ' + Object.keys(results).length + ' buttons cut. Call window._btnResults for data URLs.');
+};
+</script>
+</body>
+</html>
