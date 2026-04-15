@@ -1,4 +1,19 @@
-const COLORS = ['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#e67e22','#1abc9c','#e84393'];
+const COLOR_IDS = [
+  'red', 'blue', 'yellow', 'green', 'pink',
+  'lightblue', 'purple', 'magenta', 'orange', 'greenalt',
+];
+const COLOR_HEX = {
+  red:       '#e74c3c',
+  blue:      '#3498db',
+  yellow:    '#f1c40f',
+  green:     '#2ecc71',
+  pink:      '#e84393',
+  lightblue: '#5dc2e8',
+  purple:    '#9b59b6',
+  magenta:   '#d044a5',
+  orange:    '#e67e22',
+  greenalt:  '#2a7c33',
+};
 const VALID_CHARACTERS = ['cat', 'frog', 'wolf', 'bear', 'bunny', 'pig', 'chicken', 'raccoon'];
 
 class Players {
@@ -7,14 +22,22 @@ class Players {
     this.nextId = 1;
   }
 
-  add(ws, name, character) {
+  add(ws, name, character, preferredColor) {
     const id = this.nextId++;
     const safeName = (name || '').slice(0, 16).replace(/[<>&"]/g, '') || ('Player ' + id);
     const safeChar = VALID_CHARACTERS.includes(character) ? character : null;
+    const taken = new Set(this.all().filter(p => p.connected).map(p => p.colorId));
+    let colorId;
+    if (preferredColor && COLOR_IDS.includes(preferredColor) && !taken.has(preferredColor)) {
+      colorId = preferredColor;
+    } else {
+      colorId = COLOR_IDS.find(c => !taken.has(c)) || COLOR_IDS[(id - 1) % COLOR_IDS.length];
+    }
     this.map[id] = {
       id, ws, connected: true,
       name: safeName,
-      color: COLORS[(id - 1) % COLORS.length],
+      colorId,
+      color: COLOR_HEX[colorId],
       character: safeChar,
       score: 0, reacted: false, correct: null,
       gameData: {}
@@ -73,6 +96,7 @@ class Players {
       out[p.id] = {
         connected: p.connected,
         color: p.color,
+        colorId: p.colorId,
         score: p.score,
         reacted: p.reacted,
         correct: p.correct
@@ -83,3 +107,5 @@ class Players {
 }
 
 module.exports = Players;
+module.exports.COLOR_IDS = COLOR_IDS;
+module.exports.COLOR_HEX = COLOR_HEX;
