@@ -539,12 +539,16 @@
   margin-top: 14px;
 }
 
-/* Hide HUD chrome during spectating */
+/* Hide HUD chrome during spectating / eliminated */
 .gameplay-root.phase-spectating .gp-score-block,
 .gameplay-root.phase-spectating .gp-avatar-orb,
 .gameplay-root.phase-spectating .gp-avatar-label,
 .gameplay-root.phase-spectating .gp-hintbar,
-.gameplay-root.phase-eliminated .gp-hintbar {
+.gameplay-root.phase-spectating .gp-item-pill,
+.gameplay-root.phase-eliminated .gp-hintbar,
+.gameplay-root.phase-eliminated .gp-item-pill,
+.gameplay-root.phase-eliminated .gp-meteor-warn-flash,
+.gameplay-root.phase-eliminated .gp-meteor-warn-label {
   display: none;
 }
 

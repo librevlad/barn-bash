@@ -44,15 +44,14 @@ function hideOnboarding() {
 function ensureGameplay(nextGameId) {
   const targetGame = nextGameId || gameId;
   if (gameplayReady) {
-    // Swap the per-game token on root if the game id changed
     const root = document.querySelector('.gameplay-root');
-    if (root) {
-      root.classList.forEach((cls) => {
-        if (cls.startsWith('game-')) root.classList.remove(cls);
-      });
-      root.classList.add('game-' + targetGame);
+    if (root && root.classList.contains('game-' + targetGame)) {
+      return; // same game, no rebuild
     }
-    return;
+    // Game id changed (or root missing) — tear down and rebuild so that
+    // eyebrow text, hintbar actions, and icon match the new game.
+    Gameplay.stop();
+    gameplayReady = false;
   }
   Gameplay.start({
     gameId: targetGame,
