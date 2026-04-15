@@ -17,6 +17,7 @@ const GAME_IDS = ['escapeFox', 'hillKing', 'meteor', 'race'];
 
 const MIME = {
   '.html': 'text/html', '.js': 'application/javascript',
+  '.css': 'text/css',
   '.glb': 'model/gltf-binary', '.png': 'image/png', '.jpg': 'image/jpeg',
   '.json': 'application/json'
 };
@@ -112,19 +113,20 @@ function resolve(url) {
 
   if (url === '/' || url === '/controller/')
     return path.join(root, 'client-controller', 'index.html');
-  if (url.startsWith('/controller/') && url.endsWith('.js'))
+  if (url.startsWith('/controller/') && (url.endsWith('.js') || url.endsWith('.css')))
     return path.join(root, 'client-controller', path.basename(url));
 
   return null;
 }
 
 const server = http.createServer((req, res) => {
-  if (req.url === '/test' || req.url === '/host' || req.url === '/controller' || req.url === '/host-escape' || req.url === '/host-hill' || req.url === '/host-meteor' || req.url === '/host-race') {
-    res.writeHead(301, { Location: req.url + '/' });
+  const urlPath = req.url.split('?')[0].split('#')[0];
+  if (urlPath === '/test' || urlPath === '/host' || urlPath === '/controller' || urlPath === '/host-escape' || urlPath === '/host-hill' || urlPath === '/host-meteor' || urlPath === '/host-race') {
+    res.writeHead(301, { Location: urlPath + '/' });
     res.end();
     return;
   }
-  const filePath = resolve(req.url);
+  const filePath = resolve(urlPath);
   if (!filePath) { res.writeHead(404); res.end('Not found'); return; }
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(500); res.end('Error'); return; }
@@ -332,14 +334,14 @@ wss.on('connection', (ws) => {
 
     switch (msg.type) {
       case 'join':
-        playerId = players.add(ws, msg.name, msg.character);
+        playerId = players.add(ws, msg.name, msg.character, msg.carColor);
         const p = players.get(playerId);
-        ws.send(JSON.stringify({ type: 'init', playerId, color: p.color, name: p.name, character: p.character }));
+        ws.send(JSON.stringify({ type: 'init', playerId, color: p.color, colorId: p.colorId, name: p.name, character: p.character }));
         if (tournament) {
           tournament.scores[playerId] = tournament.scores[playerId] || 0;
         }
         // Broadcast player join event so host can react
-        broadcast({ type: 'player_joined', playerId, name: p.name, character: p.character, color: p.color });
+        broadcast({ type: 'player_joined', playerId, name: p.name, character: p.character, color: p.color, colorId: p.colorId });
         currentGame.broadcastState();
         break;
 

@@ -40,104 +40,59 @@ const CHAR_QUIPS = {
   raccoon: '"A raccoon. Sneaky. I\'ll be watching you."',
 };
 let selectedChar = null;
+let selectedColor = null;
 let myName = null;
 let jumpCount = 0;
 
 // ============================================================
-// ONBOARDING — Name → Character → Join
+// ONBOARDING — delegates to Onboarding module (onboarding.js)
 // ============================================================
-const $onboarding = document.getElementById('onboarding');
-const $obStepName = document.getElementById('ob-step-name');
-const $obStepChar = document.getElementById('ob-step-char');
-const $obName = document.getElementById('ob-name');
-const $obNameBtn = document.getElementById('ob-name-btn');
-const $obChars = document.getElementById('ob-chars');
-const $obCharQuip = document.getElementById('ob-char-quip');
-
-// Load from localStorage — if both name and character saved, offer quick-join
-const saved = localStorage.getItem('frantics_player');
-let quickJoinAvailable = false;
-if (saved) {
-  try {
-    const s = JSON.parse(saved);
-    if (s.name) { $obName.value = s.name; myName = s.name; }
-    if (s.character) selectedChar = s.character;
-    if (s.name && s.character) quickJoinAvailable = true;
-  } catch {}
-}
-
-// Build character buttons
-for (const [id, label] of Object.entries(CHAR_NAMES)) {
-  const btn = document.createElement('button');
-  btn.dataset.char = id;
-  const EMOJIS = { cat:'🐱', frog:'🐸', wolf:'🐺', bear:'🐻', bunny:'🐰', pig:'🐷', chicken:'🐔', raccoon:'🦝' };
-  btn.innerHTML = `<span style="font-size:18px;margin-right:8px">${EMOJIS[id] || '?'}</span> ${label} <span style="color:#888;font-size:11px;margin-left:4px">(${CHAR_TRAITS[id]})</span>`;
-  btn.style.cssText = 'display:flex;align-items:center;width:100%;padding:12px 14px;border:2px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.03);color:#eee;font-size:14px;cursor:pointer;font-family:inherit;text-align:left;';
-  if (selectedChar === id) btn.style.borderColor = '#fff';
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    selectedChar = id;
-    $obCharQuip.textContent = CHAR_QUIPS[id] || '';
-    $obChars.querySelectorAll('button').forEach(b => b.style.borderColor = 'rgba(255,255,255,0.15)');
-    btn.style.borderColor = '#fff';
-    navigator.vibrate?.([15]);
-  });
-  $obChars.appendChild(btn);
-}
-// Confirm button for character selection
-const confirmBtn = document.createElement('button');
-confirmBtn.textContent = 'JOIN THE SHOW';
-confirmBtn.style.cssText = 'display:block;width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff3366,#cc33ff);color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;';
-confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); finishOnboarding(); });
-$obChars.appendChild(confirmBtn);
-if (selectedChar) $obCharQuip.textContent = CHAR_QUIPS[selectedChar] || '';
-
-// Quick-join: skip onboarding if returning player
-if (quickJoinAvailable) {
-  const charEmoji = { cat:'🐱', frog:'🐸', wolf:'🐺', bear:'🐻', bunny:'🐰', pig:'🐷', chicken:'🐔', raccoon:'🦝' };
-  const quickBtn = document.createElement('button');
-  quickBtn.innerHTML = `${charEmoji[selectedChar] || '?'} Play as <b>${myName}</b>`;
-  quickBtn.style.cssText = 'display:block;width:90%;max-width:280px;margin:10px auto 0;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff3366,#cc33ff);color:white;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;';
-  quickBtn.addEventListener('click', (e) => { e.stopPropagation(); finishOnboarding(); });
-  $obStepName.insertBefore(quickBtn, $obStepName.firstChild);
-  // Add "or change" link
-  const changeLink = document.createElement('div');
-  changeLink.textContent = 'or enter a new name below';
-  changeLink.style.cssText = 'font-size:11px;color:#666;text-align:center;margin:8px 0 12px;';
-  quickBtn.after(changeLink);
-}
-
-$obNameBtn.addEventListener('click', () => {
-  const name = $obName.value.trim();
-  if (!name) { $obName.focus(); return; }
-  myName = name;
-  $obStepName.style.display = 'none';
-  $obStepChar.style.display = '';
-  // Always show character selection — don't auto-proceed
+Onboarding.start({
+  onDone: ({ name, character, carColor }) => {
+    myName = name;
+    selectedChar = character;
+    selectedColor = carColor;
+    connectWS();
+  },
 });
-$obName.addEventListener('keydown', (e) => { if (e.key === 'Enter') $obNameBtn.click(); });
 
-function finishOnboarding() {
-  if (!myName || !selectedChar) return;
-  localStorage.setItem('frantics_player', JSON.stringify({ name: myName, character: selectedChar }));
-  $onboarding.style.opacity = '0';
-  setTimeout(() => { $onboarding.style.display = 'none'; }, 400);
-  // Now connect
-  connectWS();
+function hideOnboarding() {
+  const root = document.querySelector('.onboarding-root');
+  if (!root) return;
+  root.style.transition = 'opacity 300ms';
+  root.style.opacity = '0';
+  setTimeout(() => root.remove(), 320);
 }
 
 // ============================================================
 // WEBSOCKET — delayed until onboarding complete
 // ============================================================
 let ws = null;
+let wsRetryCount = 0;
+const WS_RETRY_DELAYS = [1000, 2000, 4000];
+
 function connectWS() {
   ws = new WebSocket('ws://' + location.host);
-  ws.onopen = () => ws.send(JSON.stringify({ type: 'join', name: myName, character: selectedChar }));
+  ws.onopen = () => {
+    wsRetryCount = 0;
+    ws.send(JSON.stringify({
+      type: 'join',
+      name: myName,
+      character: selectedChar,
+      carColor: selectedColor,
+    }));
+  };
   ws.onmessage = onMessage;
   ws.onclose = () => {
+    if (wsRetryCount < WS_RETRY_DELAYS.length) {
+      const delay = WS_RETRY_DELAYS[wsRetryCount++];
+      $status.textContent = 'Reconnecting (' + wsRetryCount + '/' + WS_RETRY_DELAYS.length + ')...';
+      setTimeout(connectWS, delay);
+      return;
+    }
     $info.textContent = 'Disconnected';
     $status.textContent = 'Tap to reconnect';
-    $score.textContent = '💔';
+    $score.textContent = '\u{1F494}';
     phase = '';
     document.body.style.background = '#333';
     document.body.onclick = () => { document.body.onclick = null; location.reload(); };
@@ -148,7 +103,7 @@ function connectWS() {
 // GESTURE DETECTION
 // ============================================================
 // Uses engine/Input.js — unified gesture manager
-const input = new InputManager(document.body, { excludeSelector: '#onboarding' });
+const input = new InputManager(document.body, { excludeSelector: '.onboarding-root' });
 input.onTap(() => onTap());
 input.onSwipe(({ direction }) => onSwipe(direction));
 input.onHold(() => onHold());
@@ -303,11 +258,24 @@ function onMessage(e) {
     case 'init':
       playerId = msg.playerId;
       myColor = msg.color;
+      if (msg.colorId && msg.colorId !== selectedColor) {
+        Onboarding.onServerAssignedColor?.(msg.colorId);
+        selectedColor = msg.colorId;
+      }
       $info.textContent = msg.name || ('Player ' + playerId);
       document.body.style.background = myColor;
       break;
 
+    case 'player_joined':
+      if (msg.playerId !== playerId) Onboarding.onPlayerJoined?.(msg);
+      break;
+
+    case 'player_left':
+      Onboarding.onPlayerLeft?.(msg.playerId);
+      break;
+
     case 'gameSelected':
+      hideOnboarding();
       gameId = msg.gameId;
       tapped = false;
       $result.textContent = ''; $result.className = '';
@@ -319,6 +287,7 @@ function onMessage(e) {
       break;
 
     case 'tournamentStarted':
+      hideOnboarding();
       $result.textContent = ''; $result.className = '';
       $status.textContent = 'Tournament starting!';
       break;
