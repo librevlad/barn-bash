@@ -42,6 +42,10 @@ function resolve(url) {
     return path.join(root, 'client-host', 'slice-race.html');
   if (url === '/host/slice-race2')
     return path.join(root, 'client-host', 'slice-race2.html');
+  if (url === '/host/slice-sprites')
+    return path.join(root, 'client-host', 'slice-sprites.html');
+  if (url === '/host/slice-modal-tickets')
+    return path.join(root, 'client-host', 'slice-modal-tickets.html');
   if (url.startsWith('/host/') && url.endsWith('.js'))
     return path.join(root, 'client-host', path.basename(url));
 

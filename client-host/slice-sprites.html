@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html><head><title>Sprites Slicer</title></head>
+<body style="background:#222;color:#eee;font-family:monospace;padding:16px">
+<pre id="log"></pre>
+<div id="previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+<script>
+const log = s => { document.getElementById('log').textContent += s + '\n'; };
+
+// sprites.png is 1536x1024
+// Layout:
+// Row 1 cars (y~40-280): red, blue, yellow, green, green2 (5 cars)
+// Row 2 cars (y~290-510): purple, lightblue, pink, magenta, orange (5 cars)
+// Decorations row (y~540-700): bushes, rocks
+// Items row (y~730-920): boost, oil, missile + empty frame
+// Each car ~220x240, spaced ~280px apart
+// Coords derived from brightness analysis of sprites.png (tools/analyze-sprites.js).
+// Pitch ~199px, cars ~160 wide. Y range 35-290 row 1, 305-565 row 2.
+const REGIONS = {
+  // Row 1 cars — brightness-detected ranges + 4px padding
+  'car-red':      {x:  204, y:  30, w: 176, h: 265},
+  'car-blue':     {x:  409, y:  30, w: 168, h: 265},
+  'car-yellow':   {x:  604, y:  30, w: 176, h: 265},
+  'car-green':    {x:  804, y:  30, w: 172, h: 265},
+  'car-greenalt': {x: 1006, y:  30, w: 166, h: 265},
+  // Row 2 cars
+  'car-purple':   {x:  204, y: 300, w: 180, h: 265},
+  'car-lightblue':{x:  407, y: 300, w: 174, h: 265},
+  'car-pink':     {x:  604, y: 300, w: 170, h: 265},
+  'car-magenta':  {x:  804, y: 300, w: 168, h: 265},
+  'car-orange':   {x:  994, y: 300, w: 187, h: 265},
+  // Decorations — row 1 rightmost big bush + decoration row below row 2
+  'bush-1':       {x: 1204, y: 305, w: 138, h: 145}, // big green bush (tall)
+  'bush-2':       {x:  180, y: 565, w: 180, h: 160}, // left cluster: bush + pot
+  'bush-3':       {x:  940, y: 590, w: 110, h: 130}, // medium green bush
+  'rock-1':       {x:  765, y: 580, w: 135, h: 145}, // big rocks pile
+  'rock-2':       {x:  520, y: 575, w: 120, h: 140}, // small rocks
+  'pebbles':      {x: 1080, y: 600, w:  85, h: 110}, // scattered pebbles
+  // Items — crop ABOVE labels (labels start ~y=870)
+  'item-boost':   {x:  413, y: 740, w: 190, h: 125},
+  'item-oil':     {x:  672, y: 740, w: 130, h: 130},
+  'item-missile': {x:  860, y: 725, w: 180, h: 145},
+};
+
+const img = new Image();
+img.src = '/assets/sprites.png';
+img.onload = () => {
+  log('Loaded: ' + img.width + 'x' + img.height);
+  window._results = {};
+
+  for (const [name, r] of Object.entries(REGIONS)) {
+    const c = document.createElement('canvas');
+    c.width = r.w; c.height = r.h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+
+    // Remove dark bg (sample corner)
+    const id = ctx.getImageData(0, 0, r.w, r.h);
+    const d = id.data;
+    // Dark bg is nearly black — threshold on brightness
+    for (let i = 0; i < d.length; i += 4) {
+      const R = d[i], G = d[i+1], B = d[i+2];
+      const brightness = (R + G + B) / 3;
+      if (brightness < 25) d[i+3] = 0;
+      else if (brightness < 50) d[i+3] = Math.round(255 * (brightness - 25) / 25);
+    }
+    ctx.putImageData(id, 0, 0);
+
+    // Auto-trim
+    let minX = c.width, maxX = 0, minY = c.height, maxY = 0;
+    const td = ctx.getImageData(0, 0, c.width, c.height).data;
+    for (let y = 0; y < c.height; y++) {
+      for (let x = 0; x < c.width; x++) {
+        if (td[(y * c.width + x) * 4 + 3] > 20) {
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }
+      }
+    }
+    minX = Math.max(0, minX - 2); minY = Math.max(0, minY - 2);
+    maxX = Math.min(c.width, maxX + 3); maxY = Math.min(c.height, maxY + 3);
+    const tw = maxX - minX, th = maxY - minY;
+    const tc = document.createElement('canvas');
+    tc.width = tw; tc.height = th;
+    tc.getContext('2d').drawImage(c, minX, minY, tw, th, 0, 0, tw, th);
+
+    window._results[name] = tc.toDataURL('image/png');
+    log(name + ': ' + tw + 'x' + th);
+
+    const div = document.createElement('div');
+    div.style.cssText = 'background:#444;padding:6px;border-radius:8px;text-align:center';
+    div.innerHTML = '<div style="font-size:10px;color:#aaa">' + name + '</div>';
+    const p = new Image(); p.src = window._results[name]; p.style.height = '70px';
+    div.appendChild(p);
+    document.getElementById('previews').appendChild(div);
+  }
+
+  // Debug
+  const dbg = document.createElement('canvas');
+  dbg.width = img.width; dbg.height = img.height;
+  dbg.style.cssText = 'width:100%;max-width:1000px;margin-top:16px;border:1px solid #555';
+  const dctx = dbg.getContext('2d');
+  dctx.drawImage(img, 0, 0);
+  dctx.strokeStyle = '#0f0'; dctx.lineWidth = 3;
+  for (const [name, r] of Object.entries(REGIONS)) {
+    dctx.strokeRect(r.x, r.y, r.w, r.h);
+    dctx.fillStyle = '#0f0'; dctx.font = '14px monospace';
+    dctx.fillText(name, r.x + 4, r.y + 16);
+  }
+  document.body.appendChild(dbg);
+  log('Done!');
+};
+</script>
+</body></html>

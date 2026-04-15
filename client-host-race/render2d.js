@@ -31,6 +31,21 @@ const Render2D = (() => {
   // ============================================================
   let spritesReady = false;
 
+  // Character → car sprite name. 8 chars → 8 distinct cars (2 spares left).
+  const CAR_SPRITES = {
+    cat:      'car-red',
+    frog:     'car-green',
+    wolf:     'car-lightblue',
+    bear:     'car-blue',
+    bunny:    'car-pink',
+    pig:      'car-magenta',
+    chicken:  'car-yellow',
+    raccoon:  'car-purple',
+    // fallback for unknown characters
+    _fallback1: 'car-orange',
+    _fallback2: 'car-greenalt',
+  };
+
   function init() {
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
@@ -41,8 +56,16 @@ const Render2D = (() => {
     camera.setPosition(0, 1);
     camera.setZoom(40);
 
-    // Sprites disabled — using enhanced procedural rendering
-    spritesReady = false;
+    // Load car + item + decoration sprites from sliced sprites.png
+    const spriteLoads = [
+      'car-red','car-blue','car-yellow','car-green','car-greenalt',
+      'car-purple','car-lightblue','car-pink','car-magenta','car-orange',
+      'item-boost','item-oil','item-missile',
+      'bush-1','bush-2','bush-3','rock-1','rock-2',
+    ].map(n => SpriteLoader.loadSprite(n, '/assets/sprite-' + n + '.png'));
+    Promise.all(spriteLoads)
+      .then(() => { spritesReady = true; console.log('Race sprites loaded'); })
+      .catch(e => { console.warn('Sprite load failed, falling back to procedural:', e); spritesReady = false; });
 
     // Setup scene layers
     scene.createLayer('grass', 0);
@@ -294,6 +317,9 @@ const Render2D = (() => {
   // ============================================================
   // LAYER: TRACKSIDE OBJECTS
   // ============================================================
+  const BUSH_VARIANTS = ['bush-1', 'bush-2', 'bush-3'];
+  const ROCK_VARIANTS = ['rock-1', 'rock-2'];
+
   function generateTrackObjects() {
     if (objectsGenerated || track.length < 2) return;
     objectsGenerated = true;
@@ -304,8 +330,12 @@ const Render2D = (() => {
       for (let side = -1; side <= 1; side += 2) {
         if (Math.random() < 0.4) continue;
         const dist = trackWidth + 1.5 + Math.random() * 3;
+        const isTree = Math.random() < 0.7;
         trackObjects.push({
-          type: Math.random() < 0.7 ? 'tree' : 'rock',
+          type: isTree ? 'tree' : 'rock',
+          sprite: isTree
+            ? BUSH_VARIANTS[Math.floor(Math.random() * BUSH_VARIANTS.length)]
+            : ROCK_VARIANTS[Math.floor(Math.random() * ROCK_VARIANTS.length)],
           x: wp.x + Math.cos(angle + Math.PI / 2) * side * dist,
           z: wp.z + Math.sin(angle + Math.PI / 2) * side * dist,
           size: 0.4 + Math.random() * 0.6,
@@ -330,6 +360,16 @@ const Render2D = (() => {
       const s = camera.worldToScreen(obj.x, obj.z);
       if (s.x < -80 || s.x > W + 80 || s.y < -80 || s.y > H + 80) continue;
       const sz = obj.size * zoom * 0.4; // slightly bigger
+
+      // Try sprite-based rendering for tree/rock
+      if (spritesReady && obj.sprite && SpriteLoader.has(obj.sprite)) {
+        const w = sz * 2.0, h = sz * 2.0;
+        // Soft shadow under sprite
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath(); ctx.ellipse(s.x + 2, s.y + h * 0.35, w * 0.4, h * 0.15, 0, 0, Math.PI * 2); ctx.fill();
+        SpriteLoader.draw(ctx, obj.sprite, s.x, s.y, { width: w, height: h });
+        continue;
+      }
 
       if (obj.type === 'tree') {
         const tr = sz * 1.2; // tree radius
@@ -411,36 +451,40 @@ const Render2D = (() => {
     for (const item of items) {
       const s = camera.worldToScreen(item.x, item.z);
       const bob = Math.sin(clock * 3 + item.x) * 4;
-      const r = 14;
+      const r = 18;
       const pulse = 0.7 + Math.sin(clock * 4 + item.x * 2) * 0.3;
 
       ctx.save();
       ctx.translate(s.x, s.y + bob);
 
-      let ringColor;
-      if (item.type === 'boost') { ringColor = '68,170,255'; ctx.shadowBlur = 16; ctx.shadowColor = '#44aaff'; ctx.fillStyle = '#44aaff'; }
-      else if (item.type === 'oil') { ringColor = '80,80,80'; ctx.shadowBlur = 10; ctx.shadowColor = '#666'; ctx.fillStyle = '#555'; }
-      else { ringColor = '255,68,68'; ctx.shadowBlur = 16; ctx.shadowColor = '#ff4444'; ctx.fillStyle = '#ff4444'; }
+      // Glow color per item type
+      let glowColor;
+      if (item.type === 'boost') glowColor = '68,170,255';
+      else if (item.type === 'oil') glowColor = '255,200,40';
+      else glowColor = '255,68,68';
 
-      // Pulsing ring
-      ctx.strokeStyle = `rgba(${ringColor},${0.2 + pulse * 0.2})`;
-      ctx.lineWidth = 2;
+      // Pulsing halo ring
+      ctx.strokeStyle = `rgba(${glowColor},${0.3 + pulse * 0.3})`;
+      ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(0, 0, r + 6 + pulse * 4, 0, Math.PI * 2); ctx.stroke();
 
-      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
+      // Shadow under item
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath(); ctx.ellipse(0, r * 0.9, r * 0.8, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
 
-      ctx.fillStyle = 'rgba(255,255,255,0.25)';
-      ctx.beginPath(); ctx.arc(-2, -2, r * 0.5, 0, Math.PI * 2); ctx.fill();
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
-
-      ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(item.type === 'boost' ? '⚡' : item.type === 'oil' ? '💧' : '🚀', 0, 1);
-
-      ctx.font = '8px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.fillText(item.type.toUpperCase(), 0, r + 10);
+      // Sprite if loaded
+      const spriteName = 'item-' + item.type;
+      if (spritesReady && SpriteLoader.has(spriteName)) {
+        ctx.shadowBlur = 12; ctx.shadowColor = `rgba(${glowColor},0.8)`;
+        SpriteLoader.draw(ctx, spriteName, 0, 0, { width: r * 2.2, height: r * 2.2 });
+        ctx.shadowBlur = 0;
+      } else {
+        // Procedural fallback — colored disc + emoji
+        ctx.fillStyle = `rgb(${glowColor})`;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(item.type === 'boost' ? '⚡' : item.type === 'oil' ? '💧' : '🚀', 0, 1);
+      }
 
       ctx.restore();
     }
@@ -495,23 +539,29 @@ const Render2D = (() => {
       const s = camera.worldToScreen(e.x, e.y);
       const R = 14;
 
-      // Try sprite-based car first
-      const carSprite = spritesReady && CAR_SPRITES ? CAR_SPRITES[e.color] : null;
+      // Try sprite-based car first (map by character, not color)
+      const carSprite = spritesReady ? (CAR_SPRITES[e.character] || CAR_SPRITES._fallback1) : null;
       if (carSprite && SpriteLoader.has(carSprite)) {
-        const carSize = 28 * (camera.getZoom() / 40);
+        // Car aspect: PNG is ~170x220 (taller than wide). Keep that ratio.
+        const carSize = 48 * (camera.getZoom() / 40);
         SpriteLoader.draw(ctx, carSprite, s.x, s.y, {
           rotation: e.angle + Math.PI / 2,
-          width: carSize, height: carSize * 0.8,
+          width: carSize * 0.78, height: carSize,
           alpha: (e.data.stunned && Math.floor(clock * 10) % 2 === 0) ? 0.4 : (e.data.finished ? 0.4 : 1),
         });
         // Name label + held item even with sprite
         if (e.data.item) {
-          const itemIcons = { boost: '⚡', oil: '💧', missile: '🚀' };
-          ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillStyle = 'rgba(0,0,0,0.5)';
-          ctx.beginPath(); ctx.arc(s.x, s.y - 18, 9, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = '#fff';
-          ctx.fillText(itemIcons[e.data.item] || '?', s.x, s.y - 18);
+          const spriteName = 'item-' + e.data.item;
+          if (SpriteLoader.has(spriteName)) {
+            SpriteLoader.draw(ctx, spriteName, s.x, s.y - 20, { width: 18, height: 18 });
+          } else {
+            const itemIcons = { boost: '⚡', oil: '💧', missile: '🚀' };
+            ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.beginPath(); ctx.arc(s.x, s.y - 18, 9, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.fillText(itemIcons[e.data.item] || '?', s.x, s.y - 18);
+          }
         }
         if (!e.data.finished) {
           ctx.fillStyle = 'rgba(255,255,255,0.5)';
