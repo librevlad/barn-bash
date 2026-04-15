@@ -17,6 +17,7 @@ const GAME_IDS = ['escapeFox', 'hillKing', 'meteor', 'race'];
 
 const MIME = {
   '.html': 'text/html', '.js': 'application/javascript',
+  '.css': 'text/css',
   '.glb': 'model/gltf-binary', '.png': 'image/png', '.jpg': 'image/jpeg',
   '.json': 'application/json'
 };
@@ -108,7 +109,7 @@ function resolve(url) {
 
   if (url === '/' || url === '/controller/')
     return path.join(root, 'client-controller', 'index.html');
-  if (url.startsWith('/controller/') && url.endsWith('.js'))
+  if (url.startsWith('/controller/') && (url.endsWith('.js') || url.endsWith('.css')))
     return path.join(root, 'client-controller', path.basename(url));
 
   return null;
