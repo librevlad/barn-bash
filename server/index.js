@@ -116,12 +116,13 @@ function resolve(url) {
 }
 
 const server = http.createServer((req, res) => {
-  if (req.url === '/test' || req.url === '/host' || req.url === '/controller' || req.url === '/host-escape' || req.url === '/host-hill' || req.url === '/host-meteor' || req.url === '/host-race') {
-    res.writeHead(301, { Location: req.url + '/' });
+  const urlPath = req.url.split('?')[0].split('#')[0];
+  if (urlPath === '/test' || urlPath === '/host' || urlPath === '/controller' || urlPath === '/host-escape' || urlPath === '/host-hill' || urlPath === '/host-meteor' || urlPath === '/host-race') {
+    res.writeHead(301, { Location: urlPath + '/' });
     res.end();
     return;
   }
-  const filePath = resolve(req.url);
+  const filePath = resolve(urlPath);
   if (!filePath) { res.writeHead(404); res.end('Not found'); return; }
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(500); res.end('Error'); return; }

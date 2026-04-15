@@ -191,6 +191,7 @@
     `;
     state.root.appendChild(host);
     state.host = host;
+    state.screen = 'intro';
 
     initIntro();
     initNameScreen();
