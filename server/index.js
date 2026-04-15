@@ -328,14 +328,14 @@ wss.on('connection', (ws) => {
 
     switch (msg.type) {
       case 'join':
-        playerId = players.add(ws, msg.name, msg.character);
+        playerId = players.add(ws, msg.name, msg.character, msg.carColor);
         const p = players.get(playerId);
-        ws.send(JSON.stringify({ type: 'init', playerId, color: p.color, name: p.name, character: p.character }));
+        ws.send(JSON.stringify({ type: 'init', playerId, color: p.color, colorId: p.colorId, name: p.name, character: p.character }));
         if (tournament) {
           tournament.scores[playerId] = tournament.scores[playerId] || 0;
         }
         // Broadcast player join event so host can react
-        broadcast({ type: 'player_joined', playerId, name: p.name, character: p.character, color: p.color });
+        broadcast({ type: 'player_joined', playerId, name: p.name, character: p.character, color: p.color, colorId: p.colorId });
         currentGame.broadcastState();
         break;
 
