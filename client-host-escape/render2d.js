@@ -116,6 +116,7 @@ const Render2D = (() => {
     scene.getLayer('players').addFn(drawPlayers);
     scene.getLayer('fox').addFn(drawFox);
     scene.getLayer('foxwarning').addFn(drawFoxWarning);
+    scene.getLayer('effects').addFn(drawBiomeCurtain);
     scene.getLayer('effects').addFn(drawDust);
     scene.getLayer('ui').addFn(drawLaneMarkers);
 
@@ -435,19 +436,37 @@ const Render2D = (() => {
       const puY = groundY - 25 - Math.sin(clock * 4) * 5;
       ctx.save();
       ctx.translate(screenX, puY);
-      ctx.globalAlpha = 0.8;
+      ctx.globalAlpha = 0.88;
+
+      // Gold-bulb halo shared by every pickup — carnival signature
+      const haloR = 16 * scale;
+      const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, haloR);
+      halo.addColorStop(0, 'rgba(255,248,200,0.55)');
+      halo.addColorStop(0.45, 'rgba(255,221,107,0.3)');
+      halo.addColorStop(1, 'rgba(244,197,66,0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(0, 0, haloR, 0, Math.PI * 2); ctx.fill();
+
       if (pu.type === 'shield') {
-        ctx.fillStyle = 'rgba(60,120,255,0.7)';
+        ctx.fillStyle = (typeof Palette !== 'undefined' ? Palette.infoBlue : 'rgba(60,120,255,0.7)');
         ctx.beginPath(); ctx.arc(0, 0, 10 * scale, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#88bbff'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldHot : '#88bbff');
+        ctx.lineWidth = 1.8; ctx.stroke();
       } else if (pu.type === 'speedBoost') {
-        ctx.fillStyle = 'rgba(255,220,50,0.8)';
-        ctx.beginPath(); ctx.arc(0, 0, 10 * scale, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#ffee88'; ctx.lineWidth = 1.5; ctx.stroke();
+        // Core uses the gold-bulb gradient — reads as a lightbulb on a pole
+        const core = (typeof Palette !== 'undefined'
+          ? Palette.spotlight(ctx, 0, 0, 11 * scale)
+          : 'rgba(255,220,50,0.8)');
+        ctx.fillStyle = core;
+        ctx.beginPath(); ctx.arc(0, 0, 11 * scale, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGold : '#ffee88');
+        ctx.lineWidth = 1.8; ctx.stroke();
       } else if (pu.type === 'coin') {
-        ctx.fillStyle = 'rgba(255,200,50,0.9)';
+        // Gold disc with edge highlight
+        ctx.fillStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldHot : 'rgba(255,200,50,0.9)');
         ctx.beginPath(); ctx.arc(0, 0, 8 * scale, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#c89630'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldEdge : '#c89630');
+        ctx.lineWidth = 1.8; ctx.stroke();
       }
       ctx.globalAlpha = 1;
       ctx.restore();
@@ -550,6 +569,61 @@ const Render2D = (() => {
     if (foxX < -60 || foxX > W + 60) return;
     const foxY = groundY - 22;
     CharDraw.fox(ctx, foxX, foxY, 24, clock);
+    // Gold-eye glare — intensifies with proximity; carnival signature
+    // beat so even when you can't see the fox clearly, you feel watched.
+    if (foxProx > 0.25) {
+      const goldHot = (typeof Palette !== 'undefined' ? Palette.accentGoldHot : '#ffdd6b');
+      const pulse = 0.55 + Math.sin(clock * 8) * 0.35;
+      ctx.save();
+      ctx.translate(foxX, foxY);
+      ctx.fillStyle = `rgba(255,248,200,${pulse * foxProx})`;
+      ctx.shadowColor = goldHot;
+      ctx.shadowBlur = 8 + foxProx * 10;
+      // Two eye dots, mirroring CharDraw.fox eye positions
+      ctx.beginPath(); ctx.arc(-3, -5, 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc( 3, -5, 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // ============================================================
+  // LAYER: BIOME CURTAIN — red-velvet wipe between biomes
+  // ============================================================
+  function drawBiomeCurtain(ctx) {
+    // worldDist advances continuously; biome boundary sits at every
+    // multiple of `biomeLen`. We show a gold-rope curtain swipe for
+    // the last 12% of each biome, fading out as we settle into the
+    // next one. Tight gate so it never steals gameplay focus.
+    const biomeLen = 30;
+    const local = worldDist % biomeLen;
+    const entry = local / biomeLen;
+    if (entry < 0.88) return;
+    const t = (entry - 0.88) / 0.12;      // 0..1 inside the swipe window
+    const open = Palette && Palette.ease ? Palette.ease.curtain(t) : t;
+    const curtainH = H;
+    ctx.save();
+    ctx.globalAlpha = 1 - open; // fully opaque at start, gone at boundary
+
+    // Two panels sweeping inward from screen edges
+    const panelW = W * 0.55 * (1 - open);
+    const g1 = Palette
+      ? Palette.redCurtain(ctx, 0, 0, panelW, curtainH)
+      : 'rgba(167,45,42,0.9)';
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, panelW, curtainH);
+    ctx.fillStyle = Palette
+      ? Palette.redCurtain(ctx, W - panelW, 0, panelW, curtainH)
+      : 'rgba(167,45,42,0.9)';
+    ctx.fillRect(W - panelW, 0, panelW, curtainH);
+
+    // Gold rope along inner edges
+    if (panelW > 6) {
+      const gold = (Palette ? Palette.accentGold : '#f4c542');
+      ctx.fillStyle = gold;
+      ctx.fillRect(panelW - 3, 0, 3, curtainH);
+      ctx.fillRect(W - panelW, 0, 3, curtainH);
+    }
+    ctx.restore();
   }
 
   // ============================================================

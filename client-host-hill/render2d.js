@@ -173,11 +173,26 @@ const Render2D = (() => {
       ctx.beginPath(); ctx.arc(ax, ay, r * f, 0, Math.PI * 2); ctx.stroke();
     }
 
-    // Pulsing edge ring (danger mode)
+    // Brass rim — carnival signature. Outer gold-edge ring wraps the
+    // whole platform, inner gold-hot highlight makes the arena read
+    // as a bronze platter the king gets pushed around on.
     const clock = renderLoop ? renderLoop.getClock() : 0;
     const danger = renderPlatR < 3.5;
+    ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldEdge : 'rgba(138,103,24,0.8)');
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(ax, ay, r + 3, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldDim : 'rgba(176,133,28,0.7)');
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(ax, ay, r + 1, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,221,107,0.45)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ax, ay, r - 2, 0, Math.PI * 2); ctx.stroke();
+
+    // Pulsing edge ring — danger flip uses danger-red token
     const pulse = 0.4 + Math.sin(clock * (danger ? 6 : 3)) * 0.2;
-    ctx.strokeStyle = danger ? `rgba(255,60,60,${pulse})` : `rgba(120,80,220,${pulse})`;
+    ctx.strokeStyle = danger
+      ? (typeof Palette !== 'undefined' ? `rgba(217,83,79,${pulse})` : `rgba(255,60,60,${pulse})`)
+      : `rgba(120,80,220,${pulse * 0.7})`;
     ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.stroke();
   }
@@ -192,24 +207,39 @@ const Render2D = (() => {
     const ay = center.y;
     const kingR = (kingZoneR || 1.5) * SCALE;
 
-    // King zone glow
-    const kingGlow = ctx.createRadialGradient(ax, ay, 0, ax, ay, kingR);
-    kingGlow.addColorStop(0, 'rgba(255,200,50,0.12)');
-    kingGlow.addColorStop(0.7, 'rgba(255,200,50,0.04)');
-    kingGlow.addColorStop(1, 'rgba(255,200,50,0)');
-    ctx.fillStyle = kingGlow;
-    ctx.beginPath(); ctx.arc(ax, ay, kingR, 0, Math.PI * 2); ctx.fill();
+    // King zone glow — deeper gold-bulb spotlight so the center reads
+    // as the prize, not just a marker
+    const clock2 = renderLoop ? renderLoop.getClock() : 0;
+    const breath = 0.9 + Math.sin(clock2 * 1.8) * 0.12;
+    const kingGlow = (typeof Palette !== 'undefined'
+      ? Palette.spotlight(ctx, ax, ay, kingR * 1.4 * breath)
+      : null);
+    if (kingGlow) {
+      ctx.fillStyle = kingGlow;
+    } else {
+      const fallback = ctx.createRadialGradient(ax, ay, 0, ax, ay, kingR);
+      fallback.addColorStop(0, 'rgba(255,200,50,0.18)');
+      fallback.addColorStop(0.7, 'rgba(255,200,50,0.06)');
+      fallback.addColorStop(1, 'rgba(255,200,50,0)');
+      ctx.fillStyle = fallback;
+    }
+    ctx.beginPath(); ctx.arc(ax, ay, kingR * 1.4, 0, Math.PI * 2); ctx.fill();
 
-    // King zone ring (dashed)
-    ctx.strokeStyle = 'rgba(255,200,50,0.15)';
-    ctx.lineWidth = 1;
+    // King zone ring (dashed gold)
+    ctx.strokeStyle = (typeof Palette !== 'undefined'
+      ? 'rgba(244,197,66,0.35)'
+      : 'rgba(255,200,50,0.2)');
+    ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 6]);
     ctx.beginPath(); ctx.arc(ax, ay, kingR, 0, Math.PI * 2); ctx.stroke();
     ctx.setLineDash([]);
 
-    // Crown icon in center
-    ctx.fillStyle = 'rgba(255,200,50,0.08)';
-    ctx.font = `${Math.round(kingR * 0.4)}px sans-serif`;
+    // Crown icon in center — slightly more prominent now that the glow
+    // frames it. Still monochrome so it doesn't compete with player sprites.
+    ctx.fillStyle = (typeof Palette !== 'undefined'
+      ? 'rgba(255,221,107,0.22)'
+      : 'rgba(255,200,50,0.1)');
+    ctx.font = `${Math.round(kingR * 0.44)}px sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('\uD83D\uDC51', ax, ay);
   }
