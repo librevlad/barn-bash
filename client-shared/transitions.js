@@ -13,7 +13,8 @@ const Transitions = (() => {
     overlay.id = 'transition-overlay';
     overlay.style.cssText = `
       position: fixed; inset: 0; z-index: 9999;
-      background: #0a0a0f; pointer-events: none;
+      background: var(--bg-wood-deep, #3d2817);
+      pointer-events: none;
       opacity: 0; transition: opacity 0.4s ease-in-out;
     `;
     document.body.appendChild(overlay);

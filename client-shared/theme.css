@@ -1,0 +1,242 @@
+/* =========================================================================
+   Frantics — Shared Design Tokens
+   -------------------------------------------------------------------------
+   Single source of truth for every visual variable used across hosts,
+   controller, and per-game screens. Imported via:
+       <link rel="stylesheet" href="/shared/theme.css">
+   Specs: DESIGN.md (repo root).
+   ========================================================================= */
+
+:root {
+  /* ===============================================
+     COLOR — Wood (primary surfaces)
+     =============================================== */
+  --bg-wood-deep:        #3d2817;   /* page background, deepest surface */
+  --bg-wood-warm:        #5a3a20;   /* cards, buttons base, inputs */
+  --bg-wood-lite:        #7a5030;   /* elevated surfaces, medallion inside */
+  --bg-wood-ink:         #2f1c0c;   /* vignette floor */
+
+  /* Gold (accents, CTAs, highlights) */
+  --accent-gold:         #f4c542;   /* primary accent */
+  --accent-gold-hot:     #ffdd6b;   /* hover / selected / glow */
+  --accent-gold-dim:     #b0851c;   /* bottom gradient stop, borders */
+  --accent-gold-edge:    #8a6718;   /* button edge / darker gold border */
+  --accent-gold-bulb:    #fff8c8;   /* bulb highlight, sparkle */
+
+  /* Red velvet (curtain, ribbons, theatre) */
+  --accent-red-curtain:  #a72d2a;   /* curtain face */
+  --accent-red-deep:     #6b1818;   /* curtain shadow, ribbon tails */
+  --accent-red-light:    #c63a36;   /* top highlight of curtain fabric */
+  --accent-red-fold:     #8a2a27;   /* curtain fold accent */
+
+  /* Text */
+  --text-cream:          #f5ead4;   /* primary text — never pure white */
+  --text-dim:            rgba(245, 234, 212, 0.55);
+  --text-faint:          rgba(245, 234, 212, 0.30);
+  --text-on-gold:        #3d2817;   /* dark text on gold button */
+  --text-disabled:       rgba(245, 234, 212, 0.35);
+
+  /* Semantic status */
+  --success-green:       #7bc950;   /* "you're in", confirmations */
+  --danger-red:          #d9534f;   /* errors, destructive */
+  --warning-amber:       #e8a33c;   /* approaching timer, caution */
+  --info-blue:           #5ba8d9;   /* informational, neutral notices */
+
+  /* Overlay scrims */
+  --scrim-light:         rgba(0, 0, 0, 0.28);   /* pill background */
+  --scrim-medium:        rgba(0, 0, 0, 0.55);   /* tooltip background */
+  --scrim-dark:          rgba(0, 0, 0, 0.75);   /* narrator, winner overlay */
+  --scrim-heavy:         rgba(0, 0, 0, 0.85);   /* modal backdrop */
+
+  /* ===============================================
+     TYPOGRAPHY
+     =============================================== */
+  --font-display:        'Alfa Slab One', Georgia, serif;
+  --font-accent:         'Cutive', Georgia, serif;
+  --font-ui:             'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:           'SF Mono', 'Consolas', 'JetBrains Mono', monospace;
+
+  /* Modular scale — use via var() on font-size */
+  --fs-xs:               10px;    /* micro-copy, eyebrow labels */
+  --fs-sm:               12px;    /* pill labels, secondary meta */
+  --fs-base:             14px;    /* body default */
+  --fs-md:               16px;    /* prompts, inputs */
+  --fs-lg:               18px;    /* body emphasised, primary button */
+  --fs-xl:               22px;    /* sub-headings, large ticket button */
+  --fs-2xl:              26px;    /* screen headlines */
+  --fs-3xl:              28px;    /* waiting title, tournament ribbon */
+  --fs-4xl:              32px;    /* game-over text */
+  --fs-5xl:              40px;    /* section titles */
+  --fs-6xl:              48px;    /* hero splash */
+  --fs-7xl:              56px;    /* FRANTICS! intro mark */
+
+  --tracking-tight:      0.5px;
+  --tracking-norm:       1px;
+  --tracking-wide:       2px;
+  --tracking-wider:      3px;
+  --tracking-widest:     4px;
+
+  --leading-tight:       1.15;
+  --leading-norm:        1.4;
+  --leading-loose:       1.6;
+
+  /* ===============================================
+     SPACING (8px base grid)
+     =============================================== */
+  --sp-2xs:              2px;
+  --sp-xs:               4px;
+  --sp-sm:               8px;
+  --sp-md:               16px;
+  --sp-lg:               24px;
+  --sp-xl:               32px;
+  --sp-2xl:              48px;
+  --sp-3xl:              64px;
+
+  --pad-edge:            24px;     /* default screen edge padding */
+  --pad-edge-narrow:     16px;     /* overridden below on ≤360px */
+  --tap-min:             44px;     /* Apple HIG minimum tap target */
+
+  /* ===============================================
+     RADIUS
+     =============================================== */
+  --radius-sm:           4px;      /* ribbon, tight borders */
+  --radius-md:           8px;      /* inputs, tiles, toasts */
+  --radius-lg:           10px;     /* name input, modal sections */
+  --radius-xl:           14px;     /* cards, ticket buttons */
+  --radius-2xl:          20px;     /* contestant pills */
+  --radius-round:        9999px;   /* circles, medallions */
+
+  /* ===============================================
+     BORDERS
+     =============================================== */
+  --border-hair:         1px;
+  --border-thin:         1.5px;
+  --border-norm:         2px;
+  --border-thick:        3px;
+
+  /* ===============================================
+     ELEVATION / SHADOWS
+     =============================================== */
+  /* Standard drop-shadow scale */
+  --elevation-xs:        0 1px 3px rgba(0, 0, 0, 0.25);
+  --elevation-sm:        0 2px 6px rgba(0, 0, 0, 0.35);
+  --elevation-md:        0 4px 12px rgba(0, 0, 0, 0.5);
+  --elevation-lg:        0 6px 18px rgba(0, 0, 0, 0.6);
+  --elevation-xl:        0 8px 28px rgba(0, 0, 0, 0.7);
+
+  /* Specialty: ticket button "stacked lift" (3D offset + diffuse) */
+  --shadow-ticket:       0 4px 0 var(--accent-gold-edge), 0 6px 14px rgba(0, 0, 0, 0.45);
+  --shadow-ticket-hover: 0 5px 0 var(--accent-gold-edge), 0 8px 18px rgba(0, 0, 0, 0.55);
+  --shadow-ticket-press: 0 1px 0 var(--accent-gold-edge), 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-ticket-off:   0 4px 0 var(--accent-gold-edge);
+
+  /* Wood recessed look for cards & medallions */
+  --inset-wood:          inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  --inset-input:         inset 0 2px 6px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+
+  /* Glows (for selected state, bulbs, focus) */
+  --glow-gold-soft:      0 0 8px rgba(244, 197, 66, 0.4);
+  --glow-gold-hot:       0 0 18px rgba(255, 221, 107, 0.6);
+  --glow-gold-focus:     0 0 0 3px rgba(255, 221, 107, 0.25);
+  --glow-red-ribbon:     0 3px 8px rgba(0, 0, 0, 0.4);
+
+  /* Text shadows for theatrical headlines */
+  --text-shadow-stack:   0 2px 0 var(--accent-red-deep), 0 4px 0 #4a1010,
+                         0 6px 12px rgba(0, 0, 0, 0.5);
+  --text-shadow-glow:    0 2px 0 var(--accent-red-deep), 0 0 20px var(--accent-gold-hot);
+
+  /* ===============================================
+     MOTION
+     =============================================== */
+  --dur-instant:         80ms;
+  --dur-tap:             120ms;
+  --dur-short:           200ms;
+  --dur-pulse:           400ms;
+  --dur-medium:          500ms;
+  --dur-curtain:         700ms;
+  --dur-long:            1200ms;
+  --dur-breathe:         3000ms;
+
+  --ease-out:            cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-curtain:        cubic-bezier(0.5, 0, 0.3, 1);
+  --ease-bounce:         cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ===============================================
+     BACKGROUND TEXTURES
+     -----------------------------------------------
+     Complex gradients exposed as custom props so every
+     page gets the same recipe. Apply with:
+         background: var(--bg-wood-plank);
+     =============================================== */
+  --bg-wood-plank:
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 3px,
+      rgba(0, 0, 0, 0.045) 3px, rgba(0, 0, 0, 0.045) 4px),
+    radial-gradient(ellipse 600px 300px at 20% 15%, rgba(130, 85, 50, 0.55) 0%, transparent 65%),
+    radial-gradient(ellipse 500px 400px at 85% 75%, rgba(45, 25, 12, 0.7) 0%, transparent 65%),
+    linear-gradient(175deg, #4a2f1c 0%, var(--bg-wood-ink) 100%);
+
+  --bg-curtain-fabric:
+    repeating-linear-gradient(90deg,
+      var(--accent-red-curtain) 0px, var(--accent-red-curtain) 22px,
+      var(--accent-red-deep) 22px, var(--accent-red-deep) 26px,
+      var(--accent-red-curtain) 26px, var(--accent-red-curtain) 48px,
+      var(--accent-red-fold) 48px, var(--accent-red-fold) 52px),
+    linear-gradient(180deg, var(--accent-red-light) 0%, var(--accent-red-curtain) 50%, #7a1d1a 100%);
+
+  --bg-bulb:
+    radial-gradient(circle at 30% 30%, var(--accent-gold-bulb) 0%,
+                    var(--accent-gold-hot) 40%, var(--accent-gold-dim) 100%);
+
+  --bg-ticket-face:
+    linear-gradient(180deg, var(--accent-gold) 0%, #d9a82f 100%);
+  --bg-ticket-face-hot:
+    linear-gradient(180deg, var(--accent-gold-hot) 0%, var(--accent-gold) 100%);
+
+  --bg-ribbon:
+    linear-gradient(180deg, var(--accent-red-curtain) 0%, #7d1f1e 100%);
+
+  /* ===============================================
+     Z-INDEX
+     =============================================== */
+  --z-bg:                0;
+  --z-base:              10;
+  --z-hud:               25;
+  --z-overlay:           50;
+  --z-toast:             150;
+  --z-curtain:           200;
+  --z-modal:             500;
+  --z-top:               1000;
+
+  /* ===============================================
+     BREAKPOINT REFERENCE
+     -----------------------------------------------
+     CSS custom props can't drive media queries; these
+     values are canonical for all `@media` rules.
+         narrow : ≤ 360px  (iPhone SE portrait)
+         phone  : 361–430px (iPhone 14 / Pro Max)
+         tablet : 431–768px (iPad portrait)
+         desktop: ≥ 769px   (host display)
+     =============================================== */
+}
+
+/* Narrow phones — iPhone SE, old Androids */
+@media (max-width: 360px) {
+  :root {
+    --pad-edge: 16px;
+  }
+}
+
+/* Global font face stack load hint */
+@font-face {
+  font-family: 'Alfa Slab One';
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cutive';
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+}

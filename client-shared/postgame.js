@@ -16,32 +16,128 @@ const PostGame = (() => {
     overlay.id = 'postgame-overlay';
     overlay.style.cssText = `
       position: fixed; inset: 0; z-index: 35;
-      background: rgba(5,5,15,0.9);
+      background: rgba(47, 28, 12, 0.92);
+      backdrop-filter: blur(8px);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      font-family: -apple-system, 'Segoe UI', sans-serif;
-      color: #eee; opacity: 0; pointer-events: none;
+      font-family: var(--font-ui, -apple-system, 'Segoe UI', sans-serif);
+      color: var(--text-cream, #f5ead4);
+      opacity: 0; pointer-events: none;
       transition: opacity 0.6s ease-out;
     `;
     document.body.appendChild(overlay);
 
     const style = document.createElement('style');
     style.textContent = `
-      #postgame-overlay.show { opacity: 1; pointer-events: auto; }
-      .pg-winner-icon { font-size: 64px; margin-bottom: 8px; animation: pgBounce 0.6s ease-out; }
-      .pg-winner-name { font-size: 28px; font-weight: 900; margin-bottom: 4px; }
-      .pg-winner-label { font-size: 18px; font-weight: 700; letter-spacing: 3px; margin-bottom: 20px; }
-      .pg-narrator { font-size: 13px; color: #888; font-style: italic; margin-bottom: 24px; max-width: 400px; text-align: center; }
-      .pg-stats { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-bottom: 24px; }
-      .pg-stat { text-align: center; padding: 10px 16px; background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); min-width: 80px; }
-      .pg-stat-value { font-size: 22px; font-weight: 800; color: #FFD700; }
-      .pg-stat-label { font-size: 10px; color: #666; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
-      .pg-countdown { font-size: 14px; color: #555; margin-bottom: 16px; letter-spacing: 2px; }
-      .pg-buttons { display: flex; gap: 12px; }
-      .pg-btn { padding: 10px 24px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.06); color: #ccc; font-size: 14px; cursor: pointer; font-family: inherit; transition: background 0.2s; }
-      .pg-btn:hover { background: rgba(255,255,255,0.12); }
-      .pg-no-winner { font-size: 48px; margin-bottom: 12px; }
-      @keyframes pgBounce { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+      #postgame-overlay.show { opacity: 1 !important; pointer-events: auto !important; }
+      #postgame-overlay .pg-winner-icon {
+        font-size: 72px; margin-bottom: 8px;
+        animation: pgBounce 0.6s ease-out;
+      }
+      #postgame-overlay .pg-winner-name {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 40px; font-weight: 400;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+        text-shadow: 0 2px 0 var(--accent-red-deep, #6b1818),
+                     0 4px 12px rgba(0, 0, 0, 0.6);
+      }
+      #postgame-overlay .pg-winner-label {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 22px; font-weight: 400;
+        letter-spacing: 3px;
+        color: var(--accent-gold, #f4c542);
+        text-shadow: 0 2px 0 var(--accent-red-deep, #6b1818);
+        margin-bottom: 22px;
+      }
+      #postgame-overlay .pg-narrator {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 16px; font-style: italic;
+        color: var(--text-cream, #f5ead4);
+        opacity: 0.85;
+        margin-bottom: 24px; max-width: 460px;
+        text-align: center;
+        line-height: 1.5;
+      }
+      #postgame-overlay .pg-stats {
+        display: flex; gap: 14px; flex-wrap: wrap;
+        justify-content: center; margin-bottom: 26px;
+      }
+      #postgame-overlay .pg-stat {
+        text-align: center;
+        padding: 12px 18px;
+        background: rgba(90, 58, 32, 0.72);
+        border: 1.5px solid var(--accent-gold, #f4c542);
+        border-radius: 10px;
+        min-width: 90px;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
+                    0 3px 8px rgba(0, 0, 0, 0.4);
+      }
+      #postgame-overlay .pg-stat-value {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 26px; font-weight: 400;
+        color: var(--accent-gold, #f4c542);
+        text-shadow: 0 1px 0 var(--accent-red-deep, #6b1818);
+        letter-spacing: 0.5px;
+      }
+      #postgame-overlay .pg-stat-label {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 10px;
+        color: var(--text-dim, rgba(245, 234, 212, 0.55));
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+      #postgame-overlay .pg-countdown {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 14px; font-style: italic;
+        color: var(--text-dim, rgba(245, 234, 212, 0.55));
+        letter-spacing: 1px;
+        margin-bottom: 18px;
+      }
+      #postgame-overlay .pg-buttons { display: flex; gap: 14px; }
+      #postgame-overlay .pg-btn {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 16px;
+        padding: 14px 28px;
+        background: linear-gradient(180deg, var(--accent-gold, #f4c542) 0%, #d9a82f 100%);
+        color: var(--bg-wood-deep, #3d2817);
+        border: 2px solid var(--accent-gold-edge, #8a6718);
+        border-radius: 14px;
+        box-shadow: 0 4px 0 var(--accent-gold-edge, #8a6718),
+                    0 6px 14px rgba(0, 0, 0, 0.45);
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: transform 0.12s, box-shadow 0.12s, filter 0.15s;
+        min-height: 44px;
+      }
+      #postgame-overlay .pg-btn:hover {
+        background: linear-gradient(180deg, var(--accent-gold-hot, #ffdd6b) 0%, var(--accent-gold, #f4c542) 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 5px 0 var(--accent-gold-edge, #8a6718),
+                    0 8px 18px rgba(0, 0, 0, 0.55);
+      }
+      #postgame-overlay .pg-btn:active {
+        transform: translateY(3px);
+        box-shadow: 0 1px 0 var(--accent-gold-edge, #8a6718),
+                    0 2px 4px rgba(0, 0, 0, 0.4);
+      }
+      #postgame-overlay .pg-btn.secondary {
+        background: var(--bg-wood-warm, #5a3a20);
+        color: var(--text-cream, #f5ead4);
+        border-color: var(--accent-gold, #f4c542);
+        box-shadow: 0 3px 0 var(--accent-gold-edge, #8a6718),
+                    0 4px 10px rgba(0, 0, 0, 0.4);
+      }
+      #postgame-overlay .pg-btn.secondary:hover {
+        background: var(--bg-wood-lite, #7a5030);
+      }
+      #postgame-overlay .pg-no-winner { font-size: 64px; margin-bottom: 12px; }
+      @keyframes pgBounce {
+        0% { transform: scale(0); }
+        50% { transform: scale(1.25); }
+        100% { transform: scale(1); }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -91,17 +187,17 @@ const PostGame = (() => {
     overlay.innerHTML = `
       <div class="pg-winner-icon" style="${hasWinner ? 'filter:drop-shadow(0 0 20px ' + opts.winnerColor + ')' : ''}">${icon}</div>
       ${hasWinner ? `
-        <div class="pg-winner-name" style="color:${opts.winnerColor};text-shadow:0 0 25px ${opts.winnerColor}">${opts.winnerName}</div>
+        <div class="pg-winner-name" style="color:${opts.winnerColor};text-shadow:0 2px 0 var(--accent-red-deep,#6b1818), 0 0 25px ${opts.winnerColor}">${opts.winnerName}</div>
         <div class="pg-winner-label">${opts.winLabel || 'WINS!'}</div>
       ` : `
-        <div class="pg-winner-name" style="color:#ff6644">${opts.loseText || 'NOBODY SURVIVED!'}</div>
+        <div class="pg-winner-name" style="color:var(--danger-red,#d9534f)">${opts.loseText || 'NOBODY SURVIVED!'}</div>
       `}
       ${narratorHTML}
       ${statsHTML}
       <div class="pg-countdown" id="pg-countdown">Returning to lobby in ${remaining}s...</div>
       <div class="pg-buttons">
         <div class="pg-btn" id="pg-again">PLAY AGAIN</div>
-        <div class="pg-btn" id="pg-lobby">LOBBY</div>
+        <div class="pg-btn secondary" id="pg-lobby">LOBBY</div>
       </div>
     `;
 

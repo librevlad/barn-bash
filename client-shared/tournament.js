@@ -29,132 +29,215 @@ const Tournament = (() => {
     overlay.innerHTML = '<div id="t-content"></div>';
     overlay.style.cssText = `
       position:fixed; inset:0; z-index:100;
-      background:rgba(5,5,15,0.95);
+      background: rgba(47, 28, 12, 0.94);
+      backdrop-filter: blur(8px);
       display:flex; align-items:center; justify-content:center;
       opacity:0; pointer-events:none;
       transition: opacity 0.6s ease-in-out;
-      font-family: -apple-system, 'Segoe UI', sans-serif;
-      color: #eee;
+      font-family: var(--font-ui, -apple-system, 'Segoe UI', sans-serif);
+      color: var(--text-cream, #f5ead4);
     `;
     document.body.appendChild(overlay);
 
     const style = document.createElement('style');
     style.textContent = `
-      #tournament-overlay.show { opacity:1; pointer-events:auto; }
-      #t-content { text-align:center; max-width:560px; width:90%; }
+      #tournament-overlay.show { opacity:1 !important; pointer-events:auto !important; }
+      #t-content { text-align:center; max-width:600px; width:90%; }
 
       /* Animations */
-      @keyframes slideInLeft {
+      @keyframes tSlideInLeft {
         from { transform: translateX(-100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
       }
-      @keyframes scaleIn {
+      @keyframes tScaleIn {
         from { transform: scale(0); }
         50% { transform: scale(1.2); }
         to { transform: scale(1); }
       }
-      @keyframes countUp {
+      @keyframes tCountUp {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      @keyframes pulse {
-        0%, 100% { opacity: 0.5; }
+      @keyframes tPulse {
+        0%, 100% { opacity: 0.55; }
         50% { opacity: 1; }
       }
-      @keyframes goldGlow {
-        0%, 100% { text-shadow: 0 0 10px rgba(255,200,50,0.3); }
-        50% { text-shadow: 0 0 20px rgba(255,200,50,0.6); }
+      @keyframes tGoldGlow {
+        0%, 100% { text-shadow: 0 2px 0 var(--accent-red-deep, #6b1818), 0 0 10px rgba(244,197,66,0.3); }
+        50%      { text-shadow: 0 2px 0 var(--accent-red-deep, #6b1818), 0 0 26px rgba(255,221,107,0.7); }
       }
-      @keyframes roundScaleSettle {
+      @keyframes tRoundScaleSettle {
         0% { transform: scale(2); opacity: 0; }
         60% { transform: scale(0.95); opacity: 1; }
         100% { transform: scale(1); opacity: 1; }
       }
-      @keyframes fadeSlideUp {
+      @keyframes tFadeSlideUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      @keyframes trophyBounce {
+      @keyframes tTrophyBounce {
         0% { transform: scale(0); }
         50% { transform: scale(1.3); }
         70% { transform: scale(0.9); }
         100% { transform: scale(1); }
       }
 
-      .t-round { font-size:12px; letter-spacing:4px; color:#666; margin-bottom:8px; }
-      .t-title { font-size:28px; font-weight:800; margin-bottom:24px; }
-      .t-title.champion {
-        font-size:36px;
-        background:linear-gradient(135deg,#f1c40f,#e67e22,#e74c3c);
-        -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-        animation: goldGlow 2s ease-in-out infinite;
+      #t-content .t-round {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size:12px; letter-spacing:4px;
+        color: var(--accent-gold, #f4c542);
+        text-transform:uppercase;
+        margin-bottom:8px;
       }
-      .t-scores { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-bottom:20px; }
-      .t-player {
-        text-align:center; padding:12px 16px; border-radius:10px;
-        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06);
-        min-width:90px; transition: transform 0.3s;
-        opacity: 0;
+      #t-content .t-title {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size:32px; font-weight:400;
+        letter-spacing:1px;
+        color: var(--accent-gold, #f4c542);
+        text-shadow: 0 2px 0 var(--accent-red-deep, #6b1818),
+                     0 4px 12px rgba(0,0,0,0.6);
+        margin-bottom:24px;
       }
-      .t-player.slide-in { animation: slideInLeft 0.5s ease-out forwards; }
-      .t-player.leader {
-        border-color:rgba(241,196,15,0.5); transform:scale(1.08);
-        box-shadow: 0 0 20px rgba(241,196,15,0.15), inset 0 0 15px rgba(241,196,15,0.05);
+      #t-content .t-title.champion {
+        font-size:42px;
+        color: var(--accent-gold-hot, #ffdd6b);
+        animation: tGoldGlow 2s ease-in-out infinite;
       }
-      .t-player-dot { width:28px; height:28px; border-radius:50%; margin:0 auto 6px; }
-      .t-player-name { font-size:11px; color:#888; }
-      .t-player-pts { font-size:24px; font-weight:800; margin-top:4px; }
-      .t-player-pos-change { font-size:12px; margin-top:2px; height:16px; }
-      .t-player-pos-change.up { color:#2ecc71; }
-      .t-player-pos-change.down { color:#e74c3c; }
-      .t-next { font-size:13px; color:#666; margin-top:16px; }
-      .t-next-game { color:#aaa; font-weight:600; }
-      .t-next.pulse-text { animation: pulse 1.5s ease-in-out infinite; }
-      .t-crown { font-size:48px; margin-bottom:12px; }
-      .t-bar { font-size:10px; letter-spacing:3px; color:#444; margin-bottom:16px; }
-
-      /* Round intro dramatic */
-      .t-round-intro-number {
-        font-size:64px; font-weight:900; letter-spacing:6px; color:#fff;
-        animation: roundScaleSettle 0.8s ease-out forwards;
-        margin-bottom:12px;
-      }
-      .t-round-intro-game {
-        font-size:24px; font-weight:700; color:#ccc; letter-spacing:2px;
-        opacity:0; animation: fadeSlideUp 0.6s ease-out 0.6s forwards;
+      #t-content .t-scores {
+        display:flex; justify-content:center; gap:18px; flex-wrap:wrap;
         margin-bottom:20px;
       }
-      .t-round-intro-ready {
-        font-size:16px; font-weight:600; letter-spacing:6px; color:#f1c40f;
-        opacity:0; animation: pulse 1s ease-in-out 1.2s infinite;
+      #t-content .t-player {
+        text-align:center; padding:14px 18px;
+        border-radius: 12px;
+        background: rgba(90, 58, 32, 0.72);
+        border: 1.5px solid rgba(244, 197, 66, 0.35);
+        min-width: 100px;
+        transition: transform 0.3s;
+        opacity: 0;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.3),
+                    0 3px 8px rgba(0,0,0,0.4);
+      }
+      #t-content .t-player.slide-in { animation: tSlideInLeft 0.5s ease-out forwards; }
+      #t-content .t-player.leader {
+        border-color: var(--accent-gold, #f4c542);
+        transform: scale(1.08);
+        box-shadow: 0 0 24px rgba(255, 221, 107, 0.25),
+                    inset 0 0 18px rgba(244, 197, 66, 0.08),
+                    0 4px 10px rgba(0, 0, 0, 0.5);
+      }
+      #t-content .t-player-dot {
+        width: 28px; height: 28px; border-radius: 50%;
+        margin: 0 auto 8px;
+        box-shadow: 0 0 8px currentColor;
+      }
+      #t-content .t-player-name {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 12px;
+        color: var(--text-cream, #f5ead4);
+        opacity: 0.82;
+        letter-spacing: 0.5px;
+      }
+      #t-content .t-player-pts {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 26px; font-weight: 400;
+        color: var(--accent-gold, #f4c542);
+        text-shadow: 0 1px 0 var(--accent-red-deep, #6b1818);
+        margin-top: 6px;
+      }
+      #t-content .t-player-pos-change {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 12px; margin-top: 2px; height: 16px;
+        letter-spacing: 0.5px;
+      }
+      #t-content .t-player-pos-change.up   { color: var(--success-green, #7bc950); }
+      #t-content .t-player-pos-change.down { color: var(--danger-red, #d9534f); }
+      #t-content .t-next {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 14px; font-style: italic;
+        color: var(--text-dim, rgba(245, 234, 212, 0.55));
+        margin-top: 18px;
+      }
+      #t-content .t-next-game {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-style: normal;
+        color: var(--accent-gold, #f4c542);
+        letter-spacing: 1px;
+      }
+      #t-content .t-next.pulse-text { animation: tPulse 1.5s ease-in-out infinite; }
+      #t-content .t-crown { font-size: 56px; margin-bottom: 12px; }
+      #t-content .t-bar {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 10px; letter-spacing: 3px;
+        color: var(--text-dim, rgba(245, 234, 212, 0.55));
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+
+      /* Round intro dramatic */
+      #t-content .t-round-intro-number {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 84px; font-weight: 400; letter-spacing: 6px;
+        color: var(--accent-gold, #f4c542);
+        text-shadow: 0 4px 0 var(--accent-red-deep, #6b1818),
+                     0 8px 20px rgba(0, 0, 0, 0.7);
+        animation: tRoundScaleSettle 0.8s ease-out forwards;
+        margin-bottom: 14px;
+      }
+      #t-content .t-round-intro-game {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 28px; font-weight: 400;
+        color: var(--text-cream, #f5ead4);
+        letter-spacing: 2px;
+        text-shadow: 0 2px 0 var(--accent-red-deep, #6b1818);
+        opacity: 0; animation: tFadeSlideUp 0.6s ease-out 0.6s forwards;
+        margin-bottom: 20px;
+      }
+      #t-content .t-round-intro-ready {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 16px; letter-spacing: 6px; font-style: italic;
+        color: var(--accent-gold-hot, #ffdd6b);
+        opacity: 0; animation: tPulse 1s ease-in-out 1.2s infinite;
         animation-fill-mode: forwards;
       }
 
       /* Champion dramatic */
-      .t-trophy-anim {
-        font-size:72px; display:inline-block;
-        animation: trophyBounce 0.8s ease-out forwards;
+      #t-content .t-trophy-anim {
+        font-size: 84px; display: inline-block;
+        animation: tTrophyBounce 0.8s ease-out forwards;
+        filter: drop-shadow(0 0 24px rgba(255, 221, 107, 0.6));
       }
-      .t-champion-label {
-        font-size:42px; font-weight:900; letter-spacing:4px;
-        background:linear-gradient(135deg,#f1c40f,#e67e22);
-        -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-        animation: goldGlow 2s ease-in-out infinite;
-        margin-bottom:8px;
+      #t-content .t-champion-label {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 48px; font-weight: 400; letter-spacing: 4px;
+        color: var(--accent-gold-hot, #ffdd6b);
+        animation: tGoldGlow 2s ease-in-out infinite;
+        margin-bottom: 10px;
       }
-      .t-champion-name {
-        font-size:32px; font-weight:800; color:#fff;
-        text-shadow: 0 0 30px rgba(241,196,15,0.4);
-        animation: fadeSlideUp 0.6s ease-out 0.5s forwards;
-        opacity:0; margin-bottom:24px;
+      #t-content .t-champion-name {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 38px; font-weight: 400;
+        color: var(--text-cream, #f5ead4);
+        text-shadow: 0 3px 0 var(--accent-red-deep, #6b1818),
+                     0 0 30px rgba(255, 221, 107, 0.4);
+        animation: tFadeSlideUp 0.6s ease-out 0.5s forwards;
+        opacity: 0; margin-bottom: 26px;
+        letter-spacing: 1px;
       }
-      .t-final-scores-label {
-        font-size:10px; letter-spacing:3px; color:#555; margin-bottom:12px;
-        opacity:0; animation: fadeSlideUp 0.4s ease-out 1s forwards;
+      #t-content .t-final-scores-label {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 11px; letter-spacing: 3px;
+        color: var(--text-dim, rgba(245, 234, 212, 0.55));
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        opacity: 0; animation: tFadeSlideUp 0.4s ease-out 1s forwards;
       }
-      .t-standings-commentary {
-        font-size:13px; color:#888; font-style:italic; margin-top:14px;
-        opacity:0; animation: fadeSlideUp 0.5s ease-out 1.5s forwards;
+      #t-content .t-standings-commentary {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 15px; font-style: italic;
+        color: var(--text-cream, #f5ead4);
+        opacity: 0; margin-top: 16px; line-height: 1.5;
+        animation: tFadeSlideUp 0.5s ease-out 1.5s forwards;
       }
     `;
     document.head.appendChild(style);
@@ -282,7 +365,7 @@ const Tournament = (() => {
       quip = Narrator.tournamentChampionQuip(champDisplayName);
     }
 
-    var html = '<div class="t-bar" style="opacity:0;animation:fadeSlideUp 0.4s ease-out 0.2s forwards;">TOURNAMENT COMPLETE</div>';
+    var html = '<div class="t-bar" style="opacity:0;animation:tFadeSlideUp 0.4s ease-out 0.2s forwards;">TOURNAMENT COMPLETE</div>';
     html += '<div class="t-trophy-anim">\uD83C\uDFC6</div>';
 
     if (champDisplayName) {
@@ -314,7 +397,7 @@ const Tournament = (() => {
       html += '<div class="t-standings-commentary" style="animation-delay:2s;">' + quip + '</div>';
     }
 
-    html += '<div class="t-next" style="opacity:0;animation:fadeSlideUp 0.4s ease-out 2.5s forwards;">Returning to lobby...</div>';
+    html += '<div class="t-next" style="opacity:0;animation:tFadeSlideUp 0.4s ease-out 2.5s forwards;">Returning to lobby...</div>';
 
     content.innerHTML = html;
     show();
@@ -343,7 +426,7 @@ const Tournament = (() => {
       Narrator.tournamentRoundIntro(data.round || 1, data.totalRounds || 3, gameName);
     }
 
-    var html = '<div class="t-bar" style="opacity:0;animation:fadeSlideUp 0.4s ease-out forwards;">TOURNAMENT</div>';
+    var html = '<div class="t-bar" style="opacity:0;animation:tFadeSlideUp 0.4s ease-out forwards;">TOURNAMENT</div>';
     html += '<div class="t-round-intro-number">ROUND ' + (data.round || '?') + '</div>';
     html += '<div class="t-round-intro-game">' + gameName + '</div>';
     html += '<div class="t-round-intro-ready">GET READY</div>';

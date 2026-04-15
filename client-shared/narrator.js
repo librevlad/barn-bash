@@ -202,28 +202,42 @@ const Narrator = (() => {
     overlay.id = 'narrator-overlay';
     overlay.style.cssText = `
       position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
-      max-width: 500px; width: 85%; padding: 14px 22px;
-      background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px; backdrop-filter: blur(8px);
-      font-family: -apple-system, 'Segoe UI', sans-serif;
-      color: #eee; font-size: 15px; font-style: italic;
+      max-width: 560px; width: 85%; padding: 14px 22px;
+      background: rgba(90, 58, 32, 0.82);
+      border: 1.5px solid var(--accent-gold, #f4c542);
+      border-radius: 14px; backdrop-filter: blur(10px);
+      font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+      color: var(--text-cream, #f5ead4);
+      font-size: 17px; font-style: italic;
       text-align: center; line-height: 1.5;
+      letter-spacing: 0.3px;
       pointer-events: none; opacity: 0;
       transition: opacity 0.4s, transform 0.4s;
       z-index: 35;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6),
+                  0 0 18px rgba(244, 197, 66, 0.15);
     `;
     document.body.appendChild(overlay);
 
     const style = document.createElement('style');
     style.textContent = `
-      #narrator-overlay.show { opacity: 1; }
+      #narrator-overlay.show { opacity: 1 !important; }
       #narrator-overlay .narrator-label {
-        font-size: 9px; letter-spacing: 3px; opacity: 0.4;
-        text-transform: uppercase; font-style: normal;
-        margin-bottom: 6px; display: block;
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 10px;
+        letter-spacing: 3px;
+        color: var(--accent-gold, #f4c542);
+        opacity: 0.9;
+        text-transform: uppercase;
+        font-style: normal;
+        margin-bottom: 6px;
+        display: block;
       }
       #narrator-overlay .narrator-text {
-        font-size: 15px; color: #ddd;
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 17px;
+        color: var(--text-cream, #f5ead4);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
       }
     `;
     document.head.appendChild(style);

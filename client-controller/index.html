@@ -8,92 +8,120 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Cutive&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/theme.css">
   <link rel="stylesheet" href="/controller/onboarding.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; overflow: hidden; touch-action: none; }
     body {
-      font-family: -apple-system, 'Segoe UI', sans-serif;
-      background: #222; color: #fff;
+      font-family: var(--font-ui);
+      background-color: var(--bg-wood-deep);
+      background-image: var(--bg-wood-plank);
+      color: var(--text-cream);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       user-select: none; -webkit-user-select: none;
       transition: transform 0.08s ease-out;
     }
-    body::before {
-      content: ''; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.15);
-      pointer-events: none;
-    }
 
     #game-name {
       position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
-      font-size: 9px; letter-spacing: 4px; opacity: 0.4;
+      font-family: var(--font-accent);
+      font-size: var(--fs-xs); letter-spacing: var(--tracking-widest);
+      color: var(--text-dim); text-transform: uppercase;
     }
-    #info { font-size: 18px; opacity: 0.85; }
+    #info {
+      font-family: var(--font-accent);
+      font-size: var(--fs-md); font-style: italic;
+      color: var(--text-cream);
+    }
     #score {
-      font-size: 64px; font-weight: 800; margin: 6px 0;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      font-family: var(--font-display);
+      font-size: 64px;
+      color: var(--accent-gold);
+      text-shadow: var(--text-shadow-stack);
+      letter-spacing: var(--tracking-tight);
+      margin: 6px 0;
     }
     #result {
-      font-size: 36px; font-weight: 700; min-height: 44px;
+      font-family: var(--font-display);
+      font-size: var(--fs-4xl);
+      min-height: 44px;
       transition: transform 0.15s;
+      letter-spacing: var(--tracking-norm);
     }
-    #result.correct { color: #d5ffd5; }
-    #result.wrong   { color: #ffd5d5; }
+    #result.correct { color: var(--success-green); text-shadow: 0 0 12px rgba(123,201,80,0.5); }
+    #result.wrong   { color: var(--danger-red);   text-shadow: 0 0 12px rgba(217,83,79,0.5); }
     #result.pop { transform: scale(1.2); }
-    #status { font-size: 14px; opacity: 0.7; margin-top: 4px; min-height: 22px; }
+    #status {
+      font-family: var(--font-accent);
+      font-size: var(--fs-sm);
+      color: var(--text-dim);
+      margin-top: 4px; min-height: 22px;
+      letter-spacing: var(--tracking-norm);
+    }
 
-    /* Gesture indicator */
+    /* Gesture indicator — wood pill with gold border */
     #gesture-hint {
       position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-      font-size: 11px; letter-spacing: 1px; opacity: 0.6;
-      text-align: center; color: #ddd; max-width: 90%;
-      background: rgba(0,0,0,0.3); padding: 6px 14px; border-radius: 8px;
+      font-family: var(--font-accent);
+      font-size: var(--fs-sm); letter-spacing: var(--tracking-norm);
+      color: var(--text-cream);
+      text-align: center; max-width: 90%;
+      background: var(--bg-wood-warm);
+      border: var(--border-thin) solid var(--accent-gold);
+      padding: 6px 14px; border-radius: var(--radius-md);
+      box-shadow: var(--elevation-sm);
     }
 
-    /* Swipe arrow flash */
+    /* Swipe arrow flash — gold */
     #swipe-arrow {
       position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       font-size: 60px; pointer-events: none;
       opacity: 0; transition: opacity 0.15s;
+      color: var(--accent-gold-hot);
+      text-shadow: 0 0 20px var(--accent-gold-hot);
     }
-    #swipe-arrow.show { opacity: 0.5; }
+    #swipe-arrow.show { opacity: 0.7; }
 
-    /* Cooldown bar */
+    /* Cooldown bar — wood track with gold fill */
     #cooldown-wrap {
       position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-      width: 50%; max-width: 180px; height: 3px;
-      background: rgba(0,0,0,0.3); border-radius: 2px; display: none;
+      width: 50%; max-width: 180px; height: 4px;
+      background: var(--bg-wood-warm); border-radius: 2px; display: none;
+      box-shadow: var(--inset-wood);
     }
     #cooldown-fill {
       height: 100%; width: 100%; border-radius: 2px;
-      background: rgba(255,255,255,0.6); transition: width 0.1s linear;
+      background: var(--bg-ticket-face);
+      box-shadow: 0 0 6px rgba(244,197,66,0.5);
+      transition: width 0.1s linear;
     }
 
-    /* Tap pulse */
+    /* Tap pulse — gold ring */
     #tap-pulse {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       width: 100px; height: 100px; border-radius: 50%;
-      border: 3px solid rgba(255,255,255,0.3);
+      border: var(--border-thick) solid var(--accent-gold-hot);
       pointer-events: none; opacity: 0;
     }
     #tap-pulse.active { animation: tapRing 0.3s ease-out; }
     @keyframes tapRing {
-      0% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.5); }
+      0% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.5); }
       100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
     }
 
-    /* Hold charge */
+    /* Hold charge — gold ring */
     #hold-ring {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       width: 90px; height: 90px; border-radius: 50%;
-      border: 4px solid rgba(255,255,100,0); pointer-events: none;
-      transition: border-color 0.2s;
+      border: 4px solid rgba(255, 221, 107, 0); pointer-events: none;
+      transition: border-color var(--dur-short);
     }
     #hold-ring.charging {
-      border-color: rgba(255,255,100,0.5);
+      border-color: var(--accent-gold-hot);
+      box-shadow: 0 0 12px rgba(255,221,107,0.5);
       animation: holdPulse 0.8s ease-in-out infinite;
     }
     @keyframes holdPulse {
@@ -101,23 +129,27 @@
       50% { transform: translate(-50%, -50%) scale(1.1); }
     }
 
-    /* Desktop D-pad */
+    /* Desktop D-pad (dev helper, hidden on touch) */
     #dpad {
       position: fixed; bottom: 8px; right: 8px;
       display: grid; grid-template-columns: 36px 36px 36px; grid-template-rows: 36px 36px 36px;
       gap: 3px; z-index: 40;
     }
     .dpad-btn {
-      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);
-      color: #fff; font-size: 14px; border-radius: 6px; cursor: pointer;
+      background: var(--bg-wood-warm);
+      border: var(--border-hair) solid var(--accent-gold-edge);
+      color: var(--text-cream);
+      font-family: var(--font-ui);
+      font-size: 14px; border-radius: var(--radius-sm); cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       padding: 0; -webkit-tap-highlight-color: transparent;
-      transition: background 0.1s;
+      transition: background var(--dur-tap);
     }
-    .dpad-btn:active { background: rgba(255,255,255,0.3); }
+    .dpad-btn:active { background: var(--accent-gold); color: var(--text-on-gold); }
     .dpad-up   { grid-column: 2; grid-row: 1; }
     .dpad-left  { grid-column: 1; grid-row: 2; }
-    .dpad-tap   { grid-column: 2; grid-row: 2; font-size: 9px; font-weight: 700; background: rgba(255,255,255,0.2); }
+    .dpad-tap   { grid-column: 2; grid-row: 2; font-size: 9px; font-weight: 700;
+                  background: var(--accent-gold); color: var(--text-on-gold); }
     .dpad-right { grid-column: 3; grid-row: 2; }
     .dpad-down  { grid-column: 2; grid-row: 3; }
     .dpad-hold  { grid-column: 1; grid-row: 3; font-size: 8px; font-weight: 600; grid-column: 1 / 2; }

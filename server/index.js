@@ -50,8 +50,8 @@ function resolve(url) {
   if (url.startsWith('/host/') && url.endsWith('.js'))
     return path.join(root, 'client-host', path.basename(url));
 
-  // Shared JS (tournament overlay etc.)
-  if (url.startsWith('/shared/') && url.endsWith('.js'))
+  // Shared JS + CSS (tournament overlay, theme tokens etc.)
+  if (url.startsWith('/shared/') && (url.endsWith('.js') || url.endsWith('.css')))
     return path.join(root, 'client-shared', path.basename(url));
 
   // Engine modules
