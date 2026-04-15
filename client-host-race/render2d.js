@@ -230,13 +230,17 @@ const Render2D = (() => {
     if (track.length < 2) return;
     const tw = trackWidth * camera.getZoom();
 
-    drawTrackPath(ctx, 'rgba(0,0,0,0.35)', tw + 16);
-    drawTrackPath(ctx, 'rgba(130,110,80,0.2)', tw + 10);
-    drawTrackPath(ctx, 'rgba(200,40,40,0.5)', tw + 6);
+    // Ground shadow
+    drawTrackPath(ctx, 'rgba(0,0,0,0.35)', tw + 18);
+    // Brass rim — carnival signature: outer gold-dim band + hot highlight
+    drawTrackPath(ctx, Palette.accentGoldEdge, tw + 12);
+    drawTrackPath(ctx, Palette.accentGoldDim, tw + 8);
+    drawTrackPath(ctx, 'rgba(200,40,40,0.5)', tw + 4);
     drawTrackPath(ctx, '#3a3a3a', tw);
     drawTrackPath(ctx, '#404040', tw - 6);
     drawTrackPath(ctx, '#454545', tw - 14);
-    drawTrackPath(ctx, 'rgba(255,200,40,0.25)', tw + 1);
+    // Thin hot-gold highlight along the inside of the brass rim
+    drawTrackPath(ctx, 'rgba(255,221,107,0.35)', tw + 1);
 
     // Animated center dashed line (moves with time for speed feel)
     const clock = renderLoop ? renderLoop.getClock() : 0;
@@ -278,14 +282,45 @@ const Render2D = (() => {
           ctx.fill();
         }
       }
-      // "FINISH" label above checkered line
+      // Carnival finish — red-velvet curtain banners flanking the line,
+      // connected by a gold rope with "FINISH" in Alfa Slab.
       ctx.save();
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.font = 'bold 12px sans-serif';
+      const bannerH = 34;
+      const bannerW = 14;
+      const sides = [
+        { tx: perpX * 1.1, ty: perpY * 1.1 },
+        { tx: perpX * -1.1, ty: perpY * -1.1 },
+      ];
+      sides.forEach((s) => {
+        const bx = f.x + s.tx;
+        const by = f.y + s.ty;
+        const g = Palette.redCurtain(ctx, bx - bannerW / 2, by - bannerH, bannerW, bannerH);
+        ctx.fillStyle = g;
+        ctx.fillRect(bx - bannerW / 2, by - bannerH, bannerW, bannerH);
+        // Gold-bulb cap on top
+        ctx.fillStyle = Palette.accentGoldHot;
+        ctx.beginPath();
+        ctx.arc(bx, by - bannerH - 2, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      // Gold rope between bulbs
+      ctx.strokeStyle = Palette.accentGold;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(f.x + sides[0].tx, f.y + sides[0].ty - bannerH - 2);
+      ctx.quadraticCurveTo(f.x, f.y - Math.abs(perpY) * 0.6 - bannerH - 4,
+                           f.x + sides[1].tx, f.y + sides[1].ty - bannerH - 2);
+      ctx.stroke();
+
+      // "FINISH" label above checkered line, Alfa Slab gold
+      ctx.fillStyle = Palette.accentGold;
+      Palette.applyLetterpress(ctx);
+      ctx.font = '700 14px "Alfa Slab One", Georgia, serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      const labelY = f.y - Math.abs(perpY) * 0.5 - 12;
+      const labelY = f.y - Math.abs(perpY) * 0.5 - bannerH - 8;
       ctx.fillText('FINISH', f.x, labelY);
+      Palette.clearShadow(ctx);
       ctx.restore();
     }
   }

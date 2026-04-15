@@ -190,10 +190,18 @@ const Render2D = (() => {
       ctx.beginPath(); ctx.arc(ax, ay, r * f, 0, Math.PI * 2); ctx.stroke();
     }
 
-    // Edge
+    // Edge — brass rim with pulsing amber-to-red (carnival meteor threat)
     const clock = renderLoop ? renderLoop.getClock() : 0;
     const pulse = 0.5 + Math.sin(clock * 3.5) * 0.15;
-    ctx.strokeStyle = `rgba(255,68,0,${pulse})`; ctx.lineWidth = 3;
+    // Base brass ring (gold-edge)
+    ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldEdge : 'rgba(138,103,24,0.7)');
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.stroke();
+    // Amber/danger pulse on top — matches the controller's meteor warn token
+    ctx.strokeStyle = (typeof Palette !== 'undefined'
+      ? `rgba(217,83,79,${pulse})`
+      : `rgba(255,68,0,${pulse})`);
+    ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.stroke();
   }
 
@@ -216,10 +224,17 @@ const Render2D = (() => {
     ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2);
     ctx.clip();
 
-    // Danger overlay — pulsing red
+    // Danger overlay — two-phase telegraph: amber wash → deep-red flash
+    // Matches the controller's meteor warn tokens so host & phone agree.
     const clock = renderLoop ? renderLoop.getClock() : 0;
-    const dangerOpacity = 0.15 + Math.sin(clock * 6) * 0.05;
-    ctx.fillStyle = `rgba(255,20,0,${dangerOpacity})`;
+    const dangerOpacity = 0.18 + Math.sin(clock * 6) * 0.06;
+    ctx.fillStyle = (typeof Palette !== 'undefined'
+      ? `rgba(232,163,60,${dangerOpacity * 0.55})` // warning amber wash
+      : `rgba(255,20,0,${dangerOpacity})`);
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = (typeof Palette !== 'undefined'
+      ? `rgba(217,83,79,${dangerOpacity})` // danger-red pulse layer
+      : `rgba(255,20,0,0)`);
     ctx.fillRect(0, 0, W, H);
 
     // Cut out safe zone (clear it)
@@ -261,29 +276,41 @@ const Render2D = (() => {
     const sx = s.x, sy = s.y;
     const sr = safeZone.r * SCALE;
 
-    // Green glow
+    // Green glow — carnival success halo on top of a gold-bulb core
     const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 1.5);
-    glow.addColorStop(0, 'rgba(50,220,80,0.15)');
-    glow.addColorStop(0.6, 'rgba(50,220,80,0.05)');
-    glow.addColorStop(1, 'rgba(50,220,80,0)');
+    glow.addColorStop(0, 'rgba(123,201,80,0.18)');
+    glow.addColorStop(0.55, 'rgba(244,197,66,0.1)');
+    glow.addColorStop(1, 'rgba(123,201,80,0)');
     ctx.fillStyle = glow;
     ctx.beginPath(); ctx.arc(sx, sy, sr * 1.5, 0, Math.PI * 2); ctx.fill();
 
-    // Safe disc
-    ctx.fillStyle = 'rgba(50,200,80,0.1)';
+    // Safe disc — warm wood with gold undertone so it reads as
+    // "stand here" rather than a generic green spot
+    const safeDisc = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
+    safeDisc.addColorStop(0, 'rgba(255,248,200,0.18)');     // bulb highlight
+    safeDisc.addColorStop(0.65, 'rgba(244,197,66,0.08)');  // gold wash
+    safeDisc.addColorStop(1, 'rgba(123,201,80,0.14)');     // green edge
+    ctx.fillStyle = safeDisc;
     ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
 
-    // Pulsing ring
+    // Pulsing ring — success-green with gold accent dot
     const clock = renderLoop ? renderLoop.getClock() : 0;
-    const pulse = 0.4 + Math.sin(clock * 5) * 0.2;
-    ctx.strokeStyle = `rgba(80,255,120,${pulse})`; ctx.lineWidth = 2.5;
+    const pulse = 0.45 + Math.sin(clock * 5) * 0.2;
+    ctx.strokeStyle = (typeof Palette !== 'undefined'
+      ? `rgba(123,201,80,${pulse})`
+      : `rgba(80,255,120,${pulse})`);
+    ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.stroke();
 
-    // "SAFE" label
-    ctx.fillStyle = `rgba(80,255,120,${pulse})`;
-    ctx.font = '700 11px -apple-system, sans-serif';
+    // "SAFE" label — Alfa Slab gold with red letterpress (carnival voice)
+    ctx.save();
+    if (typeof Palette !== 'undefined') Palette.applyLetterpress(ctx);
+    ctx.fillStyle = (typeof Palette !== 'undefined' ? Palette.accentGold : '#f4c542');
+    ctx.font = '700 12px "Alfa Slab One", Georgia, serif';
     ctx.textAlign = 'center';
     ctx.fillText('SAFE', sx, sy - sr - 8);
+    if (typeof Palette !== 'undefined') Palette.clearShadow(ctx);
+    ctx.restore();
   }
 
   // ============================================================
