@@ -32,7 +32,11 @@
 }
 .onboarding-root #ob-rotate-gate .icon {
   font-size: 56px; margin-bottom: 18px;
+  color: var(--accent-gold);
   animation: obRotateHint 2.2s ease-in-out infinite;
+}
+.onboarding-root #ob-rotate-gate .icon svg {
+  width: 56px; height: 56px; display: block;
 }
 @keyframes obRotateHint {
   0%, 100% { transform: rotate(-90deg); }

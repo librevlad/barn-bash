@@ -96,7 +96,7 @@
     host.className = 'onboarding-root';
     host.innerHTML = `
       <div id="ob-rotate-gate">
-        <div class="icon">\u{1F4F1}</div>
+        <div class="icon">${window.Icons ? window.Icons.use('phone') : ''}</div>
         <h2>PLEASE ROTATE</h2>
         <p>The Game Master only accepts contestants holding their phones vertically.</p>
       </div>
