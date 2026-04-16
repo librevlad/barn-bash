@@ -56,29 +56,46 @@ roster is Unicode emoji (`🐱🐸🐺🐻🐰🐷🐔🦝`):
 
 ## Style guide (single source of truth)
 
+The target style is **the existing `assets/bg.png`** — the "Barnyard
+Bedlam" lobby scene that already contains six of our eight animals
+(fox, pig, chicken, bunny, bear, cat or raccoon). Every avatar must
+read as "drawn by the same hand" when laid next to that scene.
+
+### Visual grammar (derived from bg.png)
+
+- **Medium-thickness dark ink outlines** — not thin vector, not thick
+  comic; a confident digital-illustrator line that holds together
+  at small sizes.
+- **Soft digital-watercolor / gouache fills** — flat-ish color areas
+  with subtle gradient shading and gentle texture, not fully flat
+  vector and not photorealistic.
+- **Bright daylight palette** — outdoor-lit, saturated but not neon:
+  sky blues, leaf greens, warm oranges, cream whites, carnival reds.
+  Temperature is **neutral to cool-warm mix**, NOT vintage warm-only.
+- **Rounded friendly anthropomorphic proportions** — slightly chibi
+  head-to-body, **large expressive eyes** with white highlights, warm
+  soft smile. Animals read humanlike but retain obvious species
+  anatomy (ears, snouts, tails, markings).
+- **Kind personality** — friendly, approachable, mildly cartoonish,
+  reads as a children's-storybook character.
+
 ### Shared constants
 
 - **Format:** PNG, alpha channel, 512×512 square master.
-- **Aesthetic:** 1930s American carnival, painterly cartoon, soft
-  brushwork, warm golden-hour lighting.
-- **Palette anchors:** carnival wood browns (`#3d2817`, `#5a3a20`),
-  golds (`#f4c542`, `#ffdd6b`), deep reds (`#6b1818`, `#a72d2a`),
-  creams (`#f5ead4`). Animal natural fur colors present but
-  temperature-graded warm.
-- **Composition:** head and shoulders portrait, centered, facing
-  three-quarters forward (slight turn, not flat frontal), **looking
-  into camera** (friendly eye contact). No hands below chest.
-- **Costume:** each animal wears one small carnival accent — e.g.
-  red ringmaster bowtie, gold button, tiny striped collar, tiny
-  carnival vest. Accents are subtle, not costume-y; animal is still
-  the subject.
-- **Silhouette:** readable at 48px. Strong head shape, distinct ears,
-  distinct face markings. Avoid intricate patterns that mud at small
-  sizes.
+- **Composition:** head and shoulders (or head-plus-torso if the
+  accent lives on the chest), centered, facing three-quarters forward,
+  **looking into camera**. Avatar must sit comfortably inside a
+  circular crop at 128px.
+- **Accent:** one small carnival-fair accessory per animal — vest,
+  cap, scarf, collar, bandana — extending bg.png's vocabulary (fox
+  newsboy cap + scarf, pig blue overalls, bear brown vest, raccoon
+  railway conductor outfit).
+- **Silhouette:** readable at 48px. Strong distinctive head shape,
+  species-diagnostic ears/snout/markings, no intricate patterns
+  that mud at small sizes.
 - **Background:** transparent. No scene, no backdrop, no frame.
-- **No:** text, watermarks, borders, cropping artifacts, multiple
-  subjects, human hands, weapons, gore, modern clothing or
-  accessories outside the 1930s carnival frame.
+- **No:** text, watermarks, borders, crop marks, multiple subjects,
+  human hands, weapons, modern clothing, vintage sepia cast.
 
 ### Prompt template
 
@@ -86,28 +103,36 @@ Hand this to the image-generation LLM verbatim for each animal,
 filling `{ANIMAL}`, `{TRAIT}`, `{ACCENT}`:
 
 ```
-A 1930s American carnival-style painterly cartoon portrait of
-{ANIMAL}, a {TRAIT} character. Wearing {ACCENT}. Head and shoulders,
-facing three-quarters forward, friendly direct eye contact, soft
-warm brushwork, golden-hour carnival lighting. Palette: warm
-carnival browns, gold, deep red, cream — temperature-graded warm.
-Readable strong silhouette at small sizes. Transparent background.
-Square composition 512x512. No text, no borders, no watermarks,
-no hands, no props beyond the listed accent.
+A bright daylight children's storybook cartoon portrait of
+{ANIMAL}, a {TRAIT} character. Wearing {ACCENT}. Drawn in digital
+watercolor with medium-thickness dark ink outlines, soft washy
+color fills and gentle shading. Rounded friendly anthropomorphic
+proportions, large expressive eyes with white highlights, warm
+kind smile. Head and shoulders, facing three-quarters forward,
+looking directly at the viewer. Vibrant saturated outdoor-daylight
+palette: sky-blues and leaf-greens, warm orange and carnival red
+accents, cream highlights. Clear readable silhouette at small
+sizes. Transparent background, no scene, no backdrop. Square
+composition 512x512. No text, no borders, no watermarks, no human
+hands, no additional props beyond the listed accent. Style: the
+same "Barnyard Bedlam" painterly children's-storybook feel — not
+vintage sepia, not flat vector, not photorealistic.
 ```
 
 ### Per-animal parameters
 
+Accents extend the vocabulary already present in bg.png.
+
 | ID | ANIMAL | TRAIT | ACCENT |
 |----|--------|-------|--------|
-| cat | a house cat (orange tabby, bright green eyes) | agile | a tiny red carnival ringmaster bowtie with gold knot |
-| frog | a green tree frog | bouncy | a gold coin pendant on a red ribbon |
-| wolf | a grey timber wolf | powerful | a red carnival vest with gold trim |
-| bear | a brown bear | tank | a small red-and-gold striped collar |
-| bunny | a white-and-tan rabbit | speedy | a tiny gold carnival medallion on the chest |
-| pig | a pink pig | endurance | a red bowler hat tilted slightly |
-| chicken | a hen with red comb | chaotic | a gold-rim carnival jester collar with small bells |
-| raccoon | a raccoon with classic mask markings | trickster | a tiny gold top hat tipped rakishly |
+| cat | an orange tabby cat with bright green eyes | agile | a red neckerchief tied loosely |
+| frog | a bright green tree frog | bouncy | a small red-and-yellow jester collar |
+| wolf | a grey timber wolf with lighter muzzle | powerful | a dark-blue rolled-sleeve shirt with red suspenders |
+| bear | a friendly brown bear | tank | a brown-and-red carnival vest over a cream shirt |
+| bunny | a white-and-tan rabbit | speedy | a blue-striped racing jersey |
+| pig | a rosy pink pig | endurance | blue denim farmer overalls matching bg.png |
+| chicken | a white hen with red comb and wattle | chaotic | a tiny red apron with a gold button |
+| raccoon | a classic-mask raccoon | trickster | a grey-blue railway conductor's cap |
 
 ## Pipeline
 
