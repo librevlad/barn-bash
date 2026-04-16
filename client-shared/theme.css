@@ -9,6 +9,16 @@
 
 :root {
   /* ===============================================
+     BROWSER CHROME — dark-only lock (Phase 4c)
+     -----------------------------------------------
+     The carnival aesthetic (wood + gold + red) is
+     dark-only by design; signal that to user-agent
+     chrome so scrollbars, date/file inputs, and iOS
+     safe-area chrome render as dark variants.
+     =============================================== */
+  color-scheme: dark;
+
+  /* ===============================================
      COLOR — Wood (primary surfaces)
      =============================================== */
   --bg-wood-deep:        #3d2817;   /* page background, deepest surface */
@@ -224,6 +234,17 @@
 @media (max-width: 360px) {
   :root {
     --pad-edge: 16px;
+  }
+}
+
+/* Phase 4c — a system-theme switch to light must not invert the
+   carnival. The whole wood-and-gold dialogue depends on a dark
+   surface; re-assert dark chrome explicitly so a user flipping
+   their OS to light mode doesn't get lighter scrollbars against
+   our brown. No token values change — only the user-agent signal. */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: dark;
   }
 }
 

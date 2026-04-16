@@ -800,6 +800,46 @@ Live 4-controller timing tweaks (biome-curtain duration, fox-eye bloom
 radius, meteor telegraph hold) are left to follow-up playtests and should
 be captured in the decisions log as they land.
 
+Fifth realization: offline-first assets, functional iconography, and
+dark-only browser-chrome lock (Phase 4, 2026-04-16).
+
+- `/assets/fonts/` — Alfa Slab One, Cutive, and Inter (weights 400/600
+  from a shared variable binary) vendored as 12 woff2 files across
+  Latin / Latin-ext / Cyrillic / Cyrillic-ext / Greek / Greek-ext /
+  Vietnamese subsets. `fonts.css` preserves Google's `unicode-range`
+  split so a Latin-only viewport only downloads the Latin slice
+  (~48 KB for Inter, not the full 228 KB). Six HTML entries replaced
+  their `fonts.googleapis.com` `<link>` with a single local include;
+  `server/index.js` added `font/woff2` and `font/woff` MIME types.
+  `LICENSE.txt` records the SIL OFL 1.1 provenance for all three
+  families.
+- `/client-shared/icons.js` — functional-icon SVG sprite injected as
+  `<svg id="frantics-icon-sprite">` into `document.body`. `Icons.use(id)`
+  returns string markup, `Icons.el(id)` returns a live DOM node;
+  both reference `<symbol>`s via `<use href="#icon-id">` so the sprite
+  loads once per page. Initial roster: phone, wifi, arrow-right, check,
+  close, gear. All paths use `currentColor` so icons tint through CSS.
+  `client-controller/onboarding.js` replaced the rotate-gate phone emoji
+  (`\u{1F4F1}`) with `Icons.use('phone')`; the platform-emoji-jitter is
+  gone.
+- Animal identities (cat / frog / wolf / bear / bunny / pig / chicken /
+  raccoon) remain Unicode emoji — that's the cultural identity layer
+  and the OS-native rendering is the feature, not the bug.
+- `client-shared/theme.css` — `:root { color-scheme: dark; }` plus a
+  `@media (prefers-color-scheme: light) { :root { color-scheme: dark; }}`
+  re-assertion, and `<meta name="color-scheme" content="dark">` added
+  to every HTML entry. Browser-chrome (scrollbars, form controls, iOS
+  safe-area) now renders dark variants even when the OS theme is light.
+- Screenshots:
+  `screenshots-review/phase4a-controller-offline.png`,
+  `screenshots-review/phase4a-host-lobby-offline.png`,
+  `screenshots-review/phase4b-rotate-gate-icon.png`,
+  `screenshots-review/phase4b-icon-sheet.png`.
+
+Phase 4 closes the last visible carnival seams. The product now ships
+to a captive-portal venue on a USB stick with all three brand fonts,
+consistent chrome icons, and guaranteed-dark browser chrome.
+
 ---
 
 ## Phase roadmap
@@ -815,9 +855,15 @@ be captured in the decisions log as they land.
    scaffold (3a), race brass track + meteor carnival telegraph (3b), escape +
    hill carnival signatures (3c), wood-plank lap pennant + DESIGN.md update
    (3d). Spec: `docs/superpowers/specs/2026-04-15-per-game-canvas-polish-design.md`.
-5. **Phase 4**: custom iconography, vendored fonts for offline, optional
-   dark/light modes (though dark-only is likely the right call for carnival
-   theatrics).
+5. **Phase 4** (shipped 2026-04-16): offline & iconography polish —
+   vendored Alfa Slab / Cutive / Inter (4a), `/client-shared/icons.js`
+   functional-SVG sprite (4b), dark-only `color-scheme` lock + DESIGN.md
+   fifth realization (4c). Spec:
+   `docs/superpowers/specs/2026-04-16-offline-and-iconography-design.md`.
+
+After Phase 4 the carnival is the product. Follow-up initiatives
+(content pass, internationalization, WebGL performance) each open
+their own spec when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -845,3 +891,10 @@ first, and this document is updated to reflect the addition.
 | 2026-04-16 | Lap pennant is canvas-baked, not DOM | Spec called for a drop / hold / rise signature timed against render frames; a DOM element would need duplicate animation wiring and wouldn't sit naturally over canvas z-order |
 | 2026-04-16 | Lap pennant dedupes by lap number (first crossing wins) | Race emits `lap_complete` for every player completing each lap — without dedup a 4-player field would stack 4 pennants per lap and clobber the hold phase |
 | 2026-04-16 | Phase 3d scope limited to lap pennant + DESIGN.md | Live timing tweaks (biome-curtain duration, fox-eye bloom radius, meteor telegraph hold) need real 4-controller playtest — captured as follow-up rather than speculatively retuned |
+| 2026-04-16 | Vendored fonts preserve Google's `unicode-range` per-subset split | Merging into one file per family would force every page to download the Cyrillic and Greek blocks even for Latin-only content; keeping the split halves the Latin-only payload |
+| 2026-04-16 | Inter weight 400 and 600 share one woff2 per subset | Inter is served as a variable font; Google's own CSS points both weight declarations at the same binary. Storing only one copy per subset saves ~228 KB of duplicated disk/git weight |
+| 2026-04-16 | Animal emoji stay Unicode, functional UI goes SVG | Animals (cat / frog / wolf…) ARE the player-identity fantasy — OS-native rendering is a feature. Chrome icons (phone, check, gear) are product surface and demand per-browser consistency |
+| 2026-04-16 | Icon sprite is one hidden `<svg>` injected into `document.body` | `<use href="#icon-*">` resolves against same-document symbols; one injection, many renders, no per-icon fetch |
+| 2026-04-16 | Icons render in `currentColor` only | Forcing consumers to set `color` on the wrapper keeps the sprite a pure silhouette; accent (gold vs cream vs red) stays a design-system decision per context, not baked into the icon |
+| 2026-04-16 | Dark-only theme lock via `color-scheme` + `prefers-color-scheme: light` no-op | Browsers render scrollbars and native form controls from the computed color-scheme. Without the lock, a user flipping their OS to light mode sees light scrollbars against our wood-deep surface |
+| 2026-04-16 | No Phase 5 on the roadmap | After Phase 4 the visible product IS the carnival. Future work (illustration pass for animals, i18n for expanded Unicode blocks, WebGL offload) is substantial enough to each deserve its own spec — not a numbered continuation of this thread |
