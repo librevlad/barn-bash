@@ -202,18 +202,19 @@ const Narrator = (() => {
     overlay.id = 'narrator-overlay';
     overlay.style.cssText = `
       position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
-      max-width: 560px; width: 85%; padding: 14px 22px;
+      max-width: 640px; width: 88%; padding: 12px 22px 12px 14px;
       background: rgba(90, 58, 32, 0.82);
       border: 1.5px solid var(--accent-gold, #f4c542);
       border-radius: 14px; backdrop-filter: blur(10px);
       font-family: var(--font-accent, 'Cutive'), Georgia, serif;
       color: var(--text-cream, #f5ead4);
       font-size: 17px; font-style: italic;
-      text-align: center; line-height: 1.5;
+      text-align: left; line-height: 1.5;
       letter-spacing: 0.3px;
       pointer-events: none; opacity: 0;
       transition: opacity 0.4s, transform 0.4s;
       z-index: 35;
+      display: flex; align-items: center; gap: 14px;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6),
                   0 0 18px rgba(244, 197, 66, 0.15);
     `;
@@ -222,6 +223,20 @@ const Narrator = (() => {
     const style = document.createElement('style');
     style.textContent = `
       #narrator-overlay.show { opacity: 1 !important; }
+      #narrator-overlay .narrator-portrait {
+        flex: 0 0 auto;
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: rgba(45, 28, 12, 0.4);
+        border: 2px solid var(--accent-gold-edge, #8a6718);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
+                    0 2px 6px rgba(0, 0, 0, 0.5);
+      }
+      #narrator-overlay .narrator-body {
+        flex: 1 1 auto; min-width: 0;
+        display: flex; flex-direction: column;
+      }
       #narrator-overlay .narrator-label {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
         font-size: 10px;
@@ -230,7 +245,7 @@ const Narrator = (() => {
         opacity: 0.9;
         text-transform: uppercase;
         font-style: normal;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
         display: block;
       }
       #narrator-overlay .narrator-text {
@@ -245,9 +260,15 @@ const Narrator = (() => {
 
   function showQuip(text, duration) {
     createOverlay();
+    // onerror hides portrait if narrator.png is missing — overlay falls back
+    // to the pre-Phase 5b text-only layout (flex shrinks when img is gone).
     overlay.innerHTML = `
-      <span class="narrator-label">Game Master</span>
-      <span class="narrator-text">${text}</span>
+      <img class="narrator-portrait" src="/assets/narrator.png" alt="Game Master"
+        onerror="this.remove()">
+      <div class="narrator-body">
+        <span class="narrator-label">Game Master</span>
+        <span class="narrator-text">${text}</span>
+      </div>
     `;
     overlay.classList.add('show');
     setTimeout(() => overlay.classList.remove('show'), duration || 3500);
