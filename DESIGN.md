@@ -840,6 +840,44 @@ Phase 4 closes the last visible carnival seams. The product now ships
 to a captive-portal venue on a USB stick with all three brand fonts,
 consistent chrome icons, and guaranteed-dark browser chrome.
 
+Sixth realization: custom animal avatars replace the Unicode-emoji
+roster (Phase 5a, 2026-04-16).
+
+- `assets/animal-{cat,frog,wolf,bear,bunny,pig,chicken,raccoon}.png` —
+  eight 1024×1024 PNG portraits commissioned through a human-in-the-
+  loop image-generation pipeline (one prompt at a time, prompt
+  template + per-animal accents checked into the Phase 5 spec).
+  Style: digital-watercolor children's storybook, matching
+  `assets/bg.png`'s "Barnyard Bedlam" hand — medium dark ink outlines,
+  soft washy color fills, rounded friendly anthropomorphic
+  proportions, small carnival-fair accents (neckerchief / jester
+  collar / denim overalls / railway cap / racing jersey) extending
+  the bg.png vocabulary.
+- `client-controller/onboarding.js` — ANIMALS array gains an `avatar`
+  field per entry; new `animalGlyph(a, extraClass)` helper renders
+  `<img>` with an onerror handler that swaps in the unicode emoji as
+  a text node so the display never breaks before a PNG drops. Four
+  render sites switched: selection-grid medallion, waiting-screen
+  player card, contestant pills, quick-confirm card.
+- `client-shared/host-common.js` — `charAvatars` constant plus shared
+  `renderCharGlyph(character, extraClass)` helper consumed by the
+  main host's lobby player pill. Local emoji-only `charIcons` maps
+  in per-game hosts, postgame, hud, tournament, and the in-canvas
+  race renderer stay unchanged — those are small-context icons where
+  emoji holds up and the integration win isn't worth the churn.
+- `client-controller/onboarding.css` — `.animal-glyph` (medallion /
+  player-card sites) uses `object-fit: cover` + `border-radius: 50%`
+  so PNG transparent-edge padding never bleeds past the gold ring;
+  `.animal-glyph-inline` for contestant-pill / quick-info contexts
+  sizes at 1.4em with the same circular clip.
+- Screenshots: `screenshots-review/phase5a-parade-complete.png` —
+  all eight avatars in the "Choose your fighter" grid as a single
+  consistent family.
+
+Phase 5a closes the player-identity layer. Animals no longer render
+differently across Windows / iOS / Android / Chrome versions; every
+venue sees the same eight characters.
+
 ---
 
 ## Phase roadmap
@@ -861,12 +899,14 @@ consistent chrome icons, and guaranteed-dark browser chrome.
    fifth realization (4c). Spec:
    `docs/superpowers/specs/2026-04-16-offline-and-iconography-design.md`.
 
-6. **Phase 5** (in progress): content pass — replace the 8-animal
-   Unicode-emoji roster with custom carnival-style PNG avatars.
+6. **Phase 5a** (shipped 2026-04-16): content pass — 8 custom animal
+   PNG avatars (cat / frog / wolf / bear / bunny / pig / chicken /
+   raccoon) replacing Unicode emoji on the selection grid, pills,
+   quick-confirm, waiting-screen, and lobby. Human-in-the-loop
+   image-gen pipeline; style guide + prompt template in the spec.
    Spec: `docs/superpowers/specs/2026-04-16-content-pass-design.md`.
-   One-at-a-time pipeline driven by human-in-the-loop image-generation
-   LLM; style guide and prompt template in the spec are the source of
-   truth.
+   Phase 5b (narrator portrait) + further content (per-game
+   environmental art, GLB extension) remain open as future stretch.
 
 After Phase 5 follow-ups (internationalization, WebGL performance,
 GLB extension, per-game environmental art) each open their own spec
@@ -905,3 +945,8 @@ first, and this document is updated to reflect the addition.
 | 2026-04-16 | Icons render in `currentColor` only | Forcing consumers to set `color` on the wrapper keeps the sprite a pure silhouette; accent (gold vs cream vs red) stays a design-system decision per context, not baked into the icon |
 | 2026-04-16 | Dark-only theme lock via `color-scheme` + `prefers-color-scheme: light` no-op | Browsers render scrollbars and native form controls from the computed color-scheme. Without the lock, a user flipping their OS to light mode sees light scrollbars against our wood-deep surface |
 | 2026-04-16 | No Phase 5 on the roadmap | After Phase 4 the visible product IS the carnival. Future work (illustration pass for animals, i18n for expanded Unicode blocks, WebGL offload) is substantial enough to each deserve its own spec — not a numbered continuation of this thread |
+| 2026-04-16 | Phase 5 reopened as content pass | Reversing the "no Phase 5" decision — the 8-animal emoji roster was visibly clashing with the commissioned `bg.png` art. Scoped narrowly to PNG avatar replacement (not per-game env art or GLB extension); those stay open as separate future initiatives |
+| 2026-04-16 | Phase 5a style anchored on `bg.png`, not `theme.css` tokens | Initial style guide over-indexed on the DOM palette (wood brown / gold / red / vintage warm). But in-product illustration style lives in the commissioned `assets/bg.png` — a bright daylight children's-storybook scene. Avatars drawn in vintage warm sepia would have clashed with the lobby scene they sit inside |
+| 2026-04-16 | Emoji stays as onerror fallback, not removed | The `animalGlyph` helper renders `<img>` but each consumer keeps the emoji as the text-node fallback on load failure. Cheap resilience for captive-portal / missing-asset edge cases, and the PNG→emoji swap is invisible to working users |
+| 2026-04-16 | Shared `renderCharGlyph` helper only on main lobby + controller | Per-game hosts (race / escape / hill / meteor), postgame, hud, tournament, and the in-canvas race renderer kept their local `charIcons` emoji maps. Their icons are small (~14-22px) where emoji still reads fine, and the integration churn wasn't worth the marginal visual upgrade |
+| 2026-04-16 | Avatar images use `object-fit: cover` + `border-radius: 50%` in circular medallions | Initial CSS used `object-fit: contain` inside `border-radius: 50%` parent — PNGs with transparent-edge padding showed square bleed at medallion corners. Cover+radius clips the image to the circle directly, ignoring how much padding the source has |
