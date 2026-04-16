@@ -44,6 +44,7 @@ ws.onmessage = (e) => {
 
     case 'lap_complete':
       Sound.play('coinPickup');
+      Render2D.triggerLap(msg.lap, state.totalLaps);
       showMsg(pname(msg.playerId) + ' — Lap ' + msg.lap + '!', 1500);
       break;
 

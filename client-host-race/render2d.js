@@ -26,6 +26,10 @@ const Render2D = (() => {
   const trackObjects = [];
   let objectsGenerated = false;
 
+  // Lap pennant — wood-plank drop signature moment
+  let lapPennant = null; // { lap, totalLaps, t0 }
+  let lastPennantLap = 0;
+
   // ============================================================
   // INIT
   // ============================================================
@@ -89,6 +93,7 @@ const Render2D = (() => {
     scene.getLayer('items').addFn(drawMissiles);
     scene.getLayer('players').addFn(drawPlayers);
     scene.getLayer('ui').addFn(drawMinimap);
+    scene.getLayer('ui').addFn(drawLapPennant);
 
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
 
@@ -759,6 +764,66 @@ const Render2D = (() => {
   }
 
   // ============================================================
+  // LAYER: LAP PENNANT — wood-plank drop, carnival signature
+  // ============================================================
+  function drawLapPennant(ctx) {
+    if (!lapPennant) return;
+    const elapsed = performance.now() - lapPennant.t0;
+    const enterMs = 180, holdEnd = 820, exitEnd = 1050;
+    if (elapsed > exitEnd) { lapPennant = null; return; }
+
+    const plankW = 240, plankH = 68;
+    const restY = 28;
+    let y;
+    if (elapsed < enterMs) {
+      const t = Palette.ease.curtain(elapsed / enterMs);
+      y = -plankH + (restY + plankH) * t;
+    } else if (elapsed < holdEnd) {
+      y = restY;
+    } else {
+      const t = Palette.ease.out((elapsed - holdEnd) / (exitEnd - holdEnd));
+      y = restY - (restY + plankH) * t;
+    }
+    const x = (W - plankW) / 2;
+
+    ctx.save();
+    // Drop shadow
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 6;
+    // Wood-plank face
+    ctx.fillStyle = Palette.woodPlank(ctx, x, y, plankW, plankH);
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, plankW, plankH, 10); ctx.fill(); }
+    else ctx.fillRect(x, y, plankW, plankH);
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+    // Gold-edge border + inner hot highlight for the "ticket" feel
+    ctx.strokeStyle = Palette.accentGoldEdge;
+    ctx.lineWidth = 2.5;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, plankW, plankH, 10); ctx.stroke(); }
+    else ctx.strokeRect(x, y, plankW, plankH);
+    ctx.strokeStyle = 'rgba(255,221,107,0.5)';
+    ctx.lineWidth = 1;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x + 4, y + 4, plankW - 8, plankH - 8, 7); ctx.stroke(); }
+
+    // Gold-bulb hanging nails at top corners
+    ctx.fillStyle = Palette.accentGoldHot;
+    ctx.beginPath(); ctx.arc(x + 14, y + 11, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + plankW - 14, y + 11, 3.5, 0, Math.PI * 2); ctx.fill();
+
+    // Alfa Slab gold text with red letterpress
+    ctx.font = '700 32px "Alfa Slab One", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    Palette.applyLetterpress(ctx);
+    ctx.fillStyle = Palette.accentGold;
+    const label = 'LAP ' + lapPennant.lap + '/' + lapPennant.totalLaps;
+    ctx.fillText(label, x + plankW / 2, y + plankH / 2 + 3);
+    Palette.clearShadow(ctx);
+    ctx.restore();
+  }
+
+  // ============================================================
   // PUBLIC API
   // ============================================================
   let lastStateTime = 0;
@@ -805,5 +870,19 @@ const Render2D = (() => {
     camera.shake(8, 0.3);
   }
 
-  return { init, updateState, triggerElim };
+  function triggerLap(lap, total) {
+    if (typeof lap !== 'number') return;
+    if (lap < lastPennantLap) lastPennantLap = 0; // race restarted
+    if (lap <= lastPennantLap) return;            // dedup — first crossing per lap wins
+    lastPennantLap = lap;
+    lapPennant = {
+      lap: lap,
+      totalLaps: total || totalLaps || 3,
+      t0: performance.now(),
+    };
+  }
+
+  return { init, updateState, triggerElim, triggerLap };
 })();
+
+if (typeof window !== 'undefined') window.Render2D = Render2D;

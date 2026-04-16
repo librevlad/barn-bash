@@ -763,6 +763,43 @@ Third realization: all 4 per-game hosts + shared overlays (Phase 1.5,
   `screenshots-review/tournament-*-carnival.png`,
   `screenshots-review/narrator-overlay-pinned.png`.
 
+Fourth realization: canvas signature effects across race / escape / hill /
+meteor (Phase 3, 2026-04-16).
+
+- `engine/palette.js` — shared CSS-token → canvas surface, motion token
+  mirror (`dur`, `ease`), pre-built gradient builders (`spotlight`,
+  `redCurtain`, `ticketFace`, `woodPlank`) and letterpress helpers. All
+  renderers read colors through it with graceful fallbacks to inline hex
+  when the module is absent.
+- `client-host-race/render2d.js` — brass three-layer track border, red-velvet
+  finish banners + gold-rope arch + Alfa Slab FINISH label with red
+  letterpress, wood-plank lap pennant (180ms drop, 640ms hold, 230ms rise;
+  deduped by lap number so the first crossing wins).
+- `client-host-escape/render2d.js` — gold-bulb halo behind every pickup
+  (shield / speedBoost / coin), biome curtain wipe covering the last 12%
+  of each biome (two panels from screen edges + gold rope seam), fox
+  gold-eye glare synchronized with the `fox_growl` server event.
+- `client-host-hill/render2d.js` — brass rim three-layer gold band
+  (accent-gold-edge / accent-gold-dim / accent-gold-hot), king-zone
+  spotlight with breathing oscillator, danger-red shrink pulse when the
+  arena tightens under 3.5 units.
+- `client-host-meteor/render2d.js` — two-phase telegraph
+  (warning-amber underlay, danger-red pulsing ring on top), gold-bulb +
+  smoke impact bloom, gold-bulb safe-zone tile with Alfa Slab SAFE label.
+- Screenshots:
+  `screenshots-review/phase3a-palette-wired-escape-lobby.png`,
+  `screenshots-review/phase3b-race-track-brass.png`,
+  `screenshots-review/phase3b-race-lobby-after.png`,
+  `screenshots-review/phase3b-meteor-warning-safe.png`,
+  `screenshots-review/phase3c-hill-brass-crown.png`,
+  `screenshots-review/phase3d-lap-pennant-race.png`.
+
+Phase 3d polish is deliberately lightweight — the lap pennant was the only
+new signature effect reserved out of Phase 3b into the polish window.
+Live 4-controller timing tweaks (biome-curtain duration, fox-eye bloom
+radius, meteor telegraph hold) are left to follow-up playtests and should
+be captured in the decisions log as they land.
+
 ---
 
 ## Phase roadmap
@@ -774,8 +811,10 @@ Third realization: all 4 per-game hosts + shared overlays (Phase 1.5,
    voice guide, sound catalogue, accessibility baseline, decisions log.
 3. **Phase 2**: controller gameplay screens — score, gesture feedback, swipe
    arrow, cooldown — themed through tokens. Open its own spec.
-4. **Phase 3**: per-game canvas polish (biome palettes, fox / hill / meteor
-   signature effects). Canvas rendering, not DOM UI.
+4. **Phase 3** (shipped 2026-04-16): per-game canvas polish — `engine/palette.js`
+   scaffold (3a), race brass track + meteor carnival telegraph (3b), escape +
+   hill carnival signatures (3c), wood-plank lap pennant + DESIGN.md update
+   (3d). Spec: `docs/superpowers/specs/2026-04-15-per-game-canvas-polish-design.md`.
 5. **Phase 4**: custom iconography, vendored fonts for offline, optional
    dark/light modes (though dark-only is likely the right call for carnival
    theatrics).
@@ -800,3 +839,9 @@ first, and this document is updated to reflect the addition.
 | 2026-04-15 | Per-game keyframes namespaced (`tSlideInLeft` etc) | Original `slideInLeft` / `goldGlow` names were generic enough to collide with future per-game CSS; prefixed for tournament overlay to stay self-contained |
 | 2026-04-15 | Per-game canvas palettes stay game-specific | Carnival UI wraps every game; character palettes (race greens, meteor reds) are part of game feel and shouldn't be normalized |
 | 2026-04-15 | All 4 per-game hosts migrated in one pass | Treating them individually would cause drift (each author making slightly different token choices). Canonical pattern applied uniformly |
+| 2026-04-16 | `engine/palette.js` reads `:root` CSS tokens at boot | Canvas renderers had hardcoded hex values drifting from the DOM theme — a token-driven surface keeps wood / gold / red in sync across the canvas-to-DOM seam |
+| 2026-04-16 | Palette exposes pre-built gradient builders (spotlight, redCurtain, ticketFace, woodPlank) | Each game was reconstructing the same carnival gradients inline; centralizing prevents drift in the recipe across race / escape / hill / meteor |
+| 2026-04-16 | Canvas palette refs fall back to inline hex on lookup failure | `engine/palette.js` reads `:root`; if theme.css fails to load, gameplay must keep rendering. Fallbacks in the per-game renderers prevent a blank world when tokens are missing |
+| 2026-04-16 | Lap pennant is canvas-baked, not DOM | Spec called for a drop / hold / rise signature timed against render frames; a DOM element would need duplicate animation wiring and wouldn't sit naturally over canvas z-order |
+| 2026-04-16 | Lap pennant dedupes by lap number (first crossing wins) | Race emits `lap_complete` for every player completing each lap — without dedup a 4-player field would stack 4 pennants per lap and clobber the hold phase |
+| 2026-04-16 | Phase 3d scope limited to lap pennant + DESIGN.md | Live timing tweaks (biome-curtain duration, fox-eye bloom radius, meteor telegraph hold) need real 4-controller playtest — captured as follow-up rather than speculatively retuned |
