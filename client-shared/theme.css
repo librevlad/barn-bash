@@ -227,16 +227,6 @@
   }
 }
 
-/* Global font face stack load hint */
-@font-face {
-  font-family: 'Alfa Slab One';
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Cutive';
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  font-display: swap;
-}
+/* Font faces are declared in /assets/fonts/fonts.css (Phase 4a vendoring).
+   Loaded by each HTML entry before this file so font-family lookups in
+   the tokens below resolve against the vendored binaries. */

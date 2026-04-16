@@ -19,7 +19,8 @@ const MIME = {
   '.html': 'text/html', '.js': 'application/javascript',
   '.css': 'text/css',
   '.glb': 'model/gltf-binary', '.png': 'image/png', '.jpg': 'image/jpeg',
-  '.json': 'application/json'
+  '.json': 'application/json',
+  '.woff2': 'font/woff2', '.woff': 'font/woff',
 };
 
 function resolve(url) {
