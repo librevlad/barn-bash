@@ -49,7 +49,16 @@
     'intro_to_quick-confirm':    'WELCOME BACK, CONTESTANT.',
     'quick-confirm_to_waiting':  'STRAIGHT TO THE SHOW!',
   };
-  const LS_KEY = 'frantics_player';
+  // LS key namespaced by ?slot= URL param so the test harness can host
+  // multiple controller iframes on one origin without them clobbering
+  // each other's stored identity. Production controller (no ?slot) keeps
+  // the original key — existing saves stay valid.
+  const LS_KEY = (function () {
+    try {
+      const slot = new URLSearchParams(location.search).get('slot');
+      return slot ? 'frantics_player_' + slot : 'frantics_player';
+    } catch { return 'frantics_player'; }
+  })();
 
   const state = {
     screen: null,
