@@ -40,18 +40,22 @@
 }
 
 /* Phase 5a — animal avatar images inside emoji-sized containers.
-   The container sets the box, the img fills 86% and centers so the
-   medallion/player-card ring still reads around the artwork.
-   .animal-glyph-inline is for small-text contexts (contestant pill,
-   quick-info card) where the image should flow like a character. */
+   For circular medallion/player-card contexts, the img fills the
+   container fully (object-fit: cover + border-radius: 50%) so
+   character artwork with transparent-edge padding doesn't bleed
+   square corners past the gold ring. The tiny inline variant is for
+   small-text contexts (contestant pill, quick-info card) and keeps
+   1em sizing to flow alongside text. */
 .onboarding-root .animal-glyph {
-  width: 86%; height: 86%;
-  object-fit: contain;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
   display: block;
-  margin: auto;
 }
 .onboarding-root .animal-glyph-inline {
   width: 1.4em; height: 1.4em;
+  object-fit: cover;
+  border-radius: 50%;
   display: inline-block;
   vertical-align: middle;
   margin: 0;
