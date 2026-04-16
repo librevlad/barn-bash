@@ -861,9 +861,16 @@ consistent chrome icons, and guaranteed-dark browser chrome.
    fifth realization (4c). Spec:
    `docs/superpowers/specs/2026-04-16-offline-and-iconography-design.md`.
 
-After Phase 4 the carnival is the product. Follow-up initiatives
-(content pass, internationalization, WebGL performance) each open
-their own spec when demand justifies.
+6. **Phase 5** (in progress): content pass — replace the 8-animal
+   Unicode-emoji roster with custom carnival-style PNG avatars.
+   Spec: `docs/superpowers/specs/2026-04-16-content-pass-design.md`.
+   One-at-a-time pipeline driven by human-in-the-loop image-generation
+   LLM; style guide and prompt template in the spec are the source of
+   truth.
+
+After Phase 5 follow-ups (internationalization, WebGL performance,
+GLB extension, per-game environmental art) each open their own spec
+when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
