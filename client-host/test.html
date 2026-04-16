@@ -24,9 +24,12 @@
     .frame-wrap {
       display: flex; flex-direction: column; overflow: hidden;
     }
-    #host-wrap { flex: 3; }
-    #ctrls-wrap { flex: 1; display: flex; flex-direction: column; gap: 2px; max-width: 320px; }
-    .ctrl-frame { flex: 1; }
+    #host-wrap { flex: 1; min-width: 0; }
+    #ctrls-wrap {
+      flex: 0 0 400px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .ctrl-frame { flex: 1; min-height: 0; }
     .frame-label {
       font-size: 10px; letter-spacing: 2px; color: #555; padding: 4px 10px;
       background: #0a0a14; text-transform: uppercase; flex-shrink: 0;
