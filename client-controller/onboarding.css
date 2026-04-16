@@ -38,6 +38,24 @@
 .onboarding-root #ob-rotate-gate .icon svg {
   width: 56px; height: 56px; display: block;
 }
+
+/* Phase 5a — animal avatar images inside emoji-sized containers.
+   The container sets the box, the img fills 86% and centers so the
+   medallion/player-card ring still reads around the artwork.
+   .animal-glyph-inline is for small-text contexts (contestant pill,
+   quick-info card) where the image should flow like a character. */
+.onboarding-root .animal-glyph {
+  width: 86%; height: 86%;
+  object-fit: contain;
+  display: block;
+  margin: auto;
+}
+.onboarding-root .animal-glyph-inline {
+  width: 1.4em; height: 1.4em;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+}
 @keyframes obRotateHint {
   0%, 100% { transform: rotate(-90deg); }
   50% { transform: rotate(0deg); }

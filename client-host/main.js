@@ -170,7 +170,8 @@ function showJoinReaction(msg) {
 // ============================================================
 // LOBBY RENDERING
 // ============================================================
-const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺', bear: '🐻', bunny: '🐰', pig: '🐷', chicken: '🐔', raccoon: '🦝' };
+// Character glyph via shared helper — renders <img> from /assets/animal-*.png
+// with onerror fallback to unicode emoji. Used for lobby player pills.
 
 function navigateToGame(gameId) {
   const urls = { escapeFox: '/host-escape/', hillKing: '/host-hill/', meteor: '/host-meteor/', race: '/host-race/' };
@@ -191,7 +192,7 @@ function updateLobby(players) {
     $lobbyPlayers.innerHTML = '<div class="player-empty">Waiting for players...</div>';
   } else {
     $lobbyPlayers.innerHTML = connected.map(([id, p]) => {
-      const icon = p.character ? charIcons[p.character] || '' : '?';
+      const icon = p.character ? HostCommon.renderCharGlyph(p.character, 'char-glyph-pill') : '?';
       const name = p.name || ('P' + id);
       return `<div class="player-pill" style="border-color:${p.color}44">
         <span class="player-pill-icon">${icon}</span>

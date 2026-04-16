@@ -11,14 +11,14 @@
   const { COLOR_IDS, COLOR_HEX, COLOR_SPRITE, COLOR_LABEL } = global.FranticsColors;
 
   const ANIMALS = [
-    { id: 'cat',     name: 'Cat',     trait: 'Agile',     emoji: '\u{1F431}' },
-    { id: 'frog',    name: 'Frog',    trait: 'Bouncy',    emoji: '\u{1F438}' },
-    { id: 'wolf',    name: 'Wolf',    trait: 'Powerful',  emoji: '\u{1F43A}' },
-    { id: 'bear',    name: 'Bear',    trait: 'Tank',      emoji: '\u{1F43B}' },
-    { id: 'bunny',   name: 'Bunny',   trait: 'Speedy',    emoji: '\u{1F430}' },
-    { id: 'pig',     name: 'Pig',     trait: 'Endurance', emoji: '\u{1F437}' },
-    { id: 'chicken', name: 'Chicken', trait: 'Chaotic',   emoji: '\u{1F414}' },
-    { id: 'raccoon', name: 'Raccoon', trait: 'Trickster', emoji: '\u{1F99D}' },
+    { id: 'cat',     name: 'Cat',     trait: 'Agile',     emoji: '\u{1F431}', avatar: '/assets/animal-cat.png' },
+    { id: 'frog',    name: 'Frog',    trait: 'Bouncy',    emoji: '\u{1F438}', avatar: '/assets/animal-frog.png' },
+    { id: 'wolf',    name: 'Wolf',    trait: 'Powerful',  emoji: '\u{1F43A}', avatar: '/assets/animal-wolf.png' },
+    { id: 'bear',    name: 'Bear',    trait: 'Tank',      emoji: '\u{1F43B}', avatar: '/assets/animal-bear.png' },
+    { id: 'bunny',   name: 'Bunny',   trait: 'Speedy',    emoji: '\u{1F430}', avatar: '/assets/animal-bunny.png' },
+    { id: 'pig',     name: 'Pig',     trait: 'Endurance', emoji: '\u{1F437}', avatar: '/assets/animal-pig.png' },
+    { id: 'chicken', name: 'Chicken', trait: 'Chaotic',   emoji: '\u{1F414}', avatar: '/assets/animal-chicken.png' },
+    { id: 'raccoon', name: 'Raccoon', trait: 'Trickster', emoji: '\u{1F99D}', avatar: '/assets/animal-raccoon.png' },
   ];
   const ANIMAL_QUIPS = {
     cat: '"Cats always land on their feet. Let\'s test that."',
@@ -98,6 +98,17 @@
   function escapeHTML(s) {
     return String(s).replace(/[<>&"']/g, ch =>
       ({ '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;' }[ch]));
+  }
+
+  // Phase 5a — render animal glyph as PNG avatar with emoji fallback.
+  // onerror swaps the <img> for a text node holding the emoji, so the
+  // display never breaks before the asset lands in /assets/.
+  function animalGlyph(a, extraClass) {
+    if (!a) return '?';
+    if (!a.avatar) return a.emoji;
+    const cls = 'animal-glyph' + (extraClass ? ' ' + extraClass : '');
+    const onerr = 'this.replaceWith(document.createTextNode(' + JSON.stringify(a.emoji) + '))';
+    return '<img class="' + cls + '" src="' + a.avatar + '" alt="' + a.emoji + '" onerror=\'' + onerr + '\'>';
   }
 
   function render() {
@@ -324,7 +335,7 @@
         cell.className = 'animal-cell' + (state.animal === a.id ? ' selected' : '');
         cell.dataset.id = a.id;
         cell.innerHTML =
-          '<div class="medallion" aria-hidden="true">' + a.emoji + '</div>' +
+          '<div class="medallion" aria-hidden="true">' + animalGlyph(a) + '</div>' +
           '<div class="animal-name">' + a.name + '</div>' +
           '<div class="animal-trait">' + a.trait + '</div>';
         cell.addEventListener('click', () => {
@@ -400,7 +411,7 @@
     function refresh() {
       const a = ANIMALS.find(x => x.id === state.animal);
       ribbon.textContent = (state.name || '—').toUpperCase();
-      animalEl.textContent = a ? a.emoji : '?';
+      animalEl.innerHTML = a ? animalGlyph(a) : '?';
       carImg.src = state.color ? COLOR_SPRITE[state.color] : '';
       descEl.textContent = (a?.name || '?').toLowerCase() + ' · ' +
         ((state.color && COLOR_LABEL[state.color]) || '?').toLowerCase();
@@ -427,7 +438,7 @@
       pill.innerHTML =
         '<div class="contestant-dot" style="background:' + colorHex + ';color:' + colorHex + '"></div>' +
         '<div class="contestant-name">' + escapeHTML(player.name || 'player') + '</div>' +
-        '<div class="contestant-animal">' + a.emoji + '</div>' +
+        '<div class="contestant-animal">' + animalGlyph(a, 'animal-glyph-inline') + '</div>' +
         '<div class="contestant-color">' + colorLabel + '</div>';
       contestants.appendChild(pill);
     }
@@ -450,7 +461,7 @@
     function refresh() {
       const a = ANIMALS.find(x => x.id === state.animal);
       nameEl.textContent = (state.name || '—').toUpperCase();
-      animalEl.textContent = a ? a.emoji : '?';
+      animalEl.innerHTML = a ? animalGlyph(a, 'animal-glyph-inline') : '?';
       colorEl.textContent = state.color ? COLOR_LABEL[state.color].toUpperCase() : '?';
     }
 
