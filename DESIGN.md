@@ -958,6 +958,60 @@ renderer stays as the durable fallback; painterly art layers in
 where the biome-characterising silhouette lives (round canopy)
 without competing with pines / bushes / rocks for readability.
 
+Eighth realization: controller gameplay module — the
+post-onboarding HUD, hintbar, confirmations, elimination overlay,
+spectator view, game-over card, and connection-lost toast, all
+consumed through a single `Gameplay.*` API (Phase 2, shipped
+2026-04-15, retro-documented 2026-04-17).
+
+- `client-controller/gameplay.js` + `client-controller/gameplay.css`
+  — production carrier of the gameplay spec. gameplay.js exposes a
+  19-method API: `start / stop / setPhase / setCountdown / setScore /
+  setContext / setModifier / setItem / setMeteorWarn / nearMiss /
+  setActionPrimary / onLocalAction / holdStart / holdEnd /
+  rejectAction / setSpectators / onGameOver / setConnectionAttempt /
+  getPhase`. gameplay.css scopes every selector under
+  `.gameplay-root` and consumes `/shared/theme.css` tokens for
+  colors, typography, spacing, and motion. Reduced-motion block
+  disables decorative keyframes.
+- `client-controller/main.js` — rewritten as a thin WebSocket ↔
+  Gameplay adapter (+261/-482). Legacy per-element DOM writes
+  (`$info`, `$score`, `$result`, `$status`, `$gameName`, `$cdWrap`,
+  `$cdFill`, `$pulse`, `$arrow`, `$holdRing`, `$gestHint`) gone;
+  `engine/Input.js` gesture manager and WebSocket reconnect loop
+  stay in main.js as controller-level concerns. Per-game behaviour
+  maps directly: `gameSelected / tournamentRound` → `setPhase('idle'
+  |'countdown')`, `state.phase=running` → `setScore / setItem /
+  setMeteorWarn / setModifier`, discrete events (`powerup_collected`,
+  `shield_break`, `bump`, `lap_complete`, etc.) route through
+  `onLocalAction` / `rejectAction` with carnival-labelled confirms.
+- `client-controller/index.html` — legacy gameplay DOM nodes
+  deleted outright (not hidden); only the onboarding root, dpad
+  dev-helper, and script tags remain. `gameplay.css` linked after
+  `onboarding.css`; `gameplay.js` loads before `main.js` so
+  `Gameplay` is global at WS-handler time.
+- `ensureGameplay(gameId)` rebuilds the module on target-game
+  change (playtest caught frozen eyebrow / icon / hintbar when
+  switching between games in the same session).
+- Elimination quip seeded deterministically from
+  `playerId + round`, so a reconnecting eliminated player sees the
+  same GM line they had before the WS dropped.
+- `navigator.vibrate?.(pattern)` fires on significant transitions
+  (countdown tick, elimination, game-over reveal). This is the
+  Phase 2c polish piece that landed inline with the 2b
+  implementation.
+- Phase 2a (standalone HTML prototype for 8 screens at 390×844)
+  was skipped — pattern was proven in Phase 1 onboarding and
+  implementation went directly to production. Phase 2c remaining
+  polish (stumble / powered animation tuning after multi-player
+  playtest, tournament round-break UX verification) is deferred
+  until live 4-controller playtest data accumulates.
+
+Phase 2 closes the gameplay half of the controller UX. Onboarding
+(Phase 1) and gameplay (Phase 2) both flow through token-scoped
+modules with clean stop/start semantics; the controller no longer
+has any "legacy" DOM writing code paths.
+
 ---
 
 ## Phase roadmap
@@ -967,8 +1021,15 @@ without competing with pines / bushes / rocks for readability.
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
    postgame, tournament, hud, transitions), component library, narrator
    voice guide, sound catalogue, accessibility baseline, decisions log.
-3. **Phase 2**: controller gameplay screens — score, gesture feedback, swipe
-   arrow, cooldown — themed through tokens. Open its own spec.
+3. **Phase 2** (shipped 2026-04-15, retro-documented 2026-04-17):
+   controller gameplay screens — score, hintbar, avatar orb, center
+   confirmations, elimination overlay, spectator view, game-over
+   card, connection-lost toast. Lives in `client-controller/
+   gameplay.{js,css}` behind a 19-method `Gameplay.*` API; `main.js`
+   is a thin WebSocket adapter. Phase 2a prototype skipped, Phase 2c
+   polish (vibrate patterns) landed inline with 2b; remaining polish
+   deferred to live-playtest follow-up. Spec:
+   `docs/superpowers/specs/2026-04-15-controller-gameplay-design.md`.
 4. **Phase 3** (shipped 2026-04-16): per-game canvas polish — `engine/palette.js`
    scaffold (3a), race brass track + meteor carnival telegraph (3b), escape +
    hill carnival signatures (3c), wood-plank lap pennant + DESIGN.md update
@@ -1050,3 +1111,9 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | Two-pass chroma-key (strict + edge-seeded flood fill) over a single-pass strict key | Forest PNG's checker was pure-neutral (r=g=b, bright) so strict (chroma<12, minBright>185) cleared it. Snow PNG's checker had slight chroma tint (r=255, g=255, b=253 style) that slipped past strict. Edge-seeded flood fill catches the tinted remnants via looser (chroma<40, minBright>165) thresholds that only apply to pixels CONNECTED to the image boundary, so interior highlights (snow caps, ember glow, mushroom pale) stay opaque |
 | 2026-04-17 | Flood fill loose thresholds stay at 40/165 even though a halo persists on snow | Widening to 60/150 caught more anti-alias halo BUT also eroded the snow caps from the canopy edge inward (caps are bright-neutral and connect to outside via anti-aliased transitions). 40/165 keeps snow caps intact at the cost of a barely-perceptible halo — prioritise the deliverable (snow cap is the biome-defining feature) over cosmetic edge cleanliness |
 | 2026-04-17 | `server/index.js` returns 404 for ENOENT (was flattening to 500) | readFile's generic err branch classified missing files as server errors. Phase 6a surfaced this when escape tried to load uncommissioned biome trees — console noise even though client-side .catch handled the fallback. ENOENT→404 is the correct HTTP semantics and makes console-monitoring during development honest |
+| 2026-04-15 | Gameplay carrier is a module with a 19-method API, not inline main.js DOM writes | main.js was mixing WebSocket protocol, gesture capture, and direct DOM mutation across a dozen `$`-cached nodes. Splitting the DOM/state concerns into `Gameplay.*` let main.js shrink to a WS→API adapter (-482/+261 lines), made the surface testable in isolation, and clamps all gameplay-screen styling under a single `.gameplay-root` scope |
+| 2026-04-15 | Phase 2a prototype skipped; implementation went directly to production | Phase 1 onboarding proved the token + scoped-root + spec→production pattern. Rebuilding the gameplay screens as a standalone HTML mock first would have just duplicated work — the Gameplay API could be exercised live in the controller with mocked WS messages. Time saved went into the 2b scope |
+| 2026-04-15 | Legacy gameplay DOM nodes removed outright, not hidden behind feature flag | Keeping the old `$info` / `$score` / `$gestHint` nodes as a fallback would have let drift re-enter via someone editing the wrong path. Gameplay module is the single carrier; dual-implementation risk beats the cost of a clean revert if the migration had gone bad |
+| 2026-04-15 | `ensureGameplay(nextGameId)` rebuilds the module on target-game change | First implementation only toggled `.game-*` class on the root — eyebrow text, phase icon, and hintbar stayed frozen because they were baked into `buildDom()` at first mount. Rebuild-on-change is the simplest correct fix; per-game partial updates would spread game-shape coupling across the API |
+| 2026-04-15 | Elimination quip seeded deterministically from `playerId + round` | Plain `Math.random()` pick would reshuffle every render / reconnect, so an eliminated player's quip could change on WS reconnect — breaking the narrative beat. Seeded pick keeps the same line through disconnect / rejoin cycles |
+| 2026-04-15 | `engine/Input.js` `excludeSelector` extended for `.gp-action` and `.gp-go-btn` | Gesture manager captures taps/swipes on the controller canvas to translate into game actions. Hintbar cards and the game-over BACK-TO-LOBBY button needed native click semantics; excluding them from the gesture capture layer keeps the affordance honest without a per-event `preventDefault()` branch |
