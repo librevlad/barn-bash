@@ -261,7 +261,9 @@
    #lobby). CSS custom property --ornament-bunting-bg is set at
    runtime from a loadPainterly-processed data URL; raw PNG fallback
    via url() default. Layered via ::before at z-index 0 so overlay
-   content (text, backdrops, buttons) paints above it. */
+   content (text, backdrops, buttons) paints above it.
+   Phase 16 adds buntingSway ±0.5° rotation + buntingBulbPulse
+   filter-brightness cycling — subtle ambient festival motion. */
 #tournament-overlay::before,
 #postgame-overlay::before,
 #lobby::before {
@@ -275,6 +277,18 @@
   background-position: center top;
   z-index: 0;
   pointer-events: none;
+  transform-origin: 50% 0;
+  animation:
+    buntingSway 4s ease-in-out infinite,
+    buntingBulbPulse 2.2s ease-in-out infinite;
+}
+@keyframes buntingSway {
+  0%, 100% { transform: rotate(-0.5deg); }
+  50%      { transform: rotate(0.5deg); }
+}
+@keyframes buntingBulbPulse {
+  0%, 100% { filter: brightness(0.95); }
+  50%      { filter: brightness(1.05); }
 }
 
 /* Phase 15b — gold-filigree corner flourishes, 4 per overlay.
@@ -301,6 +315,16 @@
 .ornament-corner.tr { top: 0;    right: 0;  transform: scaleX(-1); }
 .ornament-corner.bl { bottom: 0; left: 0;   transform: scaleY(-1); }
 .ornament-corner.br { bottom: 0; right: 0;  transform: scale(-1, -1); }
+/* Phase 16b — slow corner shimmer, 6s brightness cycle so the gold
+   catches subtle light. Per-corner transform state is preserved by
+   applying animation only on the BASE class's filter property. */
+.ornament-corner {
+  animation: cornerShimmer 6s ease-in-out infinite;
+}
+@keyframes cornerShimmer {
+  0%, 100% { filter: brightness(0.95); }
+  50%      { filter: brightness(1.05); }
+}
 
 /* ============================================================
    Phase 14 — motion polish utilities
@@ -377,4 +401,9 @@
   .ticket-btn:hover::after,
   .onboarding-root .color-cell:hover::after,
   .onboarding-root .animal-cell:hover::after { animation: none; }
+  /* Phase 16 — freeze ornament ambient motion */
+  #tournament-overlay::before,
+  #postgame-overlay::before,
+  #lobby::before,
+  .ornament-corner { animation: none; }
 }
