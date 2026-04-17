@@ -12,6 +12,20 @@ const $winOverlay = $('winner-overlay'), $controls = $('controls');
 Render2D.init();
 const pname = HostCommon.pname;
 
+// Phase 10a — async-strip the lobby-race painterly backdrop and swap
+// the <img> src to the processed data URL. Raw PNG (with baked white
+// background) shows for the first ~100ms; once processed the cream
+// center panel sits transparently against the wood-plank gradient.
+setTimeout(() => {
+  if (typeof SpriteLoader === 'undefined') return;
+  SpriteLoader.loadPainterly('lobby-race', '/assets/lobby-race.png')
+    .then((canvas) => {
+      const img = document.querySelector('#lobby .lobby-backdrop');
+      if (img && canvas) img.src = canvas.toDataURL('image/png');
+    })
+    .catch(() => {});
+}, 0);
+
 ws.onopen = () => ws.send(JSON.stringify({ type: 'host' }));
 
 ws.onmessage = (e) => {

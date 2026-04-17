@@ -132,6 +132,18 @@
       align-items: center; justify-content: center;
     }
     #lobby.hidden { display: none; }
+    /* Phase 10a — painterly carnival arch backdrop behind title stack */
+    #lobby .lobby-backdrop {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      max-height: 500px; max-width: 700px;
+      width: auto; height: auto;
+      opacity: 0.95;
+      z-index: 0;
+      pointer-events: none;
+    }
+    #lobby > *:not(.lobby-backdrop) { position: relative; z-index: 1; }
     #lobby h1 {
       font-family: var(--font-display);
       font-size: 48px; font-weight: 400;
@@ -197,6 +209,7 @@
     </div>
   </div>
   <div id="lobby">
+    <img class="lobby-backdrop" src="/assets/lobby-race.png" onerror="this.remove()">
     <div class="hud-title">FRANTICS</div>
     <h1>GRAND PRIX</h1>
     <div id="lobby-info">Waiting for players...</div>
