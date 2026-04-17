@@ -131,8 +131,12 @@
   z-index: 1;
 }
 @keyframes gpOrbPulse {
-  0%, 100% { opacity: 0.65; }
-  50% { opacity: 1; box-shadow: 0 0 14px currentColor; }
+  /* Pulse only opacity on the ::before backdrop — box-shadow on a
+     rectangular pseudo paints a per-game-colored rectangle around the
+     painted silhouette, not a silhouette-aware glow. The painted frame
+     already carries plenty of visual interest. */
+  0%, 100% { opacity: 0.88; }
+  50% { opacity: 1; }
 }
 .gameplay-root .gp-avatar-orb.stumbling {
   animation: gpOrbStumble 0.2s ease-in-out infinite;
@@ -207,12 +211,16 @@
 .gameplay-root .gp-action {
   flex: 0 0 auto;
   width: 72px; height: 72px;
+  /* Label sits BELOW the frame (outside the painted rim) so it reads
+     against the HUD scrim. The frame's cream center hosts the icon
+     only. Overflow visible lets the label escape the 72px frame box. */
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 4px;
+  gap: 0;
   background: transparent;
   border: none;
   box-shadow: none;
   position: relative;
+  overflow: visible;
   transition: transform var(--dur-tap), filter var(--dur-short);
   opacity: 0.82;
 }
@@ -240,13 +248,29 @@
           drop-shadow(0 5px 8px rgba(0, 0, 0, 0.5));
   opacity: 1;
 }
-.gameplay-root .gp-action-icon { font-size: 24px; line-height: 1; }
+.gameplay-root .gp-action-icon {
+  font-size: 22px;
+  line-height: 1;
+  /* Keep the icon inside the frame's cream center (center of the card) */
+  position: relative;
+  z-index: 2;
+}
 .gameplay-root .gp-action-label {
   font-family: var(--font-accent);
   font-size: 10px;
   letter-spacing: 1px;
   color: var(--text-cream);
   text-transform: uppercase;
+  /* Sit BELOW the painted frame (outside the 72×72 cell box) so the
+     label reads against the HUD scrim instead of colliding with the
+     slot-machine bottom ornament. */
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  z-index: 2;
 }
 .gameplay-root .gp-action.primary .gp-action-label { color: var(--accent-gold); }
 
