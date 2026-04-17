@@ -1,2 +1,0 @@
-[2026-04-13T13:53:28.475Z] GET http://localhost:3000/assets/debug.html → 200 (6ms, 1865B)
-[2026-04-13T13:53:28.503Z] GET http://localhost:3000/assets/spritesheet2.png → 200 (31ms, ?B)
