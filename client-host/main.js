@@ -10,10 +10,23 @@ const $btnPlay = document.getElementById('btn-play');
 const $btnCustomize = document.getElementById('btn-customize');
 const $btnSettings = document.getElementById('btn-settings');
 
-// Show connect URL
+// Show connect URL + QR
 const connectUrl = location.host + '/controller';
 $connectUrlValue.textContent = connectUrl;
 $connectUrl.dataset.url = connectUrl;
+
+// Render QR (qrcode-generator vendored at /shared/qrcode.min.js).
+// 'L' error correction is enough for short LAN URLs and keeps the
+// pixel grid coarse so it scans from across a living room.
+(function renderJoinQR() {
+  const host = document.getElementById('join-qr');
+  if (!host || typeof qrcode !== 'function') return;
+  const full = location.protocol + '//' + connectUrl;
+  const qr = qrcode(0, 'L');
+  qr.addData(full);
+  qr.make();
+  host.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+})();
 
 let playerCount = 0;
 

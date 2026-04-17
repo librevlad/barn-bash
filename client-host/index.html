@@ -7,6 +7,7 @@
   <title>FRANTICS! — A Game Master Production</title>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
   <link rel="stylesheet" href="/shared/theme.css">
+  <script src="/shared/qrcode.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { font-family: var(--font-ui); }
@@ -69,10 +70,11 @@
     }
     #top-bar > * { pointer-events: all; }
     .top-url {
+      display: flex; align-items: center; gap: 12px;
       font-family: var(--font-mono);
       font-size: var(--fs-base); color: var(--text-cream);
       background: rgba(61, 40, 23, 0.72); backdrop-filter: blur(6px);
-      padding: 6px 14px; border-radius: var(--radius-md);
+      padding: 8px 12px 8px 14px; border-radius: var(--radius-md);
       border: var(--border-thin) solid var(--accent-gold);
       box-shadow: var(--glow-gold-soft);
       cursor: pointer;
@@ -82,6 +84,7 @@
       background: rgba(61, 40, 23, 0.88);
       border-color: var(--accent-gold-hot);
     }
+    .top-url-text { display: flex; flex-direction: column; }
     .top-url-label {
       font-family: var(--font-accent);
       font-size: var(--fs-xs);
@@ -89,6 +92,16 @@
       letter-spacing: var(--tracking-wider);
       text-transform: uppercase;
     }
+    #join-qr {
+      width: 84px; height: 84px;
+      background: var(--text-cream);
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4),
+                  inset 0 0 0 1px rgba(244, 197, 66, 0.3);
+      flex: 0 0 auto;
+    }
+    #join-qr svg, #join-qr img { display: block; width: 100%; height: 100%; }
     .top-players {
       display: flex; gap: 8px; align-items: center;
     }
@@ -278,8 +291,11 @@
   <!-- Top bar: URL + players -->
   <div id="top-bar">
     <div class="top-url" id="connect-url" onclick="navigator.clipboard.writeText(this.dataset.url).then(()=>{this.querySelector('.top-url-label').textContent='COPIED!';setTimeout(()=>this.querySelector('.top-url-label').textContent='JOIN',1500)})">
-      <div class="top-url-label">JOIN</div>
-      <div id="connect-url-value" style="font-size:14px"></div>
+      <div class="top-url-text">
+        <div class="top-url-label">JOIN</div>
+        <div id="connect-url-value" style="font-size:14px"></div>
+      </div>
+      <div id="join-qr" aria-label="QR code to join on your phone" role="img"></div>
     </div>
     <div class="top-players" id="lobby-players"></div>
   </div>
