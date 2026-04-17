@@ -159,6 +159,13 @@
         <p>The Game Master only accepts contestants holding their phones vertically.</p>
       </div>
 
+      <div id="ob-desktop-gate">
+        <div class="icon">${window.Icons ? window.Icons.use('phone') : ''}</div>
+        <h2>WRONG SCREEN, FRIEND</h2>
+        <p>This is the contestant controller. Grab your phone and scan the QR code on the host screen, or open this address in a mobile browser.</p>
+        <p class="hint">You are on a big screen. The Game Master expects you to be on a small one.</p>
+      </div>
+
       <div id="ob-screen-intro" class="screen active" data-screen="intro">
         <div class="intro-bulbs">
           <div class="bulb"></div><div class="bulb"></div><div class="bulb"></div>
