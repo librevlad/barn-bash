@@ -899,6 +899,65 @@ longer render differently across Windows / iOS / Android / Chrome
 versions, and the Game Master finally has a face to attach his
 theatrical voice to.
 
+Seventh realization: painterly biome trees overlay escape's procedural
+renderer, with a shared PNG-loading utility that strips image-gen
+tools' checker-preview backgrounds (Phase 6, 2026-04-17).
+
+- `assets/tree-{forest,cave,snow,volcano}.png` — four 1024×1024
+  digital-watercolor trees, one per escape biome, commissioned through
+  the Phase 5 human-in-the-loop pipeline. Each anchors its biome:
+  forest is lush leaf-green with warm brown trunk; cave is mossy
+  desaturated green with stone-grey trunk and a small mushroom
+  cluster; snow is blue-green canopy with a thick snow cap and frost-
+  dusted trunk; volcano is charcoal-black with a charred-red canopy
+  shot through with ember-orange highlights.
+- `engine/SpriteLoader.js` — new `loadPainterly(name, url, opts)`
+  method. Image-gen tools export "transparent" assets by rendering a
+  neutral-grey + white checker-preview pattern into the raster
+  instead of a true alpha channel (all Phase 5 and Phase 6 PNGs have
+  opaque corners). loadPainterly runs two passes: (1) a strict
+  chroma-key that clears pixels with near-zero chroma and high
+  brightness, catching the bulk of clean checker squares, and (2) an
+  edge-seeded flood fill that BFS-expands inward from transparent
+  edge pixels through neutral-bright neighbours, catching tinted
+  checker remnants (snow had r=g±2, b=253-style pixels that slipped
+  past the strict pass). Interior highlights — snow caps, ember
+  glow, mushroom pale — stay opaque because they aren't connected
+  to the outside boundary.
+- `client-host-escape/render2d.js` — at module init, four biome
+  sprites load via `SpriteLoader.loadPainterly`. A new
+  `getBiomeTreeSprite()` returns the current biome's canvas when
+  loaded AND the biome-blend window is below 80% (gates mid-
+  transition pop). `drawTrees`' type-0 (round-canopy) branch tries
+  the painterly sprite first and falls through to the existing
+  multi-layer canopy procedural code untouched when the sprite
+  isn't available. Pines (type 1) and bushes (type 2) stay
+  procedural — they're small-silhouette filler art where the
+  integration win doesn't justify the art budget.
+- `client-host-escape/index.html` — pulls in
+  `/engine/SpriteLoader.js` so render2d can reuse the loader.
+- `client-host-race/render2d.js` — `TREE_VARIANTS = ['tree-forest']`
+  alongside BUSH_VARIANTS and ROCK_VARIANTS. `generateTrackObjects`
+  now rolls three-way: 25% painterly tree / 45% bush (still "tree"
+  type) / 30% rock. Painterly sprites carry a `bigSprite` flag that
+  bumps `drawTrackObjects`' sprite scale from 2.0 to 2.2 so the
+  tree reads as a taller feature beside shorter bush silhouettes.
+  Loaded via `SpriteLoader.loadPainterly` to share the chroma-key
+  path.
+- `server/index.js` — `readFile` err branch now returns 404 for
+  ENOENT and 500 only for real IO failures. Surfaced during Phase 6a
+  when escape tried to load the three uncommissioned biome trees;
+  client-side `.catch()` silently handled the fallback, but the 500
+  console spam was noise.
+- Screenshots: `screenshots-review/phase6b-escape-{forest,cave,snow,
+  volcano}.png` — painterly trees anchoring each biome, procedural
+  pines filler unchanged.
+
+Phase 6 closes the first environmental-art pass. The procedural
+renderer stays as the durable fallback; painterly art layers in
+where the biome-characterising silhouette lives (round canopy)
+without competing with pines / bushes / rocks for readability.
+
 ---
 
 ## Phase roadmap
@@ -927,12 +986,20 @@ theatrical voice to.
    whenever a quip fires. Human-in-the-loop image-gen pipeline;
    style guide + prompt template in the spec. Spec:
    `docs/superpowers/specs/2026-04-16-content-pass-design.md`.
-   Further content (per-game environmental art, GLB extension)
-   opens its own spec when demand accumulates.
 
-After Phase 5 follow-ups (internationalization, WebGL performance,
-GLB extension, per-game environmental art) each open their own spec
-when demand justifies.
+7. **Phase 6** (shipped 2026-04-17): environmental art —
+   `assets/tree-{forest,cave,snow,volcano}.png` painterly biome trees
+   overlay escape's procedural `drawTrees` for type-0 (round-canopy)
+   tiles only (6a forest, 6b cave/snow/volcano), plus the forest
+   tree becomes a new race track-side variant beside existing
+   bush/rock sprites. New `SpriteLoader.loadPainterly` utility
+   strips image-gen-tool checker-preview backgrounds via a two-pass
+   chroma-key (strict + edge-seeded flood fill). Spec:
+   `docs/superpowers/specs/2026-04-17-environmental-art-design.md`.
+
+After Phase 6 follow-ups (internationalization, WebGL performance,
+GLB extension, hill crown, meteor crater, race finish-line flag art)
+each open their own spec when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -975,3 +1042,11 @@ first, and this document is updated to reflect the addition.
 | 2026-04-16 | Narrator portrait rides inside the overlay as a 64px circle, not a standalone floating element | Keeping the GM face attached to the same pill that carries his quip reads as one character card. Detaching the portrait to a separate floater would fight the existing overlay placement rules and scatter eye movement across two elements |
 | 2026-04-16 | Narrator overlay switched from vertical text stack to horizontal flex row | Adding a portrait to the left required horizontal composition; the prior "label above text" rhythm is preserved inside a `.narrator-body` column so existing quip reading cadence holds |
 | 2026-04-16 | `<img onerror="this.remove()">` for the narrator portrait instead of a feature-detect path | The pre-5b text-only layout still renders when `narrator.png` is absent — flex collapses the row cleanly. Inline `onerror` avoids adding a load-check branch or a CSS fallback layer for the rare missing-asset case |
+| 2026-04-17 | Painterly biome trees OVERLAY the procedural renderer, not replace it | Escape's existing `drawTrees` is already good (multi-layer canopy, snow cap in snow biome). Replacing it wholesale would scrap a working path for a PNG-only path that breaks on missing asset / slow load. Overlay keeps procedural as the durable fallback and restricts painterly to type-0 tiles, so pines/bushes/dust keep their cheap procedural home |
+| 2026-04-17 | Only round-canopy (type 0) tiles get painterly art; pines and bushes stay procedural | Pine silhouettes (triangles) and bush silhouettes (ovals) already read distinctively at their small in-canvas size. The biome-characterising piece is the round canopy — that's where saturated biome palette differences live. Art budget is one commissioned tree per biome, not three |
+| 2026-04-17 | Race borrows `tree-forest.png` as a track-side variant without a dedicated race-specific tree | Race has no biome system; forest is the universal default foliage feel and the animal-lobby / narrator art already anchors "daylight storybook" as the product's visual identity. A race-only tree would duplicate the commission for minimal differentiation |
+| 2026-04-17 | Painterly tree gated behind `t < 0.8` biome-blend window | Escape crossfades procedural colors in the last 20% of each biome. Popping a painterly PNG in mid-crossfade would clash visually (the PNG has fixed colors while the procedural renders are interpolating). Gating the sprite out during the blend window keeps the transition smooth — procedural draws through the crossfade and painterly enters once the next biome settles |
+| 2026-04-17 | `SpriteLoader.loadPainterly` lives in the shared loader, not inline per renderer | Both escape and race needed the same checker-strip logic on PNGs generated by the same image-gen workflow. Centralising it keeps the chroma-key threshold tuning in one place and means future per-game art pipelines pick it up for free |
+| 2026-04-17 | Two-pass chroma-key (strict + edge-seeded flood fill) over a single-pass strict key | Forest PNG's checker was pure-neutral (r=g=b, bright) so strict (chroma<12, minBright>185) cleared it. Snow PNG's checker had slight chroma tint (r=255, g=255, b=253 style) that slipped past strict. Edge-seeded flood fill catches the tinted remnants via looser (chroma<40, minBright>165) thresholds that only apply to pixels CONNECTED to the image boundary, so interior highlights (snow caps, ember glow, mushroom pale) stay opaque |
+| 2026-04-17 | Flood fill loose thresholds stay at 40/165 even though a halo persists on snow | Widening to 60/150 caught more anti-alias halo BUT also eroded the snow caps from the canopy edge inward (caps are bright-neutral and connect to outside via anti-aliased transitions). 40/165 keeps snow caps intact at the cost of a barely-perceptible halo — prioritise the deliverable (snow cap is the biome-defining feature) over cosmetic edge cleanliness |
+| 2026-04-17 | `server/index.js` returns 404 for ENOENT (was flattening to 500) | readFile's generic err branch classified missing files as server errors. Phase 6a surfaced this when escape tried to load uncommissioned biome trees — console noise even though client-side .catch handled the fallback. ENOENT→404 is the correct HTTP semantics and makes console-monitoring during development honest |
