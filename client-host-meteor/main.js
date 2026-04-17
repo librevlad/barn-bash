@@ -13,6 +13,18 @@ const $winOverlay = $('winner-overlay'), $controls = $('controls');
 Render2D.init();
 const pname = HostCommon.pname;
 
+// Phase 10d — async-strip lobby-meteor backdrop white surround; swap
+// img src to processed data URL once loadPainterly resolves.
+setTimeout(() => {
+  if (typeof SpriteLoader === 'undefined') return;
+  SpriteLoader.loadPainterly('lobby-meteor', '/assets/lobby-meteor.png')
+    .then((canvas) => {
+      const img = document.querySelector('#lobby .lobby-backdrop');
+      if (img && canvas) img.src = canvas.toDataURL('image/png');
+    })
+    .catch(() => {});
+}, 0);
+
 ws.onopen = () => ws.send(JSON.stringify({ type: 'host' }));
 
 ws.onmessage = (e) => {
