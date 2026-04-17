@@ -840,8 +840,8 @@ Phase 4 closes the last visible carnival seams. The product now ships
 to a captive-portal venue on a USB stick with all three brand fonts,
 consistent chrome icons, and guaranteed-dark browser chrome.
 
-Sixth realization: custom animal avatars replace the Unicode-emoji
-roster (Phase 5a, 2026-04-16).
+Sixth realization: custom animal avatars + Game Master narrator
+portrait (Phase 5a + 5b, 2026-04-16).
 
 - `assets/animal-{cat,frog,wolf,bear,bunny,pig,chicken,raccoon}.png` —
   eight 1024×1024 PNG portraits commissioned through a human-in-the-
@@ -870,13 +870,34 @@ roster (Phase 5a, 2026-04-16).
   so PNG transparent-edge padding never bleeds past the gold ring;
   `.animal-glyph-inline` for contestant-pill / quick-info contexts
   sizes at 1.4em with the same circular clip.
-- Screenshots: `screenshots-review/phase5a-parade-complete.png` —
-  all eight avatars in the "Choose your fighter" grid as a single
-  consistent family.
+- `assets/narrator.png` — 1024×1024 digital-watercolor Game Master
+  portrait in the same "Barnyard Bedlam" style as the animal roster:
+  top hat with red ribbon, twirled handlebar moustache, brass
+  spectacles, red tailcoat with gold buttons, white-gloved showman's
+  gesture. Transparent background so it reads naturally against the
+  overlay's wood-brown pill.
+- `client-shared/narrator.js` — `#narrator-overlay` layout switched
+  from a centered vertical text stack to a horizontal flex row
+  (64px portrait circle + `narrator-body` column holding the
+  `Game Master` label and quip). Max-width bumped 560 → 640 and
+  padding rebalanced for the left-anchored portrait. `showQuip`
+  renders `<img class="narrator-portrait" onerror="this.remove()">`
+  so a missing asset collapses cleanly to the pre-5b text-only
+  layout. New `.narrator-portrait` style: `border-radius: 50%` +
+  `object-fit: cover`, accent-gold-edge border, inset + drop shadow
+  for depth.
+- Screenshots:
+  - `screenshots-review/phase5a-parade-complete.png` — all eight
+    avatars in the "Choose your fighter" grid as a single consistent
+    family.
+  - `screenshots-review/phase5b-narrator-overlay-forced.png` — GM
+    portrait sitting in the lobby idle narrator pill beside a quip;
+    reads as a single character card.
 
-Phase 5a closes the player-identity layer. Animals no longer render
-differently across Windows / iOS / Android / Chrome versions; every
-venue sees the same eight characters.
+Phase 5 closes the product's content-identity layer. Animals no
+longer render differently across Windows / iOS / Android / Chrome
+versions, and the Game Master finally has a face to attach his
+theatrical voice to.
 
 ---
 
@@ -899,14 +920,15 @@ venue sees the same eight characters.
    fifth realization (4c). Spec:
    `docs/superpowers/specs/2026-04-16-offline-and-iconography-design.md`.
 
-6. **Phase 5a** (shipped 2026-04-16): content pass — 8 custom animal
-   PNG avatars (cat / frog / wolf / bear / bunny / pig / chicken /
-   raccoon) replacing Unicode emoji on the selection grid, pills,
-   quick-confirm, waiting-screen, and lobby. Human-in-the-loop
-   image-gen pipeline; style guide + prompt template in the spec.
-   Spec: `docs/superpowers/specs/2026-04-16-content-pass-design.md`.
-   Phase 5b (narrator portrait) + further content (per-game
-   environmental art, GLB extension) remain open as future stretch.
+6. **Phase 5** (shipped 2026-04-16): content pass — 8 custom animal
+   PNG avatars (5a) replace Unicode emoji on the selection grid,
+   pills, quick-confirm, waiting-screen, and lobby; a Game Master
+   narrator portrait (5b) anchors the bottom-center narrator overlay
+   whenever a quip fires. Human-in-the-loop image-gen pipeline;
+   style guide + prompt template in the spec. Spec:
+   `docs/superpowers/specs/2026-04-16-content-pass-design.md`.
+   Further content (per-game environmental art, GLB extension)
+   opens its own spec when demand accumulates.
 
 After Phase 5 follow-ups (internationalization, WebGL performance,
 GLB extension, per-game environmental art) each open their own spec
@@ -950,3 +972,6 @@ first, and this document is updated to reflect the addition.
 | 2026-04-16 | Emoji stays as onerror fallback, not removed | The `animalGlyph` helper renders `<img>` but each consumer keeps the emoji as the text-node fallback on load failure. Cheap resilience for captive-portal / missing-asset edge cases, and the PNG→emoji swap is invisible to working users |
 | 2026-04-16 | Shared `renderCharGlyph` helper only on main lobby + controller | Per-game hosts (race / escape / hill / meteor), postgame, hud, tournament, and the in-canvas race renderer kept their local `charIcons` emoji maps. Their icons are small (~14-22px) where emoji still reads fine, and the integration churn wasn't worth the marginal visual upgrade |
 | 2026-04-16 | Avatar images use `object-fit: cover` + `border-radius: 50%` in circular medallions | Initial CSS used `object-fit: contain` inside `border-radius: 50%` parent — PNGs with transparent-edge padding showed square bleed at medallion corners. Cover+radius clips the image to the circle directly, ignoring how much padding the source has |
+| 2026-04-16 | Narrator portrait rides inside the overlay as a 64px circle, not a standalone floating element | Keeping the GM face attached to the same pill that carries his quip reads as one character card. Detaching the portrait to a separate floater would fight the existing overlay placement rules and scatter eye movement across two elements |
+| 2026-04-16 | Narrator overlay switched from vertical text stack to horizontal flex row | Adding a portrait to the left required horizontal composition; the prior "label above text" rhythm is preserved inside a `.narrator-body` column so existing quip reading cadence holds |
+| 2026-04-16 | `<img onerror="this.remove()">` for the narrator portrait instead of a feature-detect path | The pre-5b text-only layout still renders when `narrator.png` is absent — flex collapses the row cleanly. Inline `onerror` avoids adding a load-check branch or a CSS fallback layer for the rare missing-asset case |
