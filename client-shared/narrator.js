@@ -290,6 +290,16 @@ const Narrator = (() => {
       </div>
     `;
     overlay.classList.add('show');
+    // Pretext-measure the quip so the overlay card height matches the
+    // actual wrapped line count. Long zingers ("A moment of silence.
+    // Moment over.") no longer over-reserve vertical space or clip.
+    // rAF wait lets flex layout settle so clientWidth is non-zero.
+    if (window.PretextHooks) {
+      requestAnimationFrame(() => {
+        const span = overlay.querySelector('.narrator-text');
+        if (span) window.PretextHooks.measure(span);
+      });
+    }
     setTimeout(() => overlay.classList.remove('show'), duration || 3500);
   }
 
