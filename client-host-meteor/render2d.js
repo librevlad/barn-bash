@@ -19,6 +19,16 @@ const Render2D = (() => {
   let impactFlash = 0;
   let lastStateTime = 0;
   let safeZone = { x: 0, z: 0, r: 1.2 };
+
+  // Phase 7b — ephemeral crater overlay. Each meteor_impact pushes
+  // a { x, z, t0 } entry; drawMeteorCraters renders it scaling up over
+  // 180ms and fading out over the next 820ms, then the entry expires.
+  // No accumulation — rapid-fire impacts don't clutter the arena.
+  const craterFX = [];
+  if (typeof SpriteLoader !== 'undefined') {
+    SpriteLoader.loadPainterly('meteor-crater', '/assets/meteor-crater.png')
+      .catch(() => { /* fallback: flash-only, no crater */ });
+  }
   let nextSafeZone = null; // radar preview
   let subPhase = 'idle';
   let showSafe = false;
@@ -45,6 +55,7 @@ const Render2D = (() => {
     scene.createLayer('arena', 5);
     scene.createLayer('danger_overlay', 10);
     scene.createLayer('safezone', 15);
+    scene.createLayer('craters', 17);
     scene.createLayer('players', 20);
     scene.createLayer('effects', 30);
     scene.createLayer('ui', 40);
@@ -54,6 +65,7 @@ const Render2D = (() => {
     scene.getLayer('arena').addFn(drawArena);
     scene.getLayer('danger_overlay').addFn(drawDangerOverlay);
     scene.getLayer('safezone').addFn(drawSafeZone);
+    scene.getLayer('craters').addFn(drawMeteorCraters);
     scene.getLayer('players').addFn(drawPlayers);
     scene.getLayer('effects').addFn(drawImpactFlash);
     scene.getLayer('ui').addFn(drawTimerBar);
@@ -370,6 +382,41 @@ const Render2D = (() => {
   }
 
   // ============================================================
+  // LAYER: METEOR CRATERS (ephemeral overlay under flash)
+  // ============================================================
+  function drawMeteorCraters(ctx) {
+    const now = performance.now();
+    // Prune expired (lifetime = 1000ms)
+    for (let i = craterFX.length - 1; i >= 0; i--) {
+      if (now - craterFX[i].t0 > 1000) craterFX.splice(i, 1);
+    }
+    if (craterFX.length === 0) return;
+    const sprite = typeof SpriteLoader !== 'undefined'
+      ? SpriteLoader.get('meteor-crater') : null;
+    if (!sprite) return;
+    const SCALE = camera.getZoom();
+    const baseSize = 3.0 * SCALE; // ~3 arena units wide at max scale
+    for (const c of craterFX) {
+      const age = now - c.t0;
+      let scale, alpha;
+      if (age < 180) {
+        scale = 0.3 + (age / 180) * 0.7; // 0.3 → 1.0 over 180ms
+        alpha = 1;
+      } else {
+        scale = 1;
+        alpha = Math.max(0, 1 - (age - 180) / 820); // 1 → 0 over next 820ms
+      }
+      if (alpha <= 0) continue;
+      const screen = camera.worldToScreen(c.x, c.z);
+      const w = baseSize * scale, h = baseSize * scale;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(sprite, screen.x - w / 2, screen.y - h / 2, w, h);
+      ctx.restore();
+    }
+  }
+
+  // ============================================================
   // LAYER: TIMER BAR (UI)
   // ============================================================
   function drawTimerBar(ctx) {
@@ -441,6 +488,10 @@ const Render2D = (() => {
     camera.shake(15, 0.5);
     impactFlash = 1;
     showSafe = false;
+
+    // Phase 7b — drop an ephemeral painterly crater at arena center.
+    // Lives 1000ms: 180ms scale-up then 820ms alpha fade.
+    craterFX.push({ x: 0, z: 0, t0: performance.now() });
 
     // Impact burst particles at arena center
     const center = camera.worldToScreen(0, 0);
