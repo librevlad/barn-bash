@@ -464,8 +464,8 @@ window.Gameplay = (function () {
     (list || []).forEach(function (p) {
       var pill = el('div', 'gp-spec-pill' + (p.leader ? ' leader' : ''));
       var dot = el('span', 'gp-spec-pill-dot');
-      dot.style.background = p.color || '#888';
-      dot.style.color = p.color || '#888';
+      dot.style.background = p.color || 'var(--color-player-unknown)';
+      dot.style.color = p.color || 'var(--color-player-unknown)';
       var emoji = el('span', 'gp-spec-pill-emoji', { text: ANIMAL_EMOJI[p.character] || '' });
       var name = el('span', 'gp-spec-pill-name', { text: p.name || ('P' + p.id) });
       var meta = el('span', 'gp-spec-pill-meta', { text: (p.score != null ? p.score + ' ' : '') + (p.leader ? '· LEADER' : '') });

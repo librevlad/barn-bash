@@ -46,6 +46,10 @@
   --text-on-gold:        #3d2817;   /* dark text on gold button */
   --text-disabled:       rgba(245, 234, 212, 0.35);
 
+  /* Player slot fallback — when server assigns a colorId the
+     client does not know yet. Warm grey stays in palette. */
+  --color-player-unknown: #8a7a68;
+
   /* Semantic status */
   --success-green:       #7bc950;   /* "you're in", confirmations */
   --danger-red:          #d9534f;   /* errors, destructive */

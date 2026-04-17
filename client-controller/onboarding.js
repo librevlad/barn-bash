@@ -471,7 +471,7 @@
       pill.className = 'contestant-pill';
       pill.dataset.pid = pid;
       const a = ANIMALS.find(x => x.id === player.character) || { emoji: '?' };
-      const colorHex = COLOR_HEX[player.colorId] || player.color || '#888';
+      const colorHex = COLOR_HEX[player.colorId] || player.color || 'var(--color-player-unknown)';
       const colorLabel = COLOR_LABEL[player.colorId] || '?';
       pill.innerHTML =
         '<div class="contestant-dot" style="background:' + colorHex + ';color:' + colorHex + '"></div>' +
