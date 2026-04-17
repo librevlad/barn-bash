@@ -1336,6 +1336,68 @@ no longer reads as static pixel art; hero titles breathe, cards
 flash gold on hover, the product feels "alive" at rest. Zero new
 PNG assets required; entirely CSS-driven.
 
+Sixteenth realization: background ornaments — carnival bunting
+drape at the top of every full-screen overlay + gold filigree
+corner flourishes at each corner (Phase 15, 2026-04-17).
+
+- `assets/ornament-bunting.png` — painted rope strung with
+  alternating red + white triangular flags, tiny gold-bulb
+  lights, warm-brown carved wooden end-caps at each side of the
+  rope loop. 2064×512 landscape master.
+- `assets/ornament-corner.png` — gold filigree corner flourish
+  occupying the top-left quarter of a 1024×1024 square; gold
+  vine-and-scroll with a tiny central ruby gem. Rendered 4×
+  per overlay via CSS transforms (tl natural, tr scaleX(-1),
+  bl scaleY(-1), br scale(-1,-1)) — one asset, four corners.
+- `client-shared/theme.css`:
+  - `#tournament-overlay::before`, `#postgame-overlay::before`,
+    `#lobby::before` rule renders the bunting at `height: 90px`
+    across the top edge via `background-repeat: repeat-x` so
+    the same 2064×512 asset tiles horizontally at any
+    viewport width.
+  - `.ornament-corner` base rule + four variant classes for
+    position + transform. `!important` needed on position
+    and z-index to beat the per-host Phase 10a
+    `#lobby > *:not(.lobby-backdrop) { position: relative }`
+    selector that would otherwise push corner divs into the
+    flex flow.
+- `client-shared/host-common.js`:
+  - `_initPainterlyPipeline` deferred to `DOMContentLoaded`
+    event (was `setTimeout(0)`). Async `<script>` fetching
+    makes `setTimeout(0)` race past subsequent script
+    parsing — `DOMContentLoaded` guarantees all parser-
+    blocking scripts (including SpriteLoader) have executed.
+  - `loadPainterly('ornament-bunting', ...)` uses custom
+    thresholds `{ seedBright: 135, expandBright: 120,
+    expandChroma: 25 }` — the bunting PNG's checker is
+    two-tone (~150 / ~180), dimmer than the default
+    seedBright 185. Processed data URL injected as
+    `<style id="phase15a-bunting-override">` with
+    `!important` to override the CSS fallback.
+  - `loadPainterly('ornament-corner', ...)` uses defaults
+    (corner PNG has standard white/grey checker).
+  - New `_addCornersTo(overlayEl)` helper injects 4
+    `<div class="ornament-corner tl|tr|bl|br">` children
+    into any overlay. Idempotent (checks for existing .tl).
+    Called at init for the already-in-DOM `#lobby`; exported
+    as `HostCommon.addCornerOrnaments`.
+- `client-shared/tournament.js` + `postgame.js` — call
+  `HostCommon.addCornerOrnaments(overlay)` immediately after
+  `document.body.appendChild` in createOverlay so corners
+  attach on first mount.
+
+Phase 15 closes the fourth and final AAA-polish dimension —
+background ornaments. Every full-screen overlay (main lobby,
+per-game lobbies, tournament standings + champion, postgame
+winner) now carries:
+- bunting draped across the top edge (framing the attraction)
+- gold filigree at each of the four corners (framing the stage)
+
+Combined with the earlier phases' painted backdrops (lobby
+arches, scoreboard scroll, throne, podium), each overlay reads
+as a tangible carnival stage rather than a CSS card floating on
+dark scrim.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1452,10 +1514,19 @@ PNG assets required; entirely CSS-driven.
     direction. Spec:
     `docs/superpowers/specs/2026-04-17-motion-polish-design.md`.
 
-After Phase 14 follow-ups (painterly pixel-car replacement if
-ever revisited, background ornament PNGs — garland, corner
-flourishes, bunting — plus the earlier-listed i18n / WebGL /
-GLB / race-2nd-3rd-place items) each open their own spec when
+15. **Phase 15** (shipped 2026-04-17): background ornaments —
+    `ornament-bunting.png` carnival bunting drapes across the
+    top of every full-screen overlay via `::before` +
+    `background-repeat: repeat-x`; `ornament-corner.png` gold
+    filigree flourish mirrors into 4 corners via CSS transforms
+    on 4 injected `<div>` children. Closes the fourth AAA-
+    polish dimension. Spec:
+    `docs/superpowers/specs/2026-04-17-background-ornaments-design.md`.
+
+After Phase 15 follow-ups (painterly pixel-car replacement if
+ever revisited, animation on ornaments — swaying bunting,
+flickering bulbs — plus the earlier-listed i18n / WebGL / GLB
+/ race-2nd-3rd-place items) each open their own spec when
 demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
@@ -1544,3 +1615,8 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | `#lobby` prefix on `.hud-title` breathing selector to exclude in-game HUD | `.hud-title` is reused inside the gameplay `#hud` element for lap / distance / position counters. Breathing on those would distract during high-pace play. Scoping to `#lobby .hud-title` keeps the attraction-banner eyebrow animation without touching the live-score counters |
 | 2026-04-17 | `.gp-action` excluded from the shine-sweep list | Shine-sweep requires `overflow: hidden` on the host element so the gold band clips cleanly at painted frame edges. Phase 12b action cards use `overflow: visible` to let their below-card labels escape the 72px frame. Controller is touch-only anyway; the hover trigger would rarely fire. Accepting the static state on actions is cheaper than reworking label positioning for a marginal hover effect |
 | 2026-04-17 | Phase 13 (pixel-car painterly replacement) skipped per user direction | User chose Phase 14 motion polish over Phase 13 car-asset commissioning. Car sprites are pixel-art (Phase 3 atlas) and sit inside Phase 11a's painted ticket frames, so the mixed-art register reads as "ticket tag with a retro car emblem" — acceptable tradeoff vs a 10-car commission. Pixel-car replacement stays on the follow-up list for future revisit |
+| 2026-04-17 | `DOMContentLoaded` instead of `setTimeout(0)` for pipeline initialization | `setTimeout(0)` defers one task-queue tick, but modern browsers allow async fetching of subsequent `<script src>` tags — a `setTimeout(0)` scheduled by an early script can fire BEFORE later scripts finish loading. In Phase 15, `SpriteLoader` was `undefined` at setTimeout-fire time in per-game hosts, silently breaking the whole pipeline. `DOMContentLoaded` fires only after ALL parser-blocking scripts execute, which is what we actually need |
+| 2026-04-17 | Large-data-URL CSS swap via `<style>` injection, not custom properties | Chrome silently rejects very long values (several-hundred-KB base64) assigned via `document.documentElement.style.setProperty('--foo', 'url(data:...)')`. The property appears unset on read. `<style>` tag `textContent` has no such limit; injecting a rule directly with the data URL works reliably. Phase 15a + 15b use `<style>` injection for all loadPainterly swaps on ornament assets |
+| 2026-04-17 | One corner PNG + CSS transforms for 4 corners vs 4 commissioned pieces | Symmetric mirrors around a square container come for free via `scaleX(-1)` / `scaleY(-1)` / `scale(-1,-1)`. Commissioning 4 corners would have quadrupled the art request while producing visually identical results. Prompt anchored the flourish to occupy ONLY the top-left quarter of the 1024×1024 square so the mirrored composition frames the container naturally |
+| 2026-04-17 | `!important` on `.ornament-corner` position/z-index | Per-host Phase 10a rule `#lobby > *:not(.lobby-backdrop) { position: relative; z-index: 1 }` is more specific (ID + descendant combinator) than a bare class selector. Without `!important`, corner divs injected into `#lobby` were forced into the flex flow (stacked vertically in the middle of the viewport) instead of absolute-positioned at corners |
+| 2026-04-17 | Bunting loadPainterly uses custom `{ seedBright: 135, expandBright: 120, expandChroma: 25 }` | The bunting PNG's baked checker is two-tone ~150 / ~180, dimmer than the default seedBright 185. Default thresholds left grey checker in place. Lowered seedBright matches the actual baked-checker luminance; saturated flags / rope / gold bulbs have high chroma and stay untouched |
