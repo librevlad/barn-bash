@@ -30,6 +30,20 @@ const PostGame = (() => {
     const style = document.createElement('style');
     style.textContent = `
       #postgame-overlay.show { opacity: 1 !important; pointer-events: auto !important; }
+      #postgame-overlay .pg-backdrop {
+        position: absolute;
+        bottom: 0; left: 50%;
+        transform: translate(-50%, 0);
+        max-height: 380px; max-width: 440px;
+        width: auto; height: auto;
+        opacity: 0.95;
+        pointer-events: none;
+        z-index: 0;
+      }
+      #postgame-overlay > *:not(.pg-backdrop) {
+        position: relative;
+        z-index: 1;
+      }
       #postgame-overlay .pg-winner-icon {
         font-size: 72px; margin-bottom: 8px;
         animation: pgBounce 0.6s ease-out;
@@ -184,7 +198,14 @@ const PostGame = (() => {
       narratorHTML = `<div class="pg-narrator">"${opts.loseQuote}"</div>`;
     }
 
-    overlay.innerHTML = `
+    // Phase 8c — optional painterly backdrop (race passes race-podium.png).
+    // Sits first in DOM so flex-flow siblings paint above it without any
+    // z-index gymnastics. onerror removes the img so a missing asset
+    // falls back cleanly to the text-only layout.
+    const backdropHTML = opts.backdrop
+      ? `<img class="pg-backdrop" src="${opts.backdrop}" onerror="this.remove()">`
+      : '';
+    overlay.innerHTML = backdropHTML + `
       <div class="pg-winner-icon" style="${hasWinner ? 'filter:drop-shadow(0 0 20px ' + opts.winnerColor + ')' : ''}">${icon}</div>
       ${hasWinner ? `
         <div class="pg-winner-name" style="color:${opts.winnerColor};text-shadow:0 2px 0 var(--accent-red-deep,#6b1818), 0 0 25px ${opts.winnerColor}">${opts.winnerName}</div>

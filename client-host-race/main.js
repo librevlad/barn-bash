@@ -101,6 +101,8 @@ ws.onmessage = (e) => {
           winLabel: 'WINS THE RACE!',
           loseIcon: '🏁', loseText: 'RACE OVER!',
           loseQuote: 'Nobody crossed the line...',
+          // Phase 8c — painterly three-tier podium as overlay backdrop
+          backdrop: '/assets/race-podium.png',
           stats: [
             { label: 'Finished', value: (state.finishOrder ? state.finishOrder.length : 0) + '/' + Object.keys(state.players).length },
           ],
