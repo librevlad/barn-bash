@@ -1247,6 +1247,58 @@ loadPainterly processing + gold-ring CSS reads at bar). Host
 game-select modal already commissioned via `ticket-*.png` in
 Phase 1.5.
 
+Fourteenth realization: painterly tournament scoreboard + avatar
+orb in the controller gameplay HUD (Phase 12, 2026-04-17).
+
+- `assets/standings-scroll.png` — painterly wooden scoreboard
+  with gold-leaf trim, rope cords draping top+bottom, four cream-
+  white horizontal slot strips separated by gold dividers,
+  central gold emblem crest, painted carnival-flag silhouettes
+  at the corners. Prepended inside `#t-content` during
+  `Tournament.renderStandings`; loadPainterly swap strips the
+  baked white surround once the PNG is processed.
+- `#t-content` layout for standings switches from horizontal
+  flex-row of score cards to vertical flex-column of row strips,
+  matching the four painted slot strips in the scroll. Each
+  `.t-player` row is color-dot + name + score laid out as a
+  horizontal strip inside a cream slot. Text colors flip to dark-
+  brown name on cream + deep-red score with gold letterpress so
+  the content reads on the painted cream slot background instead
+  of the dark overlay scrim it previously sat on.
+- Controller gameplay avatar orb adopts the Phase 11b
+  `cell-action.png` frame (reused via the same
+  `--cell-action-bg` CSS custom property). One painted slot-
+  machine face hosts both the avatar orb AND the three action
+  cards — a single ornament language across all four HUD cells
+  in the bottom row.
+- Animal avatar in the orb finally consumes the Phase 5a
+  painterly pipeline: `<img data-animal="{character}">` renders
+  in place of the raw emoji, with an async `loadPainterly` pass
+  swapping `src` to the processed data URL (Phase 5a onboarding
+  already did this; controller gameplay was the last surface
+  still rendering emoji). Emoji fallback retained via
+  `onerror="this.replaceWith(document.createTextNode(emoji))"`.
+- Pulse animation on the orb's painted frame reduced from
+  `box-shadow: 0 0 14px currentColor` + opacity to opacity-only
+  (0.88 → 1 at 1.2s ease-in-out). Rectangle-shaped box-shadow
+  over a round painterly silhouette painted a per-game-colored
+  rectangle around the orb; the painted frame carries all the
+  visual interest on its own.
+- Action-card labels (`SWIPE-STEER / BOOST / DRIFT`) reposition
+  from inside the 72px cell (where the painted slot-machine
+  bottom ornament cropped them) to `position: absolute; top:
+  100%; margin-top: 4px` BELOW the card. `overflow: visible` on
+  the cell permits the label to escape. Text-shadow gives
+  contrast against the HUD scrim.
+
+Phase 12 closes the tournament scoreboard and the controller
+gameplay HUD's avatar orb — the two remaining audit-flagged
+"flat CSS cards vs Hearthstone bar" surfaces. Controller gameplay
+HUD now reads as four painted slot-machine faces in a row
+(avatar + 3 actions) with consistent ornament language; between-
+round tournament standings read as a painted wooden scoreboard
+with four score strips instead of flex cards on a dark scrim.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1341,11 +1393,23 @@ Phase 1.5.
     frame. Spec:
     `docs/superpowers/specs/2026-04-17-selection-grid-frames-design.md`.
 
-After Phase 11 follow-ups (tournament standings scoreboard,
-controller gameplay avatar orb, pixel-car painterly replacement,
-motion polish, background ornaments, plus the earlier-listed i18n
-/ WebGL / GLB / race-2nd-3rd-place items) each open their own
-spec when demand justifies.
+13. **Phase 12** (shipped 2026-04-17): painterly tournament
+    scoreboard + controller avatar orb — `standings-scroll.png`
+    wooden scoreboard with four cream slot strips replaces the
+    flat flex cards in `Tournament.renderStandings`; avatar orb
+    in controller gameplay HUD adopts the Phase 11b
+    `cell-action.png` slot-machine frame (reused, one ornament
+    language for all four HUD cells in the bottom row) and
+    finally pipes the Phase 5a painterly animal avatar through
+    instead of raw emoji. Pulse migrated from box-shadow to
+    opacity-only; action-card labels repositioned below the card
+    so they escape the painted frame's bottom ornament. Spec:
+    `docs/superpowers/specs/2026-04-17-scoreboard-orb-frames-design.md`.
+
+After Phase 12 follow-ups (pixel-car painterly replacement,
+motion polish, background ornaments, plus the earlier-listed
+i18n / WebGL / GLB / race-2nd-3rd-place items) each open their
+own spec when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -1423,3 +1487,9 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | Cell frames integrated via CSS `::before` + custom property, not per-cell `<img>` | Each frame is used 10× (car cells) or 3× (action cards). Inlining an `<img>` child per cell would multiply the asset across the DOM tree; `::before` with `background-image: var(--cell-{name}-bg)` loads the asset once, references it N times, swaps to the processed data URL at the document root with zero DOM churn. CSS fallback (raw PNG url) means the frame renders from the first paint even before loadPainterly resolves |
 | 2026-04-17 | Frame stretch (`background-size: 100% 100%`) over `contain` | Car cells are 56×56 square, frame PNG is 1.7:1 landscape; contain would leave transparent vertical bands showing the overlay parent bg. Action cards are 72×72 with a round frame — contain would introduce transparent corners. Stretch distorts proportions slightly but the painterly ornament (tassels, rope, gold curls, rivets) survives cleanly; reads as "hand-painted with intentional looseness" rather than "pixel-perfect mismatch" |
 | 2026-04-17 | Primary-action glow migrated to `filter: drop-shadow()` from `box-shadow` | Box-shadow renders around the element's BOUNDING BOX (rectangular) — would paint a rectangle of gold glow around the round painterly slot-machine face. Filter drop-shadow tracks the PAINTED silhouette via the transparent PNG edges, so the glow follows the curls and rivets rather than a phantom rectangle around them |
+| 2026-04-17 | Standings layout flipped from horizontal-row cards to vertical-column strips | The painterly scoreboard PNG is a tall wooden plank with four painted slot strips stacked vertically. Horizontal flex cards would overlay the strips misaligned and compete with the painted dividers. Column stack puts each player row inside its matching painted cream slot — layout follows the art |
+| 2026-04-17 | Standings text color flipped from cream on dark scrim to dark brown on cream slot | Before Phase 12a, player-card text sat on a `rgba(90,58,32,0.72)` card bg atop the overlay's dark scrim — cream name + gold number read clearly. After the scoreboard backdrop lands, the cream painted slot is the text bg — cream-on-cream would vanish. Flipped to `--text-on-gold` for names, `--accent-red-deep` for scores with a gold letterpress shadow; reads against the cream slot like a painted carnival ledger entry |
+| 2026-04-17 | Avatar orb reuses `cell-action.png` frame rather than a dedicated `orb-frame.png` | Initial Phase 12b commissioned a distinct orb-frame with crown finial + red ribbon + gold tool-work. User flagged the ornament clash with the simpler slot-machine action cards sitting immediately to the right in the HUD row. Reusing the Phase 11b cell-action frame unifies the four bottom-HUD cells (avatar + 3 actions) under one ornament language. Dedicated orb-frame.png deleted |
+| 2026-04-17 | Controller gameplay HUD finally consumes the Phase 5a painterly avatar pipeline | Phase 5a shipped painterly animal PNGs to onboarding + main host pills but missed the controller gameplay HUD (audit-flagged). Phase 12b closes the loop: `buildDom` renders `<img data-animal="{character}">` with `loadPainterly` async-swap, matching the rest of the UI. Emoji fallback via `onerror` kept for resilience |
+| 2026-04-17 | Orb pulse migrated from `box-shadow: 0 0 14px currentColor` to opacity-only breathing | The pulse keyframe's `currentColor` shadow painted a per-game-colored rectangle (the ::before's bounding box) around the round painterly silhouette. Removing the shadow entirely — and holding pulse to `opacity: 0.88 ↔ 1` — preserves the breathing-life signal without a phantom rectangle outline. Painted frame carries the visual interest |
+| 2026-04-17 | Action-card labels positioned absolute below the painted frame instead of inside | Phase 11b baked labels into the flex column with 4px gap; the painted slot-machine bottom curl ornament then cropped the label. `position: absolute; top: 100%; overflow: visible` on the parent pushes the label text outside the 72px painted cell, to sit on the HUD scrim with a text-shadow for contrast |
