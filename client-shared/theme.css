@@ -251,3 +251,80 @@
 /* Font faces are declared in /assets/fonts/fonts.css (Phase 4a vendoring).
    Loaded by each HTML entry before this file so font-family lookups in
    the tokens below resolve against the vendored binaries. */
+
+/* ============================================================
+   Phase 14 — motion polish utilities
+   ============================================================ */
+
+/* Phase 14a — universal idle breathing for Alfa Slab hero titles.
+   Subtle scale + opacity pulse at the existing --dur-breathe cadence.
+   Applied directly to the titles' class / element selectors so the
+   product reads as "alive" instead of static without per-HTML edits.
+   Main lobby #host h1, per-game lobby #lobby h1 (and h2 where the
+   hierarchy differs), tournament heading, postgame winner name. */
+@keyframes breatheHero {
+  0%, 100% { transform: scale(1);      opacity: 0.92; }
+  50%      { transform: scale(1.015);  opacity: 1; }
+}
+#lobby h1,
+#lobby h2,
+#lobby .hud-title,
+#t-content .t-title,
+#postgame-overlay .pg-winner-name,
+.breathe {
+  animation: breatheHero var(--dur-breathe) ease-in-out infinite;
+}
+
+/* Phase 14b — hover shine-sweep for interactive cards. A faint gold
+   diagonal band sweeps across the card face on hover (re-triggered
+   per hover). Uses ::after so it doesn't collide with the ::before
+   painterly frame backdrops from Phase 11+. Targets the actual
+   interactive-card selectors directly; host element needs
+   position:relative + overflow:hidden for the sweep to clip — set
+   where necessary in the per-component CSS. */
+@keyframes shineSweep {
+  0%   { transform: translateX(-140%) skewX(-20deg); }
+  100% { transform: translateX(380%)  skewX(-20deg); }
+}
+/* .gp-action deliberately excluded: its CSS relies on overflow:visible
+   so action-card labels (positioned absolute below the painted frame)
+   don't get clipped. Controller is touch-only so hover sweep is
+   low-value there anyway. */
+.ticket-btn,
+.onboarding-root .color-cell,
+.onboarding-root .animal-cell {
+  position: relative;
+  overflow: hidden;
+}
+.ticket-btn::after,
+.onboarding-root .color-cell::after,
+.onboarding-root .animal-cell::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 221, 107, 0.28) 50%,
+    transparent 100%);
+  transform: translateX(-140%) skewX(-20deg);
+  pointer-events: none;
+  z-index: 3;
+}
+.ticket-btn:hover::after,
+.onboarding-root .color-cell:hover::after,
+.onboarding-root .animal-cell:hover::after {
+  animation: shineSweep 800ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #lobby h1,
+  #lobby h2,
+  #lobby .hud-title,
+  #t-content .t-title,
+  #postgame-overlay .pg-winner-name,
+  .breathe { animation: none; }
+  .ticket-btn:hover::after,
+  .onboarding-root .color-cell:hover::after,
+  .onboarding-root .animal-cell:hover::after { animation: none; }
+}
