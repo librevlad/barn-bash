@@ -131,7 +131,12 @@ const server = http.createServer((req, res) => {
   const filePath = resolve(urlPath);
   if (!filePath) { res.writeHead(404); res.end('Not found'); return; }
   fs.readFile(filePath, (err, data) => {
-    if (err) { res.writeHead(500); res.end('Error'); return; }
+    if (err) {
+      const code = err.code === 'ENOENT' ? 404 : 500;
+      res.writeHead(code);
+      res.end(code === 404 ? 'Not found' : 'Error');
+      return;
+    }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'text/plain' });
     res.end(data);
   });
