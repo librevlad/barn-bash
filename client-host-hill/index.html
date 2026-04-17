@@ -135,6 +135,18 @@
       background-image: var(--bg-wood-plank);
     }
     #lobby.hidden { display: none; }
+    /* Phase 10c — painterly king's-arena banner backdrop behind title stack */
+    #lobby .lobby-backdrop {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      max-height: 500px; max-width: 700px;
+      width: auto; height: auto;
+      opacity: 0.95;
+      z-index: 0;
+      pointer-events: none;
+    }
+    #lobby > *:not(.lobby-backdrop) { position: relative; z-index: 1; }
     #lobby h1 {
       font-family: var(--font-accent);
       font-size: 11px; font-weight: 400;
@@ -181,6 +193,7 @@
   <div id="message"></div>
   <div id="winner-overlay"></div>
   <div id="lobby">
+    <img class="lobby-backdrop" src="/assets/lobby-hill.png" onerror="this.remove()">
     <h1>FRANTICS</h1>
     <h2>KING OF THE HILL</h2>
     <div id="lobby-info">Waiting for players...</div>
