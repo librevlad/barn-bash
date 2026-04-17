@@ -277,6 +277,31 @@
   pointer-events: none;
 }
 
+/* Phase 15b — gold-filigree corner flourishes, 4 per overlay.
+   Single PNG with the flourish occupying its top-left quarter;
+   CSS transform mirrors the PNG into the other 3 corners.
+   background-size:200% renders the full PNG at 240x120 inside a
+   120x120 box — only the top-left quarter of the PNG (the flourish)
+   is visible via the 120x120 crop. */
+.ornament-corner {
+  /* !important needed to beat the per-host Phase 10a rule
+     #lobby > *:not(.lobby-backdrop) { position: relative; } which
+     selects by ID + descendant combinator and would otherwise force
+     these corner divs into the flex flow. */
+  position: absolute !important;
+  width: 120px; height: 120px;
+  background-image: url('/assets/ornament-corner.png');
+  background-size: 200% 200%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  z-index: 0 !important;
+  pointer-events: none;
+}
+.ornament-corner.tl { top: 0;    left: 0; }
+.ornament-corner.tr { top: 0;    right: 0;  transform: scaleX(-1); }
+.ornament-corner.bl { bottom: 0; left: 0;   transform: scaleY(-1); }
+.ornament-corner.br { bottom: 0; right: 0;  transform: scale(-1, -1); }
+
 /* ============================================================
    Phase 14 — motion polish utilities
    ============================================================ */

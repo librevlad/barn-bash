@@ -39,6 +39,12 @@ const Tournament = (() => {
     `;
     document.body.appendChild(overlay);
 
+    // Phase 15b — gold filigree corner flourishes. 4 <div>s injected
+    // once per overlay lifetime; CSS handles positioning + mirroring.
+    if (typeof HostCommon !== 'undefined' && HostCommon.addCornerOrnaments) {
+      HostCommon.addCornerOrnaments(overlay);
+    }
+
     const style = document.createElement('style');
     style.textContent = `
       #tournament-overlay.show { opacity:1 !important; pointer-events:auto !important; }

@@ -70,6 +70,35 @@ const HostCommon = (() => {
         document.head.appendChild(styleEl);
       })
       .catch(() => {});
+    // Phase 15b — preload gold corner flourish; inject <style> override
+    // targeting the four .ornament-corner elements (natural + mirrored
+    // variants). addCornerOrnaments helper injects the four <div>s into
+    // any overlay, called for #lobby here and by tournament.js +
+    // postgame.js at overlay-create time.
+    SpriteLoader.loadPainterly('ornament-corner', '/assets/ornament-corner.png')
+      .then((canvas) => {
+        if (!canvas) return;
+        const styleEl = document.createElement('style');
+        styleEl.id = 'phase15b-corner-override';
+        styleEl.textContent =
+          '.ornament-corner {' +
+          '  background-image: url(' + canvas.toDataURL('image/png') + ') !important;' +
+          '}';
+        document.head.appendChild(styleEl);
+      })
+      .catch(() => {});
+    // Inject corners into the already-in-DOM #lobby element
+    const lobbyEl = document.getElementById('lobby');
+    if (lobbyEl) _addCornersTo(lobbyEl);
+  }
+  function _addCornersTo(overlayEl) {
+    if (!overlayEl) return;
+    if (overlayEl.querySelector('.ornament-corner.tl')) return; // idempotent
+    ['tl', 'tr', 'bl', 'br'].forEach((pos) => {
+      const d = document.createElement('div');
+      d.className = 'ornament-corner ' + pos;
+      overlayEl.appendChild(d);
+    });
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', _initPainterlyPipeline);
@@ -174,5 +203,5 @@ const HostCommon = (() => {
     next();
   }
 
-  return { charIcons, charAvatars, renderCharGlyph, gameUrls, pname, navigateToGame, redirectIfWrongGame, lobbyPlayersHTML, countPlayers, showMsg, runCountdown };
+  return { charIcons, charAvatars, renderCharGlyph, gameUrls, pname, navigateToGame, redirectIfWrongGame, lobbyPlayersHTML, countPlayers, showMsg, runCountdown, addCornerOrnaments: _addCornersTo };
 })();

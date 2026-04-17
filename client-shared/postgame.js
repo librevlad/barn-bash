@@ -27,6 +27,11 @@ const PostGame = (() => {
     `;
     document.body.appendChild(overlay);
 
+    // Phase 15b — gold filigree corner flourishes.
+    if (typeof HostCommon !== 'undefined' && HostCommon.addCornerOrnaments) {
+      HostCommon.addCornerOrnaments(overlay);
+    }
+
     const style = document.createElement('style');
     style.textContent = `
       #postgame-overlay.show { opacity: 1 !important; pointer-events: auto !important; }
