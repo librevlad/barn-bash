@@ -87,6 +87,15 @@ $btnPlay.addEventListener('click', () => {
   navigator.vibrate?.([30]);
   $modalNeed.style.display = playerCount < 2 ? 'block' : 'none';
   $gameModal.classList.add('show');
+  // Pretext-measure every card description and rules tooltip body so
+  // the gradient-label row and bubble height match the actual wrapped
+  // line count instead of whatever the initial 0×0 layout computed.
+  if (window.PretextHooks) {
+    requestAnimationFrame(() => {
+      $gameModal.querySelectorAll('.card-desc, .tip-body')
+        .forEach((el) => window.PretextHooks.measure(el));
+    });
+  }
 });
 
 $btnCustomize.addEventListener('click', () => {

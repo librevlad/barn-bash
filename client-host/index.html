@@ -204,7 +204,7 @@
       border: none; cursor: pointer; background: none; padding: 0;
       transition: transform var(--dur-tap), filter var(--dur-tap);
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-      overflow: hidden; position: relative;
+      position: relative;
       border-radius: var(--radius-sm);
     }
     .modal-btn img { display: block; width: 100%; height: 100%; object-fit: contain; position: absolute; inset: 0; }
@@ -244,6 +244,52 @@
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     }
     .card-label .card-icon { display: none; }
+
+    /* Rules tooltip — reveals on hover above each ticket. Pretext-
+       measured body height so the bubble always fits the copy. */
+    .rules-tooltip {
+      position: absolute;
+      left: 50%; top: -8px;
+      transform: translate(-50%, -100%);
+      width: 220px;
+      padding: 10px 12px 11px;
+      background: rgba(47, 28, 12, 0.96);
+      border: 1px solid var(--accent-gold);
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55), 0 0 18px rgba(244, 197, 66, 0.18);
+      font-family: var(--font-accent);
+      font-size: 12px;
+      color: var(--text-cream);
+      line-height: 1.5;
+      letter-spacing: 0.25px;
+      text-align: left;
+      font-style: italic;
+      z-index: 30;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--dur-short);
+    }
+    .rules-tooltip .tip-title {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-style: normal;
+      color: var(--accent-gold);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .rules-tooltip::after {
+      content: '';
+      position: absolute;
+      left: 50%; bottom: -7px;
+      transform: translateX(-50%) rotate(45deg);
+      width: 12px; height: 12px;
+      background: rgba(47, 28, 12, 0.96);
+      border-right: 1px solid var(--accent-gold);
+      border-bottom: 1px solid var(--accent-gold);
+    }
+    .modal-btn:hover .rules-tooltip { opacity: 1; transition-delay: 140ms; }
     .modal-bottom {
       display: flex; gap: 6px; align-items: stretch; width: 100%;
       flex-shrink: 0; height: 50px;
@@ -391,23 +437,63 @@
       <div class="modal-title">Choose a Game</div>
       <div class="modal-need" id="modal-need">Need 2+ players to start</div>
       <div class="modal-grid">
-        <button class="modal-btn" data-game="escapeFox">
-          <img src="/assets/ticket-escape.png">
+        <button class="modal-btn" data-game="escapeFox" aria-label="Escape the Fox">
+          <img src="/assets/ticket-escape.png" alt="">
+          <div class="card-label">
+            <span class="card-name">Escape the Fox</span>
+            <span class="card-desc">Don't get caught. Dodge the fox.</span>
+          </div>
+          <div class="rules-tooltip" role="tooltip">
+            <span class="tip-title">How it works</span>
+            <span class="tip-body">Run, jump, swap lanes. Survive as long as you can. The fox gets faster. The trees get closer. You get dumber.</span>
+          </div>
         </button>
-        <button class="modal-btn" data-game="hillKing">
-          <img src="/assets/ticket-hill.png">
+        <button class="modal-btn" data-game="hillKing" aria-label="King of the Hill">
+          <img src="/assets/ticket-hill.png" alt="">
+          <div class="card-label">
+            <span class="card-name">King of the Hill</span>
+            <span class="card-desc">Hold the throne. Push everyone else off.</span>
+          </div>
+          <div class="rules-tooltip" role="tooltip">
+            <span class="tip-title">How it works</span>
+            <span class="tip-body">Claim the peak. Slam opponents off. Every second on the crown earns points. Every second off is a reminder of your mediocrity.</span>
+          </div>
         </button>
-        <button class="modal-btn" data-game="meteor">
-          <img src="/assets/ticket-meteor.png">
+        <button class="modal-btn" data-game="meteor" aria-label="Meteor Shower">
+          <img src="/assets/ticket-meteor.png" alt="">
+          <div class="card-label">
+            <span class="card-name">Meteor Shower</span>
+            <span class="card-desc">Watch the sky. Time your dodges.</span>
+          </div>
+          <div class="rules-tooltip" role="tooltip">
+            <span class="tip-title">How it works</span>
+            <span class="tip-body">Orange flashes mean rocks incoming. Move early. Survive the wave. Then another. Then another. Then lose.</span>
+          </div>
         </button>
-        <button class="modal-btn" data-game="race">
-          <img src="/assets/ticket-gp.png">
+        <button class="modal-btn" data-game="race" aria-label="Grand Prix">
+          <img src="/assets/ticket-gp.png" alt="">
+          <div class="card-label">
+            <span class="card-name">Grand Prix</span>
+            <span class="card-desc">Race. Drift. Boost. Finish first.</span>
+          </div>
+          <div class="rules-tooltip" role="tooltip">
+            <span class="tip-title">How it works</span>
+            <span class="tip-body">Swipe to steer. Tap to boost. Hold to drift. Pick up items. Throw items. First across the line gets applause.</span>
+          </div>
         </button>
       </div>
       <div class="modal-bottom">
         <button class="modal-btn-back" id="mh-back">BACK</button>
-        <button class="modal-btn" id="mh-tournament">
-          <img src="/assets/ticket-tourn.png">
+        <button class="modal-btn" id="mh-tournament" aria-label="Tournament">
+          <img src="/assets/ticket-tourn.png" alt="">
+          <div class="card-label">
+            <span class="card-name">Tournament</span>
+            <span class="card-desc">All four games. One champion.</span>
+          </div>
+          <div class="rules-tooltip" role="tooltip">
+            <span class="tip-title">The whole show</span>
+            <span class="tip-body">Three rounds, one of each mini-game, scored as a running total. The Game Master narrates every humiliation.</span>
+          </div>
         </button>
       </div>
     </div>
