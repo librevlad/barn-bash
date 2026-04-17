@@ -70,6 +70,8 @@ const Render2D = (() => {
     // Phase 6a — painterly tree asset sits outside the sprite-* atlas naming.
     // Use loadPainterly to strip the baked checker-preview background.
     spriteLoads.push(SpriteLoader.loadPainterly('tree-forest', '/assets/tree-forest.png'));
+    // Phase 7c — painterly finish-line flag replacing the procedural red-velvet banners.
+    spriteLoads.push(SpriteLoader.loadPainterly('race-flag', '/assets/race-flag.png'));
     Promise.all(spriteLoads)
       .then(() => { spritesReady = true; console.log('Race sprites loaded'); })
       .catch(e => { console.warn('Sprite load failed, falling back to procedural:', e); spritesReady = false; });
@@ -290,26 +292,45 @@ const Render2D = (() => {
           ctx.fill();
         }
       }
-      // Carnival finish — red-velvet curtain banners flanking the line,
+      // Carnival finish — painterly checker flags flanking the line,
       // connected by a gold rope with "FINISH" in Alfa Slab.
+      // Phase 7c — painterly flag replaces the procedural red-velvet
+      // banner rectangles. Flag PNG has pole on the LEFT and fabric
+      // extending RIGHT; right-side flag is mirrored so both flags
+      // wave toward the track interior.
       ctx.save();
       const bannerH = 34;
       const bannerW = 14;
       const sides = [
-        { tx: perpX * 1.1, ty: perpY * 1.1 },
-        { tx: perpX * -1.1, ty: perpY * -1.1 },
+        { tx: perpX * 1.1, ty: perpY * 1.1, mirror: false },
+        { tx: perpX * -1.1, ty: perpY * -1.1, mirror: true },
       ];
+      const flagSprite = SpriteLoader.get('race-flag');
       sides.forEach((s) => {
         const bx = f.x + s.tx;
         const by = f.y + s.ty;
-        const g = Palette.redCurtain(ctx, bx - bannerW / 2, by - bannerH, bannerW, bannerH);
-        ctx.fillStyle = g;
-        ctx.fillRect(bx - bannerW / 2, by - bannerH, bannerW, bannerH);
-        // Gold-bulb cap on top
-        ctx.fillStyle = Palette.accentGoldHot;
-        ctx.beginPath();
-        ctx.arc(bx, by - bannerH - 2, 3, 0, Math.PI * 2);
-        ctx.fill();
+        if (spritesReady && flagSprite) {
+          // Painterly flag: pole at bx, bottom at by, taller than banner
+          const fw = bannerH * 1.4, fh = bannerH * 1.5;
+          ctx.save();
+          if (s.mirror) {
+            ctx.translate(bx, by);
+            ctx.scale(-1, 1);
+            ctx.drawImage(flagSprite, -fw * 0.3, -fh, fw, fh);
+          } else {
+            ctx.drawImage(flagSprite, bx - fw * 0.3, by - fh, fw, fh);
+          }
+          ctx.restore();
+        } else {
+          // Fallback: procedural red-velvet banner + gold-bulb cap
+          const g = Palette.redCurtain(ctx, bx - bannerW / 2, by - bannerH, bannerW, bannerH);
+          ctx.fillStyle = g;
+          ctx.fillRect(bx - bannerW / 2, by - bannerH, bannerW, bannerH);
+          ctx.fillStyle = Palette.accentGoldHot;
+          ctx.beginPath();
+          ctx.arc(bx, by - bannerH - 2, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
       });
       // Gold rope between bulbs
       ctx.strokeStyle = Palette.accentGold;
