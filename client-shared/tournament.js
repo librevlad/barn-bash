@@ -376,7 +376,7 @@ const Tournament = (() => {
     // strips the baked white surround and swaps src on resolve.
     let html = '<img class="t-scroll-backdrop" src="/assets/standings-scroll.png" onerror="this.remove()">';
     html += '<div class="t-bar">TOURNAMENT</div>';
-    html += '<div class="t-round">ROUND ' + data.round + ' OF ' + data.totalRounds + '</div>';
+    html += '<div class="t-round">ROUND ' + (data.round || '?') + ' OF ' + (data.totalRounds || 3) + '</div>';
     html += '<div class="t-title">STANDINGS</div>';
     html += '<div class="t-scores">';
 
