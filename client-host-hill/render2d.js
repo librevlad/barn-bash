@@ -25,7 +25,14 @@ const Render2D = (() => {
   if (typeof SpriteLoader !== 'undefined') {
     SpriteLoader.loadPainterly('hill-crown', '/assets/hill-crown.png')
       .catch(() => { /* fallback path renders emoji */ });
+    SpriteLoader.loadPainterly('hill-crest', '/assets/hill-crest.png')
+      .catch(() => { /* silent — crest is purely decorative */ });
   }
+
+  // Phase 8a — heraldic crest fades in when arena enters danger state.
+  // Monotonic ramp (never falls back to 0 mid-round) so micro-oscillations
+  // around the threshold don't flicker.
+  let crestFade = 0;
 
   // Stars (pre-generated, same count & distribution as original)
   const stars = [];
@@ -50,12 +57,14 @@ const Render2D = (() => {
     scene.createLayer('arena', 5);
     scene.createLayer('kingzone', 8);
     scene.createLayer('players', 20);
+    scene.createLayer('crest', 22);
     scene.createLayer('ui', 40);
 
     // Register render functions per layer
     scene.getLayer('arena').addFn(drawArena);
     scene.getLayer('kingzone').addFn(drawKingZone);
     scene.getLayer('players').addFn(drawPlayers);
+    scene.getLayer('crest').addFn(drawHillCrest);
 
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
 
@@ -261,6 +270,30 @@ const Render2D = (() => {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('\uD83D\uDC51', ax, ay);
     }
+  }
+
+  // ============================================================
+  // LAYER: HILL CREST (Phase 8a — arena-shrink heraldic crest)
+  // ============================================================
+  function drawHillCrest(ctx) {
+    // Monotonic fade in: crosses 3.5 threshold once, crest stays.
+    // 400ms ramp ≈ 0.025 per frame at 60fps.
+    if (renderPlatR < 3.5 && crestFade < 1) {
+      crestFade = Math.min(1, crestFade + 0.025);
+    }
+    if (crestFade <= 0) return;
+    const sprite = typeof SpriteLoader !== 'undefined'
+      ? SpriteLoader.get('hill-crest') : null;
+    if (!sprite) return;
+    const SCALE = camera.getZoom();
+    // Anchor above the king zone, below the HUD strip — visible even
+    // at the wider viewports where world y=-6 would clip off-screen.
+    const anchor = camera.worldToScreen(0, -4);
+    const size = 2.5 * SCALE;
+    ctx.save();
+    ctx.globalAlpha = crestFade * 0.85;
+    ctx.drawImage(sprite, anchor.x - size / 2, anchor.y - size / 2, size, size);
+    ctx.restore();
   }
 
   // ============================================================
