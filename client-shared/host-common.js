@@ -24,6 +24,29 @@ const HostCommon = (() => {
     raccoon: '/assets/animal-raccoon.png',
   };
 
+  // Audit / post-Phase 9: animal PNGs carry baked checker or black-solid
+  // backgrounds that peek through CSS circle-crop around the silhouette.
+  // Pipe each avatar through SpriteLoader.loadPainterly at module init,
+  // cache the processed data URL, and swap rendered imgs' src in place.
+  const processedCharAvatars = {};
+  function _registerProcessedChar(id, canvas) {
+    if (!canvas) return;
+    processedCharAvatars[id] = canvas.toDataURL('image/png');
+    document.querySelectorAll('img[data-char="' + id + '"]').forEach((img) => {
+      if (!img.src.startsWith('data:')) img.src = processedCharAvatars[id];
+    });
+  }
+  // Defer so SpriteLoader script has time to execute in per-game hosts
+  // where it may load AFTER host-common.js in index.html.
+  setTimeout(() => {
+    if (typeof SpriteLoader === 'undefined') return;
+    Object.keys(charAvatars).forEach((id) => {
+      SpriteLoader.loadPainterly('charAvatar-' + id, charAvatars[id])
+        .then((canvas) => _registerProcessedChar(id, canvas))
+        .catch(() => {});
+    });
+  }, 0);
+
   // Renders an <img class="char-glyph"> with emoji text-node fallback on
   // load failure. Returns HTML string (for innerHTML / template use).
   // Pass an extra CSS class for per-context sizing when needed.
@@ -36,7 +59,8 @@ const HostCommon = (() => {
     // onerror replaces the <img> with a text node holding the emoji.
     // JSON.stringify handles quoting for arbitrary emoji payloads.
     const onerr = 'this.replaceWith(document.createTextNode(' + JSON.stringify(emoji) + '))';
-    return '<img class="' + cls + '" src="' + avatar + '" alt="' + emoji + '" onerror=\'' + onerr + '\'>';
+    const src = processedCharAvatars[character] || avatar;
+    return '<img class="' + cls + '" data-char="' + character + '" src="' + src + '" alt="' + emoji + '" onerror=\'' + onerr + '\'>';
   }
 
   const gameUrls = {

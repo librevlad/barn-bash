@@ -258,12 +258,31 @@ const Narrator = (() => {
     document.head.appendChild(style);
   }
 
+  // Audit / post-Phase 9: narrator.png carries a baked background that
+  // peeks through the 64px circle-crop. Pipe through loadPainterly and
+  // cache the processed data URL; showQuip consumes whichever is
+  // currently available (raw PNG or processed).
+  let narratorPortraitSrc = '/assets/narrator.png';
+  // Defer so SpriteLoader script has time to execute in per-game hosts
+  // where it may load AFTER narrator.js in index.html.
+  setTimeout(() => {
+    if (typeof SpriteLoader === 'undefined') return;
+    SpriteLoader.loadPainterly('narrator', '/assets/narrator.png')
+      .then((canvas) => {
+        if (canvas) narratorPortraitSrc = canvas.toDataURL('image/png');
+        document.querySelectorAll('#narrator-overlay .narrator-portrait').forEach((img) => {
+          if (!img.src.startsWith('data:')) img.src = narratorPortraitSrc;
+        });
+      })
+      .catch(() => {});
+  }, 0);
+
   function showQuip(text, duration) {
     createOverlay();
     // onerror hides portrait if narrator.png is missing — overlay falls back
     // to the pre-Phase 5b text-only layout (flex shrinks when img is gone).
     overlay.innerHTML = `
-      <img class="narrator-portrait" src="/assets/narrator.png" alt="Game Master"
+      <img class="narrator-portrait" src="${narratorPortraitSrc}" alt="Game Master"
         onerror="this.remove()">
       <div class="narrator-body">
         <span class="narrator-label">Game Master</span>

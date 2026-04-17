@@ -103,12 +103,38 @@
   // Phase 5a — render animal glyph as PNG avatar with emoji fallback.
   // onerror swaps the <img> for a text node holding the emoji, so the
   // display never breaks before the asset lands in /assets/.
+  //
+  // Audit / post-Phase 9: the commissioned PNGs carry baked checker or
+  // black-solid backgrounds that peek through the CSS circle-crop (the
+  // crop hides OUTSIDE the circle; background pixels INSIDE the circle
+  // around the animal silhouette stay visible). Pipe each avatar
+  // through SpriteLoader.loadPainterly at module init, cache the
+  // processed data URL, and swap rendered imgs' src once the URL is
+  // ready. Raw PNG shows for the first ~100ms of page load; once
+  // processed, all rendered medallions clean up in place.
+  const processedAvatars = {};
+  function registerProcessed(id, canvas) {
+    if (!canvas) return;
+    processedAvatars[id] = canvas.toDataURL('image/png');
+    document.querySelectorAll('img[data-animal="' + id + '"]').forEach((img) => {
+      if (!img.src.startsWith('data:')) img.src = processedAvatars[id];
+    });
+  }
+  if (typeof SpriteLoader !== 'undefined') {
+    ANIMALS.forEach((a) => {
+      SpriteLoader.loadPainterly('avatar-' + a.id, a.avatar)
+        .then((canvas) => registerProcessed(a.id, canvas))
+        .catch(() => {});
+    });
+  }
+
   function animalGlyph(a, extraClass) {
     if (!a) return '?';
     if (!a.avatar) return a.emoji;
     const cls = 'animal-glyph' + (extraClass ? ' ' + extraClass : '');
     const onerr = 'this.replaceWith(document.createTextNode(' + JSON.stringify(a.emoji) + '))';
-    return '<img class="' + cls + '" src="' + a.avatar + '" alt="' + a.emoji + '" onerror=\'' + onerr + '\'>';
+    const src = processedAvatars[a.id] || a.avatar;
+    return '<img class="' + cls + '" data-animal="' + a.id + '" src="' + src + '" alt="' + a.emoji + '" onerror=\'' + onerr + '\'>';
   }
 
   function render() {
