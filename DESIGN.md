@@ -1205,6 +1205,48 @@ per-game silhouette ornaments + accent colors. This sets the
 reference bar for Phase 11+ frame commissions (selection-grid
 cells, tournament scoreboard, gameplay orb, background ornaments).
 
+Thirteenth realization: painterly selection-grid cell frames
+replace the flat brown rectangles that hosted the car cells and
+gameplay action cards (Phase 11, 2026-04-17).
+
+- `assets/cell-car.png` — painterly carnival auction-ticket frame:
+  rectangular wooden plaque, gold-leaf ornamental trim, cream-white
+  center panel, gold star crest, gold tassels at top corners,
+  rope-twist along the bottom. Used 10× in the car-selection grid.
+- `assets/cell-action.png` — painterly slot-machine button face:
+  rounded wooden outer ring, gold-rim bezel around a cream-white
+  center circle, ornate gold curls at top+bottom, gold rivet bulbs
+  at the four compass points. Used 3× in the controller gameplay
+  action-hintbar row.
+- Integration via CSS `::before` pseudo-element with a
+  `background-image: var(--cell-{car,action}-bg, url('/assets/
+  cell-{car,action}.png'))` rule — one PNG load per frame, reused
+  across N cells with zero per-cell HTML changes.
+  `background-size: 100% 100%` stretches to fit the cell bounds;
+  the landscape (car) and round (action) ornaments survive the
+  mild aspect squish without visual break.
+- `document.documentElement.style.setProperty(
+  '--cell-{car,action}-bg', 'url(' + canvas.toDataURL() + ')')`
+  — CSS custom-property swap at root scope once loadPainterly
+  resolves. Raw PNG renders during the first paint (~100ms with
+  the baked white surround); processed transparent version
+  replaces the bg-image once the data URL lands.
+- Cell children (img for car, icon+label for action) get
+  `position:relative; z-index:1` so they paint above the frame
+  backdrop (mirror of Phase 8c/9a/10 z-index pattern).
+- Primary-action selected-state glow migrated from `box-shadow`
+  to `filter: drop-shadow()` — the latter tracks the actual
+  painted silhouette (round action button) rather than a
+  rectangular bounding box.
+
+Phase 11 closes the second AAA-polish surface. The flat-brown
+placeholder cells are gone across both the onboarding car
+selection and the gameplay HUD action hintbar. Animal-medallion
+cells intentionally kept as-is (post-Phase-5 audit fix's
+loadPainterly processing + gold-ring CSS reads at bar). Host
+game-select modal already commissioned via `ticket-*.png` in
+Phase 1.5.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1290,11 +1332,20 @@ cells, tournament scoreboard, gameplay orb, background ornaments).
     by the post-Phase-9 audit. Spec:
     `docs/superpowers/specs/2026-04-17-per-game-lobby-backdrops-design.md`.
 
-After Phase 10 follow-ups (selection-grid cell frames, tournament
-standings scoreboard, controller gameplay avatar orb, pixel-car
-painterly replacement, motion polish, background ornaments, plus
-the earlier-listed i18n / WebGL / GLB / race-2nd-3rd-place items)
-each open their own spec when demand justifies.
+12. **Phase 11** (shipped 2026-04-17): painterly selection-grid
+    cell frames — `cell-car.png` (carnival auction-ticket) behind
+    10 car-color cells in onboarding, `cell-action.png` (slot-
+    machine button face) behind 3 action-hintbar cards in
+    controller gameplay. CSS `::before` + `background-image:
+    var(--cell-{name}-bg, url(raw))` + runtime data-URL swap per
+    frame. Spec:
+    `docs/superpowers/specs/2026-04-17-selection-grid-frames-design.md`.
+
+After Phase 11 follow-ups (tournament standings scoreboard,
+controller gameplay avatar orb, pixel-car painterly replacement,
+motion polish, background ornaments, plus the earlier-listed i18n
+/ WebGL / GLB / race-2nd-3rd-place items) each open their own
+spec when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -1369,3 +1420,6 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | Per-game lobby backdrops opened as Phase 10 after a formal AAA-polish audit | The audit (conducted 2026-04-17 after Phase 9 shipped) reframed the benchmark from "cohesive token UI" to "Hearthstone pixel-for-pixel." Per-game lobbies were the single largest gap — empty wood-plank gradient vs the commissioned bg.png main lobby. Phase 10 opens the staged AAA-polish thread with lobby backdrops; subsequent phases tackle selection-grid frames, tournament scoreboard, gameplay orb, motion polish, etc., one peak per phase |
 | 2026-04-17 | Four lobby backdrops commissioned as a series with shared compositional grammar | Rather than commissioning four unrelated backgrounds, each follows the same structural language: two symmetric ornate posts, connecting banner with a cream-white center panel for overlay text, per-game silhouette ornaments at the crests, per-game accent color. Reads as a unified theatrical series — race/escape/hill/meteor as four different attractions on the same carnival stage |
 | 2026-04-17 | `loadPainterly` swap via setTimeout(0) instead of sync call at module load | SpriteLoader.js loads AFTER main.js-referencing render2d.js in several per-game HTMLs (retrofitted at different Phase boundaries). Calling loadPainterly synchronously at main.js module top would hit a `typeof SpriteLoader === 'undefined'` early-return. setTimeout(0) defers one task-queue tick, by which time all scripts have parsed. No ordering-fragility across past and future HTML include lists |
+| 2026-04-17 | Cell frames integrated via CSS `::before` + custom property, not per-cell `<img>` | Each frame is used 10× (car cells) or 3× (action cards). Inlining an `<img>` child per cell would multiply the asset across the DOM tree; `::before` with `background-image: var(--cell-{name}-bg)` loads the asset once, references it N times, swaps to the processed data URL at the document root with zero DOM churn. CSS fallback (raw PNG url) means the frame renders from the first paint even before loadPainterly resolves |
+| 2026-04-17 | Frame stretch (`background-size: 100% 100%`) over `contain` | Car cells are 56×56 square, frame PNG is 1.7:1 landscape; contain would leave transparent vertical bands showing the overlay parent bg. Action cards are 72×72 with a round frame — contain would introduce transparent corners. Stretch distorts proportions slightly but the painterly ornament (tassels, rope, gold curls, rivets) survives cleanly; reads as "hand-painted with intentional looseness" rather than "pixel-perfect mismatch" |
+| 2026-04-17 | Primary-action glow migrated to `filter: drop-shadow()` from `box-shadow` | Box-shadow renders around the element's BOUNDING BOX (rectangular) — would paint a rectangle of gold glow around the round painterly slot-machine face. Filter drop-shadow tracks the PAINTED silhouette via the transparent PNG edges, so the glow follows the curls and rivets rather than a phantom rectangle around them |
