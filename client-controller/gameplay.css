@@ -194,23 +194,38 @@
 }
 .gameplay-root .gp-action {
   flex: 0 0 auto;
-  width: 64px; height: 72px;
+  width: 72px; height: 72px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 4px;
-  background: var(--bg-wood-warm);
-  border: 2px solid rgba(244, 197, 66, 0.25);
-  border-radius: 12px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.4);
-  transition: transform var(--dur-tap), border-color var(--dur-short);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  position: relative;
+  transition: transform var(--dur-tap), filter var(--dur-short);
   opacity: 0.82;
 }
+/* Phase 11b — painterly slot-machine face as backdrop behind action
+   icon + label. CSS custom property is set at runtime to a loadPainterly-
+   processed data URL; fallback to the raw PNG so the frame still
+   appears on first paint. */
+.gameplay-root .gp-action::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--cell-action-bg, url('/assets/cell-action.png'));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+.gameplay-root .gp-action > * { position: relative; z-index: 1; }
 .gameplay-root .gp-action.primary {
   transform: translateY(-6px) scale(1.08);
-  border-color: var(--accent-gold-hot);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2),
-              0 0 0 2px rgba(255, 221, 107, 0.2),
-              0 0 18px rgba(255, 221, 107, 0.45),
-              0 5px 10px rgba(0, 0, 0, 0.5);
+  /* Phase 11b — selected-state glow moves from box-shadow (which would
+     sit behind the transparent .gp-action background) to a filter
+     drop-shadow that tracks the painterly frame's silhouette. */
+  filter: drop-shadow(0 0 12px rgba(255, 221, 107, 0.55))
+          drop-shadow(0 5px 8px rgba(0, 0, 0, 0.5));
   opacity: 1;
 }
 .gameplay-root .gp-action-icon { font-size: 24px; line-height: 1; }
