@@ -19,6 +19,7 @@ const MIME = {
   '.html': 'text/html', '.js': 'application/javascript',
   '.css': 'text/css',
   '.glb': 'model/gltf-binary', '.png': 'image/png', '.jpg': 'image/jpeg',
+  '.webp': 'image/webp', '.avif': 'image/avif',
   '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
   '.json': 'application/json',
   '.woff2': 'font/woff2', '.woff': 'font/woff',
