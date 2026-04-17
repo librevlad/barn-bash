@@ -310,6 +310,7 @@ window.Gameplay = (function () {
     setPhaseClass(next);
     if (next === 'eliminated') {
       els.elimQuip.textContent = '"' + pick(ELIM_QUIPS, String(opts.playerId) + '-' + (opts.round || 0)) + '"';
+      if (window.PretextHooks) window.PretextHooks.measure(els.elimQuip);
       vibe([20, 40, 20]);
     }
     if (next === 'countdown') {
@@ -486,6 +487,11 @@ window.Gameplay = (function () {
     els.goHero.textContent = info.winnerName || 'Nobody';
     els.goSubline.textContent = info.subline || (info.winnerName ? 'SURVIVED!' : 'NO WINNER');
     els.goQuip.textContent = info.quip ? '"' + info.quip + '"' : '';
+    if (window.PretextHooks) {
+      window.PretextHooks.measure(els.goHero);
+      window.PretextHooks.measure(els.goSubline);
+      window.PretextHooks.measure(els.goQuip);
+    }
     setPhaseClass('gameover');
     vibe([30, 50, 30]);
     return api;
