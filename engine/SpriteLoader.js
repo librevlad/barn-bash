@@ -167,6 +167,45 @@
     },
 
     /**
+     * Load a painterly PNG and strip a baked checker-preview background.
+     * Image-gen tools often export "transparent" assets by rendering a
+     * neutral-grey + white checkerboard into the image instead of a true
+     * alpha channel. This pipes the load through a chroma-key pass that
+     * clears pixels whose RGB is near-neutral (chroma below maxChroma) and
+     * bright (min channel above minBright). Legitimate saturated colors
+     * (greens, browns, oranges) are preserved because their chroma is high.
+     * @param {string} name
+     * @param {string} url
+     * @param {Object} [opts] - { minBright = 185, maxChroma = 12 }
+     * @returns {Promise}
+     */
+    loadPainterly: function (name, url, opts) {
+      opts = opts || {};
+      var minBright = opts.minBright !== undefined ? opts.minBright : 185;
+      var maxChroma = opts.maxChroma !== undefined ? opts.maxChroma : 12;
+      return loadImage(url).then(function (img) {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        var cx = canvas.getContext('2d');
+        cx.drawImage(img, 0, 0);
+        var data = cx.getImageData(0, 0, canvas.width, canvas.height);
+        var px = data.data;
+        for (var i = 0; i < px.length; i += 4) {
+          var r = px[i], g = px[i + 1], b = px[i + 2];
+          var minC = r < g ? (r < b ? r : b) : (g < b ? g : b);
+          var maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
+          if ((maxC - minC) < maxChroma && minC > minBright) {
+            px[i + 3] = 0;
+          }
+        }
+        cx.putImageData(data, 0, 0);
+        sprites[name] = canvas;
+        return canvas;
+      });
+    },
+
+    /**
      * Get load progress
      * @returns {{loaded: number, total: number}}
      */

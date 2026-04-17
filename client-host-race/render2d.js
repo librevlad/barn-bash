@@ -67,6 +67,9 @@ const Render2D = (() => {
       'item-boost','item-oil','item-missile',
       'bush-1','bush-2','bush-3','rock-1','rock-2',
     ].map(n => SpriteLoader.loadSprite(n, '/assets/sprite-' + n + '.png'));
+    // Phase 6a — painterly tree asset sits outside the sprite-* atlas naming.
+    // Use loadPainterly to strip the baked checker-preview background.
+    spriteLoads.push(SpriteLoader.loadPainterly('tree-forest', '/assets/tree-forest.png'));
     Promise.all(spriteLoads)
       .then(() => { spritesReady = true; console.log('Race sprites loaded'); })
       .catch(e => { console.warn('Sprite load failed, falling back to procedural:', e); spritesReady = false; });
@@ -359,6 +362,7 @@ const Render2D = (() => {
   // ============================================================
   const BUSH_VARIANTS = ['bush-1', 'bush-2', 'bush-3'];
   const ROCK_VARIANTS = ['rock-1', 'rock-2'];
+  const TREE_VARIANTS = ['tree-forest'];
 
   function generateTrackObjects() {
     if (objectsGenerated || track.length < 2) return;
@@ -370,12 +374,22 @@ const Render2D = (() => {
       for (let side = -1; side <= 1; side += 2) {
         if (Math.random() < 0.4) continue;
         const dist = trackWidth + 1.5 + Math.random() * 3;
-        const isTree = Math.random() < 0.7;
+        // Phase 6a — 25% painterly tree, 45% bush (still "tree" type), 30% rock
+        const roll = Math.random();
+        let type, sprite, bigSprite = false;
+        if (roll < 0.25) {
+          type = 'tree';
+          sprite = TREE_VARIANTS[Math.floor(Math.random() * TREE_VARIANTS.length)];
+          bigSprite = true;
+        } else if (roll < 0.7) {
+          type = 'tree';
+          sprite = BUSH_VARIANTS[Math.floor(Math.random() * BUSH_VARIANTS.length)];
+        } else {
+          type = 'rock';
+          sprite = ROCK_VARIANTS[Math.floor(Math.random() * ROCK_VARIANTS.length)];
+        }
         trackObjects.push({
-          type: isTree ? 'tree' : 'rock',
-          sprite: isTree
-            ? BUSH_VARIANTS[Math.floor(Math.random() * BUSH_VARIANTS.length)]
-            : ROCK_VARIANTS[Math.floor(Math.random() * ROCK_VARIANTS.length)],
+          type, sprite, bigSprite,
           x: wp.x + Math.cos(angle + Math.PI / 2) * side * dist,
           z: wp.z + Math.sin(angle + Math.PI / 2) * side * dist,
           size: 0.4 + Math.random() * 0.6,
@@ -403,7 +417,10 @@ const Render2D = (() => {
 
       // Try sprite-based rendering for tree/rock
       if (spritesReady && obj.sprite && SpriteLoader.has(obj.sprite)) {
-        const w = sz * 2.0, h = sz * 2.0;
+        // Phase 6a — painterly tree sprites render taller so they read as
+        // feature trees beside the shorter 60x60 bush silhouettes
+        const scale = obj.bigSprite ? 2.2 : 2.0;
+        const w = sz * scale, h = sz * scale;
         // Soft shadow under sprite
         ctx.fillStyle = 'rgba(0,0,0,0.25)';
         ctx.beginPath(); ctx.ellipse(s.x + 2, s.y + h * 0.35, w * 0.4, h * 0.15, 0, 0, Math.PI * 2); ctx.fill();

@@ -32,6 +32,29 @@ const Render2D = (() => {
     { name: 'volcano',sky: ['#601a08','#351005'], ground: ['#7a3020','#4a1a0a'], tree: '#884030' },
   ];
   let currentBiome = 0;
+
+  // Phase 6a — painterly biome tree overlay. Each PNG is loaded through
+  // SpriteLoader.loadPainterly which chroma-keys the baked checker-preview
+  // background (image-gen tools export a grey/white checker instead of
+  // true alpha). Failed loads leave the slot empty, so drawTrees falls
+  // through to the procedural round-canopy code untouched.
+  if (typeof SpriteLoader !== 'undefined') {
+    ['forest', 'cave', 'snow', 'volcano'].forEach((name) => {
+      SpriteLoader.loadPainterly('tree-' + name, '/assets/tree-' + name + '.png')
+        .catch(() => { /* asset not commissioned yet — fallback handles it */ });
+    });
+  }
+  function getBiomeTreeSprite() {
+    const dist = Math.max(0, worldDist);
+    const biomeLen = 30;
+    const idx = Math.floor(dist / biomeLen) % BIOMES.length;
+    const t = (dist % biomeLen) / biomeLen;
+    // Gate out during the 80-100% blend window so painterly trees don't
+    // pop mid-transition (procedural draws through the crossfade).
+    if (t > 0.8) return null;
+    if (typeof SpriteLoader === 'undefined') return null;
+    return SpriteLoader.get('tree-' + BIOMES[idx].name);
+  }
   function lerpColor(a, b, t) {
     const pa = [parseInt(a.slice(1,3),16), parseInt(a.slice(3,5),16), parseInt(a.slice(5,7),16)];
     const pb = [parseInt(b.slice(1,3),16), parseInt(b.slice(3,5),16), parseInt(b.slice(5,7),16)];
@@ -304,21 +327,33 @@ const Render2D = (() => {
       const bc = getBiomeColors();
       const lighten = CharDraw.lighten, darken = CharDraw.darken;
       if (t.type === 0) {
-        // Round tree — trunk + shadow + multi-layer canopy
-        ctx.fillStyle = 'rgba(0,0,0,0.15)';
-        ctx.beginPath(); ctx.ellipse(3, 2, t.h * 0.3, 4, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#4a3520';
-        ctx.fillRect(-3, -t.h * 0.4, 7, t.h * 0.4);
-        // Canopy layers (dark -> light)
-        ctx.fillStyle = darken(bc.tree, 15);
-        ctx.beginPath(); ctx.arc(0, -t.h * 0.45, t.h * 0.38, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = bc.tree;
-        ctx.beginPath(); ctx.arc(-2, -t.h * 0.52, t.h * 0.3, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = lighten(bc.tree, 20);
-        ctx.beginPath(); ctx.arc(4, -t.h * 0.58, t.h * 0.2, 0, Math.PI * 2); ctx.fill();
-        // Highlight
-        ctx.fillStyle = 'rgba(255,255,255,0.06)';
-        ctx.beginPath(); ctx.arc(-4, -t.h * 0.6, t.h * 0.15, 0, Math.PI * 2); ctx.fill();
+        // Phase 6a — painterly overlay when the biome PNG is ready
+        const sprite = getBiomeTreeSprite();
+        if (sprite) {
+          // Ground shadow (mirror the procedural ellipse)
+          ctx.fillStyle = 'rgba(0,0,0,0.15)';
+          ctx.beginPath(); ctx.ellipse(3, 2, t.h * 0.3, 4, 0, 0, Math.PI * 2); ctx.fill();
+          // Sprite centered on trunk base (y=0 is ground plane here)
+          const drawH = t.h * 1.8;
+          const drawW = drawH;
+          ctx.drawImage(sprite, -drawW / 2, -drawH, drawW, drawH);
+        } else {
+          // Round tree — trunk + shadow + multi-layer canopy (procedural fallback)
+          ctx.fillStyle = 'rgba(0,0,0,0.15)';
+          ctx.beginPath(); ctx.ellipse(3, 2, t.h * 0.3, 4, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#4a3520';
+          ctx.fillRect(-3, -t.h * 0.4, 7, t.h * 0.4);
+          // Canopy layers (dark -> light)
+          ctx.fillStyle = darken(bc.tree, 15);
+          ctx.beginPath(); ctx.arc(0, -t.h * 0.45, t.h * 0.38, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = bc.tree;
+          ctx.beginPath(); ctx.arc(-2, -t.h * 0.52, t.h * 0.3, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = lighten(bc.tree, 20);
+          ctx.beginPath(); ctx.arc(4, -t.h * 0.58, t.h * 0.2, 0, Math.PI * 2); ctx.fill();
+          // Highlight
+          ctx.fillStyle = 'rgba(255,255,255,0.06)';
+          ctx.beginPath(); ctx.arc(-4, -t.h * 0.6, t.h * 0.15, 0, Math.PI * 2); ctx.fill();
+        }
       } else if (t.type === 1) {
         // Pine — layered triangles with depth
         ctx.fillStyle = 'rgba(0,0,0,0.12)';
