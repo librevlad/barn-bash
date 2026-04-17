@@ -141,7 +141,7 @@
   50% { opacity: 1; }
 }
 .gameplay-root .gp-avatar-orb.stumbling {
-  animation: gpOrbStumble 0.2s ease-in-out infinite;
+  animation: gpOrbStumble var(--dur-short) ease-in-out infinite;
 }
 @keyframes gpOrbStumble {
   0%, 100% { transform: rotate(0deg); }
@@ -319,7 +319,7 @@
   z-index: 6;
   pointer-events: none;
 }
-.gameplay-root .gp-tap-pulse.active { animation: gpTapRing 0.3s ease-out; }
+.gameplay-root .gp-tap-pulse.active { animation: gpTapRing var(--dur-short) ease-out; }
 @keyframes gpTapRing {
   0% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.5); }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
@@ -360,7 +360,7 @@
   letter-spacing: 4px;
   line-height: 1;
   z-index: 3;
-  animation: gpCountdownStamp 0.3s var(--ease-bounce);
+  animation: gpCountdownStamp var(--dur-short) var(--ease-bounce);
 }
 @keyframes gpCountdownStamp {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
@@ -469,7 +469,7 @@
   gap: 16px;
   padding: 40px;
   opacity: 0;
-  transition: opacity 0.3s ease-out;
+  transition: opacity var(--dur-short) ease-out;
 }
 .gameplay-root.phase-eliminated .gp-eliminated-overlay { display: flex; opacity: 1; }
 .gameplay-root .gp-elim-avatar {
@@ -489,7 +489,7 @@
   color: var(--danger-red);
   letter-spacing: 4px;
   text-shadow: 0 3px 0 var(--accent-red-deep), 0 4px 18px rgba(0, 0, 0, 0.7);
-  animation: gpElimEntry 0.4s var(--ease-bounce);
+  animation: gpElimEntry var(--dur-pulse) var(--ease-bounce);
 }
 @keyframes gpElimEntry {
   0% { opacity: 0; transform: scale(0.6); }
@@ -713,7 +713,7 @@
   text-align: center;
   letter-spacing: 0.4px;
   display: none;
-  animation: gpToastSlide 0.3s var(--ease-out);
+  animation: gpToastSlide var(--dur-short) var(--ease-out);
 }
 .gameplay-root.phase-lost .gp-lost-toast { display: block; }
 @keyframes gpToastSlide {
