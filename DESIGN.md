@@ -1075,6 +1075,59 @@ Phase 7 closes per-game hero-art bucket. Every game's signature
 moment — king-zone crown, meteor impact, finish-line crossing —
 now carries painterly art alongside its procedural framework.
 
+Tenth realization: second-layer per-game hero art for the moments
+Phase 7 didn't cover — arena-shrink crest on hill, safe-zone
+bullseye on meteor, three-tier podium on race postgame
+(Phase 8, 2026-04-17).
+
+- `assets/hill-crest.png` — 1024×1024 digital-watercolor heraldic
+  crest: gold-and-ruby crown matching `hill-crown.png`, hand-painted
+  green laurel branches, red velvet ribbon banner with three gold
+  stars.
+- `assets/meteor-target.png` — 1024×1024 digital-watercolor
+  bullseye: black outer rim, carnival red band, cream-white inner
+  band, gold center dot. Painterly imperfection in ring edges.
+- `assets/race-podium.png` — 1024×1024 digital-watercolor three-
+  tier podium: tall center with gold "1", left shorter with silver
+  "2", right shortest with bronze "3", warm-brown wood pedestals
+  with gold-leaf trim, red velvet curtain backdrop.
+- `client-host-hill/render2d.js` — new `crestFade` module-scope
+  variable ramps 0→1 over ~400ms once `renderPlatR < 3.5` is
+  reached; monotonic (never reverts) so micro-oscillations around
+  the threshold don't flicker. New `crest` scene layer at depth 22
+  (above players=20, below ui=40) registers `drawHillCrest`, which
+  renders the sprite anchored at world (0, -4) at 2.5×zoom size
+  with `globalAlpha = crestFade * 0.85` — HUD strip still reads
+  through at full intensity.
+- `client-host-meteor/render2d.js` — sprite loads alongside
+  `meteor-crater` at init. In `drawSafeZone`, after the green
+  glow + bulb core + pulsing ring but before the "SAFE" Alfa Slab
+  label, draws the target centered on the safe-zone anchor at
+  1.6× the safe radius with `globalAlpha = 0.8`. Label stacks
+  above so text stays legible.
+- `client-shared/postgame.js` — `show(opts)` gains an optional
+  `backdrop` slot. When set, prepends
+  `<img class="pg-backdrop" onerror="this.remove()">` as the first
+  overlay child. CSS anchors the img at `bottom: 0` centered
+  horizontally with max-height 380px. Z-ordering: backdrop gets
+  `z-index: 0`, all other overlay children get
+  `position: relative; z-index: 1` — without the explicit
+  positioned-relative rule, `position: absolute` backdrop paints
+  AFTER the static flex siblings and buries the text.
+- `client-host-race/main.js` — race's `game_over` handler passes
+  `backdrop: '/assets/race-podium.png'` into `PostGame.show`. Other
+  games leave the slot undefined and render as before.
+- Screenshots: `screenshots-review/phase8{a,b,c}-*.png` — each
+  second-layer piece in its native moment (hill danger state,
+  meteor warning state, race winner overlay).
+
+Phase 8 covers the second-tier per-game signature moments. The
+pipeline — commission a painterly PNG, load via
+`SpriteLoader.loadPainterly` (edge-seeded after Phase 7c), overlay
+with graceful procedural fallback — is now well-proven and can
+extend indefinitely for further per-game art without architecture
+rework.
+
 ---
 
 ## Phase roadmap
@@ -1133,10 +1186,21 @@ now carries painterly art alongside its procedural framework.
    white interior squares of the checker flag. Spec:
    `docs/superpowers/specs/2026-04-17-per-game-hero-art-design.md`.
 
-After Phase 7 follow-ups (internationalization, WebGL performance,
-GLB extension, hill arena-shrink crown-crest, meteor safe-tile
-painterly target-mark, race podium illustration) each open their
-own spec when demand justifies.
+9. **Phase 8** (shipped 2026-04-17): per-game second-layer art —
+   `hill-crest.png` (8a) heraldic overlay fades in when
+   `renderPlatR < 3.5`, `meteor-target.png` (8b) bullseye overlays
+   the safe-zone tile between the bulb core and the SAFE label,
+   `race-podium.png` (8c) three-tier podium anchors the `PostGame`
+   winner overlay via a new `backdrop` option. Hill gets a
+   monotonic crest-fade variable; meteor stacks target between
+   existing safe-zone elements; PostGame gains an API slot and
+   z-index rule so the backdrop sits behind flex siblings. Spec:
+   `docs/superpowers/specs/2026-04-17-per-game-second-layer-art-design.md`.
+
+After Phase 8 follow-ups (internationalization, WebGL performance,
+GLB extension for bear/bunny/pig/chicken/raccoon, 2nd/3rd place
+display flow for race podium, tournament-stage painterly backdrop)
+each open their own spec when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -1199,3 +1263,9 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | Right-side race flag is mirror-rendered (`ctx.scale(-1, 1)`) rather than commissioning a second flag PNG | The flag illustration has a natural direction (pole left, fabric right). A second "pole-right" asset would duplicate the art for a 1-bit piece of information. Mirroring via canvas transform ships in 3 lines and matches the spec's "both flags wave toward the track interior" intent |
 | 2026-04-17 | `loadPainterly` refactored from two-pass to edge-seeded-only mid-Phase 7c | The prior strict-everywhere first pass ate pure-white interior squares of the checker flag (they matched the neutral-bright criterion just like the outside checker did). The strict pass was never strictly necessary — the edge-seeded flood fill's strict-at-seed rule catches the same outside-checker pixels while preserving interior whites disconnected by saturated-color ink outlines. Simpler logic, correct behaviour on more asset types |
 | 2026-04-17 | Hill and meteor retrofitted SpriteLoader mid-Phase 7 | Escape picked up SpriteLoader in Phase 6a; race has had it since Phase 3 for atlas sprites. Hill and meteor hadn't needed it until now. Adding it in-phase means all four per-game hosts share one painterly-asset loading path — future hero art in any game picks up `loadPainterly` for free |
+| 2026-04-17 | Hill crest fade is monotonic (0→1 only, never reverses) | `renderPlatR` lerps smoothly toward `targetPlatR`, so a target just below 3.5 would oscillate the render value across the threshold each frame and flicker the crest in/out. Locking the fade to monotonic 0→1 after the first threshold crossing removes the flicker without adding hysteresis state. If a round somehow expands the arena back, the crest stays; the round is ending anyway |
+| 2026-04-17 | Hill crest anchored at world (0, -4) not (0, -6) | First integration pass used (0, -6) so the crest sat above the max arena radius regardless of zoom. At 1280x720 the top of the crest clipped above the viewport. Moving to (0, -4) + shrinking crest size 3.5→2.5 world units keeps the full composition visible at the standard host viewport. Arena shrinks under the crest, crest stays in its anchor spot |
+| 2026-04-17 | Meteor target draws BETWEEN the pulsing ring and the SAFE label | Target above the pulsing green ring (stacks on top of halo+bulb core composition) so the painterly rings read clearly. SAFE label ABOVE target so the carnival-voice text stays legible and letterpress gold reads without competing with the bullseye colors |
+| 2026-04-17 | Race podium anchored at overlay `bottom: 0` rather than centered | First pass centered the podium; the red velvet curtain backdrop landed exactly where the winner name + label rendered, and the red-on-red killed legibility. Anchoring at overlay bottom puts the CURTAIN below the text block and the STAIRS+NUMBERS in the lower half where buttons sit — decorative, not competitive |
+| 2026-04-17 | PostGame backdrop needs explicit z-index: 0 + position:relative on flex siblings | `position: absolute` backdrop without z-index paints LAST within the stacking context, over the static flex children. Giving the backdrop z-index:0 and siblings `position:relative; z-index:1` makes DOM order explicit: backdrop first, everything else on top |
+| 2026-04-17 | Race podium integrated via PostGame API, not custom race overlay | Race uses the shared `PostGame.show` overlay already. Adding a `backdrop` opt threaded through `show(opts)` is one API surface change that benefits any future per-game postgame scene. Avoids a race-only overlay implementation that would duplicate the winner-name / countdown / buttons logic |
