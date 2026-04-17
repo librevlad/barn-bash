@@ -1012,6 +1012,69 @@ Phase 2 closes the gameplay half of the controller UX. Onboarding
 modules with clean stop/start semantics; the controller no longer
 has any "legacy" DOM writing code paths.
 
+Ninth realization: per-game hero art — one painterly PNG per game
+that wasn't covered by Phase 6, reusing the Phase 6 SpriteLoader
+pipeline verbatim (Phase 7, 2026-04-17).
+
+- `assets/hill-crown.png` — 1024×1024 digital-watercolor royal crown.
+  Five gold spires tipped in red velvet, central ruby, pearl inlays
+  around the rim.
+- `assets/meteor-crater.png` — 1024×1024 digital-watercolor impact
+  crater. Cracked dark-rock rim, ember-orange veins radiating from
+  the centre, pale smoke plume rising.
+- `assets/race-flag.png` — 1024×1024 digital-watercolor checker
+  racing flag on a warm-brown pole with a gold cap, caught mid-
+  flutter. Checker squares painted with slight imperfection, not
+  machine-precise.
+- `client-host-hill/render2d.js` + `client-host-hill/index.html` —
+  hill picks up SpriteLoader (it had never needed it). The sprite
+  loads via `SpriteLoader.loadPainterly` at init; `drawKingZone`
+  renders the painterly crown at `kingR * 1.8` centered on the
+  king-zone anchor with `globalAlpha = 0.85`, so the gold-bulb
+  spotlight and dashed-gold ring still frame it. Falls back to the
+  original gold-tinted emoji text (`\uD83D\uDC51`) when the sprite
+  isn't loaded.
+- `client-host-meteor/render2d.js` + `client-host-meteor/index.html`
+  — meteor also picks up SpriteLoader. A new `craterFX` array
+  tracks active craters as `{ x, z, t0 }`; a new `craters` scene
+  layer at depth 17 (between `safezone=15` and `players=20`)
+  renders them UNDER the impact flash so the flash reads as "the
+  moment" and the crater as "the aftermath". Each entry ramps
+  scale 0.3 → 1.0 over 180ms, alpha 1.0 → 0 over the next 820ms,
+  and is pruned at 1000ms — no accumulation on rapid-fire impacts.
+  `onImpact` now pushes an entry into `craterFX` alongside the
+  existing camera shake + impact flash + FIRE particle burst.
+- `client-host-race/render2d.js` — the sprite loads next to
+  `tree-forest` in the SpriteLoader chain. In the finish-line
+  block, the procedural red-velvet banner rectangles + gold-bulb
+  caps are replaced by two painterly flag sprites. The PNG has
+  its pole on the LEFT; the right-side flag is mirrored via
+  `ctx.scale(-1, 1)` so both flags wave toward the track
+  interior — finishers see them "greeting" them. Flag sizes to
+  `bannerH × 1.4 × bannerH × 1.5` (taller than the previous
+  14×34 banner) so it reads as a feature rather than a stripe.
+  Gold rope + FINISH label + checker ground tile stay procedural.
+  Procedural banner + gold-bulb remain as the sprite-missing
+  fallback.
+- `engine/SpriteLoader.js` — `loadPainterly` refactored from
+  two-pass (strict full-image chroma-key + edge-seeded flood
+  fill) to edge-seeded flood fill only. The prior strict pass
+  ate pure-white interior squares of the checker flag because
+  it treated every bright-neutral pixel the same, ignoring
+  connectivity. Edge-seeded fill treats only pixels connected
+  to the image boundary as checker. Interior whites (flag
+  squares, snow caps) survive because saturated ink outlines /
+  dark canopy edges break the flood path. Opt names renamed
+  `tightChroma/tightBright/looseChroma/looseBright` →
+  `seedChroma/seedBright/expandChroma/expandBright` for clarity.
+- Screenshots: `screenshots-review/phase7{a,b,c}-*.png` — each
+  hero piece in its native context (king-zone centerpiece,
+  crater mid-fade, finish-line composite).
+
+Phase 7 closes per-game hero-art bucket. Every game's signature
+moment — king-zone crown, meteor impact, finish-line crossing —
+now carries painterly art alongside its procedural framework.
+
 ---
 
 ## Phase roadmap
@@ -1058,9 +1121,22 @@ has any "legacy" DOM writing code paths.
    chroma-key (strict + edge-seeded flood fill). Spec:
    `docs/superpowers/specs/2026-04-17-environmental-art-design.md`.
 
-After Phase 6 follow-ups (internationalization, WebGL performance,
-GLB extension, hill crown, meteor crater, race finish-line flag art)
-each open their own spec when demand justifies.
+8. **Phase 7** (shipped 2026-04-17): per-game hero art — one
+   painterly PNG per game not covered by Phase 6. `hill-crown.png`
+   (7a) replaces the emoji king-zone icon, `meteor-crater.png`
+   (7b) fires as an ephemeral 1s scale-up / fade-out at every
+   meteor impact, `race-flag.png` (7c) replaces the procedural
+   red-velvet banner rectangles on each side of the finish line.
+   Hill and meteor retrofit SpriteLoader; race adds the flag
+   alongside the Phase 6a tree load. `loadPainterly` refactored
+   from two-pass to edge-seeded-only (7c fix) to preserve pure-
+   white interior squares of the checker flag. Spec:
+   `docs/superpowers/specs/2026-04-17-per-game-hero-art-design.md`.
+
+After Phase 7 follow-ups (internationalization, WebGL performance,
+GLB extension, hill arena-shrink crown-crest, meteor safe-tile
+painterly target-mark, race podium illustration) each open their
+own spec when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -1117,3 +1193,9 @@ first, and this document is updated to reflect the addition.
 | 2026-04-15 | `ensureGameplay(nextGameId)` rebuilds the module on target-game change | First implementation only toggled `.game-*` class on the root — eyebrow text, phase icon, and hintbar stayed frozen because they were baked into `buildDom()` at first mount. Rebuild-on-change is the simplest correct fix; per-game partial updates would spread game-shape coupling across the API |
 | 2026-04-15 | Elimination quip seeded deterministically from `playerId + round` | Plain `Math.random()` pick would reshuffle every render / reconnect, so an eliminated player's quip could change on WS reconnect — breaking the narrative beat. Seeded pick keeps the same line through disconnect / rejoin cycles |
 | 2026-04-15 | `engine/Input.js` `excludeSelector` extended for `.gp-action` and `.gp-go-btn` | Gesture manager captures taps/swipes on the controller canvas to translate into game actions. Hintbar cards and the game-over BACK-TO-LOBBY button needed native click semantics; excluding them from the gesture capture layer keeps the affordance honest without a per-event `preventDefault()` branch |
+| 2026-04-17 | Per-game-prefix filename convention for hero art (`hill-`, `meteor-`, `race-`) | Phase 5/6 used category-prefix (`animal-`, `tree-`). Phase 7 pieces are heterogeneous (crown / crater / flag) with no shared category, so per-game prefix is the natural slot. Forward-compatible with future hill-banner, meteor-safetile, race-podium, etc. without namespace churn |
+| 2026-04-17 | Meteor crater is ephemeral (1000ms lifetime) rather than persistent/accumulating | A persistent impact mark would accumulate over a 30s meteor round — 6+ impacts stacking craters across the arena would clutter the gameplay read. Ephemeral ramp-up + fade-out delivers the "that spot got hit" moment without visual debt. Each entry auto-prunes so craterFX stays bounded |
+| 2026-04-17 | Meteor crater draws UNDER the impact flash, not over it | Flash is "the moment" (impulse red full-screen tint). Crater is "the aftermath" (localised painterly mark). Draw-order matches the narrative: flash dominates the first 100-200ms, crater reveals as the flash fades. Scene layer 'craters' at depth 17 sits between safezone=15 and players=20, so the layering is explicit rather than relying on sub-ordering within one layer |
+| 2026-04-17 | Right-side race flag is mirror-rendered (`ctx.scale(-1, 1)`) rather than commissioning a second flag PNG | The flag illustration has a natural direction (pole left, fabric right). A second "pole-right" asset would duplicate the art for a 1-bit piece of information. Mirroring via canvas transform ships in 3 lines and matches the spec's "both flags wave toward the track interior" intent |
+| 2026-04-17 | `loadPainterly` refactored from two-pass to edge-seeded-only mid-Phase 7c | The prior strict-everywhere first pass ate pure-white interior squares of the checker flag (they matched the neutral-bright criterion just like the outside checker did). The strict pass was never strictly necessary — the edge-seeded flood fill's strict-at-seed rule catches the same outside-checker pixels while preserving interior whites disconnected by saturated-color ink outlines. Simpler logic, correct behaviour on more asset types |
+| 2026-04-17 | Hill and meteor retrofitted SpriteLoader mid-Phase 7 | Escape picked up SpriteLoader in Phase 6a; race has had it since Phase 3 for atlas sprites. Hill and meteor hadn't needed it until now. Adding it in-phase means all four per-game hosts share one painterly-asset loading path — future hero art in any game picks up `loadPainterly` for free |
