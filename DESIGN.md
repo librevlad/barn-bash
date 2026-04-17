@@ -1299,6 +1299,43 @@ HUD now reads as four painted slot-machine faces in a row
 round tournament standings read as a painted wooden scoreboard
 with four score strips instead of flex cards on a dark scrim.
 
+Fifteenth realization: motion polish — universal idle breathing
+on hero titles + hover gold shine-sweep on interactive cards
+(Phase 14, 2026-04-17). Pixel-car replacement (Phase 13) skipped
+per user direction as large content ask with marginal uplift
+vs direct motion work.
+
+- `client-shared/theme.css` — two new CSS utility layers:
+- `@keyframes breatheHero` (scale 1.0 → 1.015 → 1.0, opacity
+  0.92 → 1.0 → 0.92 over `--dur-breathe` 3000ms infinite).
+  Applied via direct selectors to `#lobby h1`, `#lobby h2`,
+  `#lobby .hud-title`, `#t-content .t-title`, `#postgame-overlay
+  .pg-winner-name`, plus a `.breathe` utility class for ad-hoc
+  use. Scope important: `.hud-title` is ALSO used in the
+  in-game `#hud` for lap / distance counters; the `#lobby`
+  prefix keeps breathing to the lobby attraction-banner
+  moment only, not the gameplay HUD.
+- `@keyframes shineSweep` (translateX -140% → 380% + skew-20°
+  over 800ms). `::after` pseudo-element on `.ticket-btn`,
+  `.onboarding-root .color-cell`, `.onboarding-root .animal-cell`
+  — a faint gold diagonal band sweeps across the card face
+  on hover and re-triggers per hover. Host element gets
+  `position:relative; overflow:hidden` for clean clipping at
+  the painted frame edges.
+- `.gameplay-root .gp-action` deliberately excluded from the
+  shine-sweep: its `overflow: visible` is required so Phase
+  12b's below-frame labels don't clip. Controller is touch-
+  only so the hover sweep would rarely fire anyway.
+- Both layers honor `@media (prefers-reduced-motion: reduce)`:
+  breathing animation falls to `none`, shine-sweep animation
+  falls to `none`. Reduced-motion users see the static UI
+  exactly as the painted surfaces render.
+
+Phase 14 closes the third AAA-polish dimension — motion. The UI
+no longer reads as static pixel art; hero titles breathe, cards
+flash gold on hover, the product feels "alive" at rest. Zero new
+PNG assets required; entirely CSS-driven.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1406,10 +1443,20 @@ with four score strips instead of flex cards on a dark scrim.
     so they escape the painted frame's bottom ornament. Spec:
     `docs/superpowers/specs/2026-04-17-scoreboard-orb-frames-design.md`.
 
-After Phase 12 follow-ups (pixel-car painterly replacement,
-motion polish, background ornaments, plus the earlier-listed
-i18n / WebGL / GLB / race-2nd-3rd-place items) each open their
-own spec when demand justifies.
+14. **Phase 14** (shipped 2026-04-17): motion polish — universal
+    idle breathing on Alfa Slab hero titles (lobby, overlay
+    headings, winner name) + hover gold shine-sweep on
+    interactive cards (ticket buttons, car cells, animal cells).
+    CSS-only, zero new assets, honors prefers-reduced-motion.
+    Phase 13 (pixel-car painterly replacement) skipped per user
+    direction. Spec:
+    `docs/superpowers/specs/2026-04-17-motion-polish-design.md`.
+
+After Phase 14 follow-ups (painterly pixel-car replacement if
+ever revisited, background ornament PNGs — garland, corner
+flourishes, bunting — plus the earlier-listed i18n / WebGL /
+GLB / race-2nd-3rd-place items) each open their own spec when
+demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -1493,3 +1540,7 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | Controller gameplay HUD finally consumes the Phase 5a painterly avatar pipeline | Phase 5a shipped painterly animal PNGs to onboarding + main host pills but missed the controller gameplay HUD (audit-flagged). Phase 12b closes the loop: `buildDom` renders `<img data-animal="{character}">` with `loadPainterly` async-swap, matching the rest of the UI. Emoji fallback via `onerror` kept for resilience |
 | 2026-04-17 | Orb pulse migrated from `box-shadow: 0 0 14px currentColor` to opacity-only breathing | The pulse keyframe's `currentColor` shadow painted a per-game-colored rectangle (the ::before's bounding box) around the round painterly silhouette. Removing the shadow entirely — and holding pulse to `opacity: 0.88 ↔ 1` — preserves the breathing-life signal without a phantom rectangle outline. Painted frame carries the visual interest |
 | 2026-04-17 | Action-card labels positioned absolute below the painted frame instead of inside | Phase 11b baked labels into the flex column with 4px gap; the painted slot-machine bottom curl ornament then cropped the label. `position: absolute; top: 100%; overflow: visible` on the parent pushes the label text outside the 72px painted cell, to sit on the HUD scrim with a text-shadow for contrast |
+| 2026-04-17 | Breathing applied via direct selector in theme.css, not a per-element utility class | Utility class would require editing every hero-title element in every host + shared module to add `class="breathe"`. Direct selector targets the semantic hierarchy (`#lobby h1`, `#postgame-overlay .pg-winner-name`, etc.) so the shared CSS automatically covers every instance that matches. Zero HTML edits. The `.breathe` utility still exists as an escape hatch for ad-hoc future use |
+| 2026-04-17 | `#lobby` prefix on `.hud-title` breathing selector to exclude in-game HUD | `.hud-title` is reused inside the gameplay `#hud` element for lap / distance / position counters. Breathing on those would distract during high-pace play. Scoping to `#lobby .hud-title` keeps the attraction-banner eyebrow animation without touching the live-score counters |
+| 2026-04-17 | `.gp-action` excluded from the shine-sweep list | Shine-sweep requires `overflow: hidden` on the host element so the gold band clips cleanly at painted frame edges. Phase 12b action cards use `overflow: visible` to let their below-card labels escape the 72px frame. Controller is touch-only anyway; the hover trigger would rarely fire. Accepting the static state on actions is cheaper than reworking label positioning for a marginal hover effect |
+| 2026-04-17 | Phase 13 (pixel-car painterly replacement) skipped per user direction | User chose Phase 14 motion polish over Phase 13 car-asset commissioning. Car sprites are pixel-art (Phase 3 atlas) and sit inside Phase 11a's painted ticket frames, so the mixed-art register reads as "ticket tag with a retro car emblem" — acceptable tradeoff vs a 10-car commission. Pixel-car replacement stays on the follow-up list for future revisit |
