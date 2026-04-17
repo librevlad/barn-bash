@@ -134,13 +134,16 @@ const Tournament = (() => {
         z-index: 0;
         pointer-events: none;
       }
-      #t-content .t-scores {
-        /* Vertical stack to fit the scroll's four painted slot strips */
+      /* Phase 12a — scoreboard-scroll-aware layout scoped to standings
+         mode. Champion view keeps the earlier horizontal card layout
+         unchanged so the Phase 9a throne backdrop frames horizontal
+         cards (not column-stacked transparent rows). */
+      #t-content.mode-standings .t-scores {
         display:flex; flex-direction:column; align-items:center;
         gap: 6px; margin: 6px auto 14px;
         width: min(340px, 80%);
       }
-      #t-content .t-player {
+      #t-content.mode-standings .t-player {
         display: flex; align-items: center; gap: 12px;
         padding: 6px 14px;
         border-radius: 6px;
@@ -151,6 +154,22 @@ const Tournament = (() => {
         opacity: 0;
         box-shadow: none;
       }
+      /* Non-standings (champion) retains the original horizontal card */
+      #t-content:not(.mode-standings) .t-scores {
+        display:flex; justify-content:center; gap:18px; flex-wrap:wrap;
+        margin-bottom:20px;
+      }
+      #t-content:not(.mode-standings) .t-player {
+        text-align:center; padding:14px 18px;
+        border-radius: 12px;
+        background: rgba(90, 58, 32, 0.72);
+        border: 1.5px solid rgba(244, 197, 66, 0.35);
+        min-width: 100px;
+        transition: transform 0.3s;
+        opacity: 0;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.3),
+                    0 3px 8px rgba(0,0,0,0.4);
+      }
       #t-content .t-player.slide-in { animation: tSlideInLeft 0.5s ease-out forwards; }
       #t-content .t-player.leader {
         border-color: var(--accent-gold, #f4c542);
@@ -159,12 +178,13 @@ const Tournament = (() => {
                     inset 0 0 18px rgba(244, 197, 66, 0.08),
                     0 4px 10px rgba(0, 0, 0, 0.5);
       }
-      #t-content .t-player-dot {
+      /* Standings mode: dark text on cream slot (Phase 12a) */
+      #t-content.mode-standings .t-player-dot {
         width: 22px; height: 22px; border-radius: 50%;
         margin: 0; flex: 0 0 auto;
         box-shadow: 0 0 6px currentColor;
       }
-      #t-content .t-player-name {
+      #t-content.mode-standings .t-player-name {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
         font-size: 14px;
         color: var(--text-on-gold, #3d2817);
@@ -172,12 +192,32 @@ const Tournament = (() => {
         flex: 1 1 auto;
         text-align: left;
       }
-      #t-content .t-player-pts {
+      #t-content.mode-standings .t-player-pts {
         font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
         font-size: 22px; font-weight: 400;
         color: var(--accent-red-deep, #6b1818);
         text-shadow: 0 1px 0 rgba(244, 197, 66, 0.3);
         margin: 0; flex: 0 0 auto;
+      }
+      /* Champion mode: restore original cream-on-dark scheme */
+      #t-content:not(.mode-standings) .t-player-dot {
+        width: 28px; height: 28px; border-radius: 50%;
+        margin: 0 auto 8px;
+        box-shadow: 0 0 8px currentColor;
+      }
+      #t-content:not(.mode-standings) .t-player-name {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 12px;
+        color: var(--text-cream, #f5ead4);
+        opacity: 0.82;
+        letter-spacing: 0.5px;
+      }
+      #t-content:not(.mode-standings) .t-player-pts {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 26px; font-weight: 400;
+        color: var(--accent-gold, #f4c542);
+        text-shadow: 0 1px 0 var(--accent-red-deep, #6b1818);
+        margin-top: 6px;
       }
       #t-content .t-player-pos-change {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
@@ -311,6 +351,10 @@ const Tournament = (() => {
   function renderStandings(data) {
     createOverlay();
     const content = document.getElementById('t-content');
+    // Phase 12a CSS (column-stack slot-strip layout) scopes to
+    // .mode-standings; champion view keeps its horizontal card layout.
+    content.classList.add('mode-standings');
+    content.classList.remove('mode-champion');
     const maxPts = Math.max(...Object.values(data.scores), 0);
     const players = window._lastPlayers || {};
     const sorted = Object.entries(data.scores).sort(function(a, b) { return b[1] - a[1]; });
@@ -408,6 +452,11 @@ const Tournament = (() => {
   function renderChampion(data) {
     createOverlay();
     var content = document.getElementById('t-content');
+    // Phase 12a CSS (standings column layout) is scoped to
+    // .mode-standings; switch modes so champion keeps its horizontal
+    // card layout + the Phase 9a throne backdrop integration.
+    content.classList.add('mode-champion');
+    content.classList.remove('mode-standings');
     var players = window._lastPlayers || {};
     var sorted = Object.entries(data.scores).sort(function(a, b) { return b[1] - a[1]; });
 
