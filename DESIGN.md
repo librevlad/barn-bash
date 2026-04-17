@@ -69,6 +69,7 @@ value you need isn't a token, add it to `theme.css` first.
 | `--danger-red` | `#d9534f` | Errors, destructive actions |
 | `--warning-amber` | `#e8a33c` | Approaching timer, caution |
 | `--info-blue` | `#5ba8d9` | Informational, neutral notice |
+| `--color-player-unknown` | `#8a7a68` | Fallback for player slots when the server assigns a colorId the client does not recognise. Warm grey — stays in palette. |
 
 Scrims for overlays: `--scrim-light` (0.28), `--scrim-medium` (0.55),
 `--scrim-dark` (0.75), `--scrim-heavy` (0.85). Use `--scrim-heavy` behind modals
@@ -686,6 +687,58 @@ ranges referenced throughout `theme.css` and component files.
 
 Write media queries against the **upper bound** of narrower ranges
 (`@media (max-width: 360px)`) so the next range inherits desktop defaults.
+
+---
+
+## Text layout (Pretext)
+
+Any text block that (a) wraps across multiple lines AND (b) lives inside a
+container whose height depends on the text — narrator quips, Game Master
+zingers, elimination copy, winner hero + subline + quip, rules tooltips,
+card descriptions — is measured with **Pretext**, not approximated by CSS.
+
+Pretext is vendored at `client-shared/pretext.js` (ES module, 30KB). A thin
+imperative wrapper at `client-shared/pretext-hooks.js` exposes:
+
+```js
+window.PretextHooks.measure(el)    // prepare + layout, applies minHeight
+window.PretextHooks.release(el)    // stop tracking
+window.PretextHooks.relayoutAll()  // re-layout everything (called on resize)
+window.PretextHooks.whenReady(fn)  // run fn once Pretext + fonts resolve
+window.PretextHooks.isReady        // boolean flag
+```
+
+The hooks script is included in both `client-host/index.html` and
+`client-controller/index.html` via `<script src="/shared/pretext-hooks.js">`.
+It gates measurement on `import('/shared/pretext.js')` + `document.fonts.ready`
+so the first `prepare()` always uses the real Inter/Alfa Slab/Cutive metrics,
+never the system fallback.
+
+### When to call measure()
+
+Call `PretextHooks.measure(el)` **immediately after setting `textContent`**
+on an element whose height should match its wrapped content. Examples
+from the live codebase:
+
+- `client-controller/gameplay.js` — `els.elimQuip` on phase 'eliminated',
+  `els.goHero` + `els.goSubline` + `els.goQuip` in `onGameOver()`
+- `client-host/main.js` — `.card-desc` + `.tip-body` inside `#game-modal`
+  on `$btnPlay` click (the modal-open gate)
+
+### When NOT to call measure()
+
+- Single-line labels that never wrap (`.gp-eyebrow`, `.card-name` when
+  bounded to 1 line) — unnecessary overhead.
+- Decorative glyphs, icon-only buttons, background painting.
+- Text inside `<svg>` or `<canvas>` — Pretext measures DOM text only.
+
+### Tokens touched by Pretext
+
+Pretext reads computed styles at measurement time, so the font-family,
+font-size, line-height, and font-weight on each tracked element must come
+from `--font-*`, `--fs-*`, `--leading-*`, `--font-weight-*`. If those
+tokens change, call `PretextHooks.relayoutAll()` to re-run layout with
+the new metrics.
 
 ---
 
