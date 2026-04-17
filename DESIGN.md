@@ -1128,9 +1128,32 @@ with graceful procedural fallback — is now well-proven and can
 extend indefinitely for further per-game art without architecture
 rework.
 
----
+Eleventh realization: tournament-champion painterly throne backdrop
+(Phase 9, 2026-04-17).
 
-## Phase roadmap
+- `assets/tournament-champion.png` — 1024×1024 digital-watercolor
+  ornate royal throne. Carved wooden back, red velvet cushion and
+  armrests, gold-leaf ornamental trim, gold laurel wreath floating
+  above as a ceremonial award, red velvet curtain drape behind.
+- `client-shared/tournament.js` — in `renderChampion`, prepends
+  `<img class="t-backdrop" src="/assets/tournament-champion.png"
+  onerror="this.remove()">` to `#t-content.innerHTML` before the
+  existing champion text stack. createOverlay's inline stylesheet
+  gains `.t-backdrop` rules (absolute-positioned, anchored at
+  `bottom: -40px; left: 50%` centered, max-height 440px, opacity
+  0.85, `z-index: 0`) and the `position: relative; z-index: 1`
+  rule on `#t-content > *:not(.t-backdrop)` that mirrors the
+  Phase 8c `PostGame.pg-backdrop` z-ordering fix.
+- Backdrop present only during champion mode — standings and
+  round-intro renderers clear `content.innerHTML` when they fire,
+  so the tournament-champion art never leaks into the mid-round
+  scoreboard or the between-round title card.
+
+Phase 9 closes the tournament ceremony art. The throne + laurel +
+curtain composition matches the product's "carnival-storybook
+grand stage" language established by `bg.png`, the animal roster,
+and the race podium. Session's peak moment now carries a
+commissioned visual anchor.
 
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
@@ -1197,10 +1220,20 @@ rework.
    z-index rule so the backdrop sits behind flex siblings. Spec:
    `docs/superpowers/specs/2026-04-17-per-game-second-layer-art-design.md`.
 
-After Phase 8 follow-ups (internationalization, WebGL performance,
-GLB extension for bear/bunny/pig/chicken/raccoon, 2nd/3rd place
-display flow for race podium, tournament-stage painterly backdrop)
-each open their own spec when demand justifies.
+10. **Phase 9** (shipped 2026-04-17): tournament champion art —
+    `tournament-champion.png` painterly throne + laurel wreath +
+    red velvet curtain composition, prepended into
+    `Tournament.renderChampion`'s `#t-content` as a backdrop
+    behind the existing trophy / CHAMPION! / name / final scores
+    stack. Re-uses the Phase 8c z-index pattern
+    (`position: relative; z-index: 1` on children,
+    `z-index: 0` on backdrop). Spec:
+    `docs/superpowers/specs/2026-04-17-tournament-champion-art-design.md`.
+
+After Phase 9 follow-ups (internationalization, WebGL performance,
+GLB extension for bear/bunny/pig/chicken/raccoon, race 2nd/3rd
+place display flow, tournament standings / round-intro painterly
+backdrop polish) each open their own spec when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -1269,3 +1302,6 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | Race podium anchored at overlay `bottom: 0` rather than centered | First pass centered the podium; the red velvet curtain backdrop landed exactly where the winner name + label rendered, and the red-on-red killed legibility. Anchoring at overlay bottom puts the CURTAIN below the text block and the STAIRS+NUMBERS in the lower half where buttons sit — decorative, not competitive |
 | 2026-04-17 | PostGame backdrop needs explicit z-index: 0 + position:relative on flex siblings | `position: absolute` backdrop without z-index paints LAST within the stacking context, over the static flex children. Giving the backdrop z-index:0 and siblings `position:relative; z-index:1` makes DOM order explicit: backdrop first, everything else on top |
 | 2026-04-17 | Race podium integrated via PostGame API, not custom race overlay | Race uses the shared `PostGame.show` overlay already. Adding a `backdrop` opt threaded through `show(opts)` is one API surface change that benefits any future per-game postgame scene. Avoids a race-only overlay implementation that would duplicate the winner-name / countdown / buttons logic |
+| 2026-04-17 | Phase 9 scoped to champion mode only, not standings / round-intro | Standings needs dense scoreboard readability — painterly art would compete with numbers and player-color dots. Round-intro already has its own title-card aesthetic (curtain reveal, AND NOW... game name) that a backdrop would fight. Champion is the session's emotional peak and has sparse text; backdrop elevates it without competition |
+| 2026-04-17 | Tournament backdrop prepended to `#t-content.innerHTML` rather than created as a DOM-level sibling | Each tournament mode (standings / round-intro / champion) calls `content.innerHTML = html` which wipes prior children. Prepending inside the innerHTML puts the backdrop INSIDE the per-mode render, so standings/round-intro automatically lose the backdrop when they fire. No manual remove call needed when switching modes |
+| 2026-04-17 | Tournament backdrop anchored at `bottom: -40px` rather than `bottom: 0` | The throne illustration has a slight padding below its base from transparent cropping + the curtain's lower sweep visually exceeds the pedestal footprint. Anchoring 40px below visual overlay bottom avoids a hard edge where the throne's base would otherwise cut off at the overlay edge. Image is tall enough that the top stays inside the overlay; no HUD clipping |
