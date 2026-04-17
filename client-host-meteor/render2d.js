@@ -28,6 +28,8 @@ const Render2D = (() => {
   if (typeof SpriteLoader !== 'undefined') {
     SpriteLoader.loadPainterly('meteor-crater', '/assets/meteor-crater.png')
       .catch(() => { /* fallback: flash-only, no crater */ });
+    SpriteLoader.loadPainterly('meteor-target', '/assets/meteor-target.png')
+      .catch(() => { /* fallback: bulb-only safe-zone */ });
   }
   let nextSafeZone = null; // radar preview
   let subPhase = 'idle';
@@ -313,6 +315,19 @@ const Render2D = (() => {
       : `rgba(80,255,120,${pulse})`);
     ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.stroke();
+
+    // Phase 8b — painterly bullseye target overlay on the safe tile,
+    // drawn after bulb + ring and before SAFE label so the text stays
+    // legible above it. Sized 1.6x safe radius so rings frame the bulb.
+    const targetSprite = typeof SpriteLoader !== 'undefined'
+      ? SpriteLoader.get('meteor-target') : null;
+    if (targetSprite) {
+      const ts = sr * 3.2; // full diameter = 1.6x radius on each side
+      ctx.save();
+      ctx.globalAlpha = 0.8;
+      ctx.drawImage(targetSprite, sx - ts / 2, sy - ts / 2, ts, ts);
+      ctx.restore();
+    }
 
     // "SAFE" label — Alfa Slab gold with red letterpress (carnival voice)
     ctx.save();
