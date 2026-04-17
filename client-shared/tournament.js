@@ -417,9 +417,22 @@ const Tournament = (() => {
     // Prepended so it sits first in DOM flow; absolute-positioned under
     // the z-index:1 siblings via the .t-backdrop rule above. onerror
     // removes the img so missing asset falls back to the prior text-
-    // only layout.
+    // only layout. Raw img src is the on-disk PNG (may have a baked
+    // solid-black background); SpriteLoader.loadPainterly async-strips
+    // it and swaps src to the processed data URL once ready.
     const backdropHTML = '<img class="t-backdrop" src="/assets/tournament-champion.png" onerror="this.remove()">';
     content.innerHTML = backdropHTML + html;
+    if (typeof SpriteLoader !== 'undefined') {
+      const applyProcessed = () => {
+        const sprite = SpriteLoader.get('tournament-champion');
+        const img = content.querySelector('.t-backdrop');
+        if (sprite && img) img.src = sprite.toDataURL('image/png');
+      };
+      const cached = SpriteLoader.get('tournament-champion');
+      if (cached) applyProcessed();
+      else SpriteLoader.loadPainterly('tournament-champion',
+        '/assets/tournament-champion.png').then(applyProcessed).catch(() => {});
+    }
     show();
 
     // Confetti burst if Visual is available

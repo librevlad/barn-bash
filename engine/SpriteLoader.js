@@ -173,30 +173,34 @@
      * alpha channel.
      *
      * Edge-seeded flood fill only — NO unconditional strict pass. Seeds
-     * from image-boundary pixels that match a strict neutral-bright
-     * threshold (the outside checker). BFS inward through neighbors
-     * matching a looser threshold. Interior neutral-bright pixels that
-     * are disconnected from the edge boundary by saturated-color ink
-     * outlines (e.g. white checker squares INSIDE a checker-flag
-     * painting, or snow caps in the canopy of a snow tree) stay opaque.
+     * from image-boundary pixels that match a strict neutral threshold
+     * (either bright-checker, e.g. the checker-preview background, OR
+     * dark-solid, e.g. a solid-black baked background). BFS inward
+     * through neighbors matching a looser threshold. Interior
+     * neutral pixels disconnected from the edge boundary by saturated-
+     * color ink outlines (e.g. white checker squares INSIDE a checker-
+     * flag painting, or snow caps in the canopy of a snow tree, or
+     * dark ink outlines inside a throne painting) stay opaque.
      *
-     * A prior version also ran an unconditional pass that cleared every
-     * near-neutral-bright pixel in the image. That pass ate pure-white
-     * interior pixels in a checker racing flag, leaving only the black
-     * squares. The edge-seeded approach preserves disconnected interior
-     * whites by construction.
+     * A prior version ran an unconditional pass that cleared every
+     * near-neutral-bright pixel — that ate pure-white interior
+     * pixels in a checker racing flag. Edge-seeded approach preserves
+     * disconnected interiors by construction.
      * @param {string} name
      * @param {string} url
      * @param {Object} [opts] - { seedChroma = 12, seedBright = 185,
-     *                            expandChroma = 40, expandBright = 165 }
+     *                            seedDark = 15, expandChroma = 40,
+     *                            expandBright = 165, expandDark = 30 }
      * @returns {Promise}
      */
     loadPainterly: function (name, url, opts) {
       opts = opts || {};
       var seedChroma = opts.seedChroma !== undefined ? opts.seedChroma : 12;
       var seedBright = opts.seedBright !== undefined ? opts.seedBright : 185;
+      var seedDark = opts.seedDark !== undefined ? opts.seedDark : 15;
       var expandChroma = opts.expandChroma !== undefined ? opts.expandChroma : 40;
       var expandBright = opts.expandBright !== undefined ? opts.expandBright : 165;
+      var expandDark = opts.expandDark !== undefined ? opts.expandDark : 30;
       return loadImage(url).then(function (img) {
         var canvas = document.createElement('canvas');
         canvas.width = img.width;
@@ -208,14 +212,16 @@
         var W = canvas.width, H = canvas.height;
         var visited = new Uint8Array(W * H);
         var stack = [];
-        // Seed: every edge pixel that matches the strict neutral-bright
-        // threshold. Those are the outside-checker pixels.
+        // Seed: every edge pixel matching EITHER a neutral-bright
+        // threshold (checker-preview white/grey) OR a neutral-dark
+        // threshold (solid-black baked background). Image-gen tools
+        // emit both styles; both are "outside" pixels here.
         function trySeed(idx) {
           var p = idx * 4;
           var r = px[p], g = px[p + 1], b = px[p + 2];
           var minC = r < g ? (r < b ? r : b) : (g < b ? g : b);
           var maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
-          if ((maxC - minC) < seedChroma && minC > seedBright) {
+          if ((maxC - minC) < seedChroma && (minC > seedBright || maxC < seedDark)) {
             px[p + 3] = 0;
             stack.push(idx);
             visited[idx] = 1;
@@ -241,7 +247,7 @@
             var nr = px[p], ng = px[p + 1], nb = px[p + 2];
             var nMin = nr < ng ? (nr < nb ? nr : nb) : (ng < nb ? ng : nb);
             var nMax = nr > ng ? (nr > nb ? nr : nb) : (ng > nb ? ng : nb);
-            if ((nMax - nMin) < expandChroma && nMin > expandBright) {
+            if ((nMax - nMin) < expandChroma && (nMin > expandBright || nMax < expandDark)) {
               px[p + 3] = 0;
               stack.push(n);
             }
