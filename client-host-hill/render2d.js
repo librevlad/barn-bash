@@ -19,6 +19,14 @@ const Render2D = (() => {
   let kingZoneR = 1.5;
   let lastStateTime = 0;
 
+  // Phase 7a — painterly crown overlay. SpriteLoader.loadPainterly strips
+  // the image-gen checker-preview background; drawKingZone falls back to
+  // the original emoji text when the sprite isn't loaded.
+  if (typeof SpriteLoader !== 'undefined') {
+    SpriteLoader.loadPainterly('hill-crown', '/assets/hill-crown.png')
+      .catch(() => { /* fallback path renders emoji */ });
+  }
+
   // Stars (pre-generated, same count & distribution as original)
   const stars = [];
   for (let i = 0; i < 80; i++) {
@@ -234,14 +242,25 @@ const Render2D = (() => {
     ctx.beginPath(); ctx.arc(ax, ay, kingR, 0, Math.PI * 2); ctx.stroke();
     ctx.setLineDash([]);
 
-    // Crown icon in center — slightly more prominent now that the glow
-    // frames it. Still monochrome so it doesn't compete with player sprites.
-    ctx.fillStyle = (typeof Palette !== 'undefined'
-      ? 'rgba(255,221,107,0.22)'
-      : 'rgba(255,200,50,0.1)');
-    ctx.font = `${Math.round(kingR * 0.44)}px sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('\uD83D\uDC51', ax, ay);
+    // Crown icon in center — Phase 7a painterly PNG overlay when loaded;
+    // falls back to emoji text at the original styling. Sprite drawn at
+    // 0.9x king-zone radius so it sits inside the dashed ring.
+    const crownSprite = typeof SpriteLoader !== 'undefined'
+      ? SpriteLoader.get('hill-crown') : null;
+    if (crownSprite) {
+      const cw = kingR * 1.8, ch = kingR * 1.8;
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.drawImage(crownSprite, ax - cw / 2, ay - ch / 2, cw, ch);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = (typeof Palette !== 'undefined'
+        ? 'rgba(255,221,107,0.22)'
+        : 'rgba(255,200,50,0.1)');
+      ctx.font = `${Math.round(kingR * 0.44)}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('\uD83D\uDC51', ax, ay);
+    }
   }
 
   // ============================================================
