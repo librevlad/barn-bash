@@ -110,11 +110,13 @@
   z-index: 3;
 }
 /* Phase 12b — painterly medallion frame behind the avatar.
-   Runtime --orb-frame-bg data URL swap; raw PNG fallback on first paint. */
+   Reuses Phase 11b's --cell-action-bg (slot-machine face) so the
+   orb shares its exact ornament language with the action-card row
+   to the right; one asset, unified HUD aesthetic. */
 .gameplay-root .gp-avatar-orb::before {
   content: '';
   position: absolute; inset: 0;
-  background-image: var(--orb-frame-bg, url('/assets/orb-frame.png'));
+  background-image: var(--cell-action-bg, url('/assets/cell-action.png'));
   background-size: 100% 100%;
   background-repeat: no-repeat;
   z-index: 0;

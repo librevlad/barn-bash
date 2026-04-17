@@ -42,15 +42,8 @@ window.Gameplay = (function () {
         }
       })
       .catch(function () {});
-    // Phase 12b — same treatment for orb-frame behind the avatar orb
-    SpriteLoader.loadPainterly('orb-frame', '/assets/orb-frame.png')
-      .then(function (canvas) {
-        if (canvas) {
-          document.documentElement.style.setProperty(
-            '--orb-frame-bg', 'url(' + canvas.toDataURL('image/png') + ')');
-        }
-      })
-      .catch(function () {});
+    // Phase 12b-fix — orb reuses the cell-action slot-machine face
+    // loaded above; no separate orb-frame asset needed.
   }, 0);
 
   var GAME_NAMES = {
