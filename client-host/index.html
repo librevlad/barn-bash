@@ -273,10 +273,78 @@
       display: none; flex-shrink: 0;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
     }
+
+    /* Host mobile gate (F-09) — the host view is the TV /
+       big-screen composition. If someone opens /host/ on a phone
+       the illustration and CTA row shrink to microscopic and the
+       QR code loses scannability. Replace the layout with a
+       clean "this is the TV" explainer below 768px. */
+    #host-mobile-gate {
+      display: none;
+      position: fixed; inset: 0; z-index: 400;
+      background: var(--bg-wood-deep);
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px; text-align: center;
+    }
+    #host-mobile-gate .icon {
+      margin-bottom: 20px;
+      color: var(--accent-gold);
+      filter: drop-shadow(0 2px 10px rgba(244, 197, 66, 0.4));
+    }
+    #host-mobile-gate h2 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      color: var(--accent-gold);
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+      text-shadow: 0 2px 0 var(--accent-red-deep), 0 4px 10px rgba(0,0,0,0.4);
+    }
+    #host-mobile-gate p {
+      font-family: var(--font-accent);
+      font-size: 17px;
+      color: var(--text-cream);
+      max-width: 360px;
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+    #host-mobile-gate a {
+      font-family: var(--font-ui);
+      color: var(--accent-gold);
+      text-decoration: none;
+      border-bottom: 1px dashed var(--accent-gold);
+      padding-bottom: 2px;
+    }
+    #host-mobile-gate .hint {
+      font-size: 14px;
+      color: var(--text-dim);
+      font-style: italic;
+      margin-top: 10px;
+      max-width: 320px;
+    }
+    @media (max-width: 768px) {
+      #host-mobile-gate { display: flex; }
+    }
   </style>
 </head>
 <body>
   <h1 class="sr-only">Frantics — a Game Master production</h1>
+
+  <div id="host-mobile-gate">
+    <div class="icon" aria-hidden="true">
+      <svg width="72" height="56" viewBox="0 0 72 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="66" height="44" rx="5" stroke="currentColor" stroke-width="3" fill="none"/>
+        <rect x="11" y="11" width="50" height="28" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.55"/>
+        <line x1="22" y1="52" x2="50" y2="52" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <line x1="26" y1="47" x2="46" y2="47" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+      </svg>
+    </div>
+    <h2>WRONG SHOW, FRIEND</h2>
+    <p>Frantics is meant for the big screen. Open <strong>localhost:3000/host/</strong> on a laptop or TV, then scan the QR code there with this phone.</p>
+    <p>To join as a contestant, go to <a href="/">localhost:3000</a> instead.</p>
+    <p class="hint">You are on a small screen. The Game Master has a bigger stage in mind.</p>
+  </div>
+
   <div id="bg" role="img" aria-label="Barnyard Bedlam stage"></div>
   <!-- Dark gradient overlay to hide bg.png buttons at bottom -->
   <div style="position:fixed;inset:0;pointer-events:none;z-index:1;background:linear-gradient(180deg, transparent 0%, transparent 60%, rgba(0,0,0,0.85) 80%, rgba(0,0,0,1) 100%)"></div>
