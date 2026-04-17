@@ -422,6 +422,18 @@ const Tournament = (() => {
 
     content.innerHTML = html;
 
+    // Pretext-measure the standings commentary so the scroll row that
+    // holds "Fox is dominating. This is getting embarrassing for Bear."
+    // has a height matching the real wrapped line count. Short zingers
+    // don't over-reserve space; long ones don't collide with the
+    // "NEXT: GRAND PRIX" pulse text below.
+    if (window.PretextHooks) {
+      requestAnimationFrame(function () {
+        var quipEl = content.querySelector('.t-standings-commentary');
+        if (quipEl) window.PretextHooks.measure(quipEl);
+      });
+    }
+
     // Phase 12a — async-swap scroll backdrop img src to loadPainterly-
     // processed data URL so the painted scroll loses its baked white
     // surround. Raw PNG paints first (~100ms); processed version
