@@ -1155,6 +1155,56 @@ grand stage" language established by `bg.png`, the animal roster,
 and the race podium. Session's peak moment now carries a
 commissioned visual anchor.
 
+Twelfth realization: per-game lobby painterly carnival backdrops —
+first AAA-polish pass after the audit raised the benchmark bar
+(Phase 10, 2026-04-17).
+
+- `assets/lobby-race.png` — carnival race-starting arch: wooden
+  posts with gold finial bulbs, deep-red velvet banner with a
+  cream-white center panel, checker-flag bunting, painted toy
+  race-car silhouette ornaments on the posts.
+- `assets/lobby-escape.png` — forest gateway: weathered wooden
+  posts with gold-lit lanterns, rope banner with cream-white
+  drape, painted fox-tail silhouette crests along the rope,
+  green vines curling up the posts.
+- `assets/lobby-hill.png` — king's-arena banner: gold-gilded posts,
+  red velvet drapes at the upper corners, cream-white center panel,
+  gold crown silhouette cresting the top, carved chess-king-piece
+  ornaments standing at the post bases.
+- `assets/lobby-meteor.png` — cosmic tent entrance: wooden posts
+  topped by gold star-finials, deep-navy-blue banner with gold
+  star patterns, cream-white center panel, painted meteor trails
+  tapering down the posts, shooting-star crest on top.
+- Each per-game host (`client-host-{race,escape,hill,meteor}/
+  index.html`) gains `.lobby-backdrop` CSS rules (absolute
+  centered, max 500×700, z-index 0, opacity 0.95) plus the
+  `#lobby > *:not(.lobby-backdrop) { position:relative; z-index:1 }`
+  rule that the Phase 8c/9a z-index pattern proved out. The
+  `<img class="lobby-backdrop" onerror="this.remove()">` sits as
+  first child of `#lobby`.
+- Each `main.js` runs a `setTimeout(0, ...)`-deferred
+  `SpriteLoader.loadPainterly` pass against its lobby PNG and
+  swaps the `<img>` src to the processed canvas's data URL when
+  ready. setTimeout defers past SpriteLoader.js's own script-
+  execution in the per-game HTML include order. Raw PNG with a
+  baked white surround paints first (~100ms); processed version
+  with a transparent surround replaces it once loadPainterly
+  resolves.
+- Title stack (FRANTICS eyebrow + Alfa Slab game title + Waiting
+  italic caption) renders on top of the cream center panel via
+  the z-index rule. The cream panel is sized large enough to
+  contain the Alfa Slab title without clipping against the painted
+  banner edges.
+
+Phase 10 closes the largest single AAA gap identified in the
+post-Phase-9 audit. Per-game lobby screens — seen 1-3 times per
+session — now read as commissioned carnival stages rather than
+wood-plank placeholder backgrounds. The four compositions form a
+style-consistency series: the same archway/banner language with
+per-game silhouette ornaments + accent colors. This sets the
+reference bar for Phase 11+ frame commissions (selection-grid
+cells, tournament scoreboard, gameplay orb, background ornaments).
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1230,10 +1280,21 @@ commissioned visual anchor.
     `z-index: 0` on backdrop). Spec:
     `docs/superpowers/specs/2026-04-17-tournament-champion-art-design.md`.
 
-After Phase 9 follow-ups (internationalization, WebGL performance,
-GLB extension for bear/bunny/pig/chicken/raccoon, race 2nd/3rd
-place display flow, tournament standings / round-intro painterly
-backdrop polish) each open their own spec when demand justifies.
+11. **Phase 10** (shipped 2026-04-17): per-game lobby painterly
+    backdrops — one ornate carnival arch / banner / tent
+    composition per per-game host (`lobby-race.png`, `lobby-escape.png`,
+    `lobby-hill.png`, `lobby-meteor.png`). Each prepended as the
+    first child of `#lobby` with the Phase 8c/9a z-index pattern;
+    `setTimeout(0)`-deferred `SpriteLoader.loadPainterly` swaps
+    src to the processed data URL. First AAA-polish pass driven
+    by the post-Phase-9 audit. Spec:
+    `docs/superpowers/specs/2026-04-17-per-game-lobby-backdrops-design.md`.
+
+After Phase 10 follow-ups (selection-grid cell frames, tournament
+standings scoreboard, controller gameplay avatar orb, pixel-car
+painterly replacement, motion polish, background ornaments, plus
+the earlier-listed i18n / WebGL / GLB / race-2nd-3rd-place items)
+each open their own spec when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -1305,3 +1366,6 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | Phase 9 scoped to champion mode only, not standings / round-intro | Standings needs dense scoreboard readability — painterly art would compete with numbers and player-color dots. Round-intro already has its own title-card aesthetic (curtain reveal, AND NOW... game name) that a backdrop would fight. Champion is the session's emotional peak and has sparse text; backdrop elevates it without competition |
 | 2026-04-17 | Tournament backdrop prepended to `#t-content.innerHTML` rather than created as a DOM-level sibling | Each tournament mode (standings / round-intro / champion) calls `content.innerHTML = html` which wipes prior children. Prepending inside the innerHTML puts the backdrop INSIDE the per-mode render, so standings/round-intro automatically lose the backdrop when they fire. No manual remove call needed when switching modes |
 | 2026-04-17 | Tournament backdrop anchored at `bottom: -40px` rather than `bottom: 0` | The throne illustration has a slight padding below its base from transparent cropping + the curtain's lower sweep visually exceeds the pedestal footprint. Anchoring 40px below visual overlay bottom avoids a hard edge where the throne's base would otherwise cut off at the overlay edge. Image is tall enough that the top stays inside the overlay; no HUD clipping |
+| 2026-04-17 | Per-game lobby backdrops opened as Phase 10 after a formal AAA-polish audit | The audit (conducted 2026-04-17 after Phase 9 shipped) reframed the benchmark from "cohesive token UI" to "Hearthstone pixel-for-pixel." Per-game lobbies were the single largest gap — empty wood-plank gradient vs the commissioned bg.png main lobby. Phase 10 opens the staged AAA-polish thread with lobby backdrops; subsequent phases tackle selection-grid frames, tournament scoreboard, gameplay orb, motion polish, etc., one peak per phase |
+| 2026-04-17 | Four lobby backdrops commissioned as a series with shared compositional grammar | Rather than commissioning four unrelated backgrounds, each follows the same structural language: two symmetric ornate posts, connecting banner with a cream-white center panel for overlay text, per-game silhouette ornaments at the crests, per-game accent color. Reads as a unified theatrical series — race/escape/hill/meteor as four different attractions on the same carnival stage |
+| 2026-04-17 | `loadPainterly` swap via setTimeout(0) instead of sync call at module load | SpriteLoader.js loads AFTER main.js-referencing render2d.js in several per-game HTMLs (retrofitted at different Phase boundaries). Calling loadPainterly synchronously at main.js module top would hit a `typeof SpriteLoader === 'undefined'` early-return. setTimeout(0) defers one task-queue tick, by which time all scripts have parsed. No ordering-fragility across past and future HTML include lists |
