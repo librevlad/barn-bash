@@ -12,6 +12,18 @@ const $winOverlay = $('winner-overlay'), $controls = $('controls');
 Render2D.init();
 const pname = HostCommon.pname;
 
+// Phase 10b — async-strip lobby-escape backdrop white surround; swap
+// img src to processed data URL once loadPainterly resolves.
+setTimeout(() => {
+  if (typeof SpriteLoader === 'undefined') return;
+  SpriteLoader.loadPainterly('lobby-escape', '/assets/lobby-escape.png')
+    .then((canvas) => {
+      const img = document.querySelector('#lobby .lobby-backdrop');
+      if (img && canvas) img.src = canvas.toDataURL('image/png');
+    })
+    .catch(() => {});
+}, 0);
+
 ws.onopen = () => ws.send(JSON.stringify({ type: 'host' }));
 
 ws.onmessage = (e) => {
