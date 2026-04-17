@@ -540,7 +540,11 @@
   }
 
   function bootstrap() {
-    setTimeout(advanceFromIntro, 1200);
+    // Dwell long enough for the 5-bulb marquee to run one full
+    // pulse cycle and for "TAP TO SKIP" to settle into its breathe
+    // animation. 1200ms left the skip hint readable for ~200ms,
+    // which meant players couldn't actually use it.
+    setTimeout(advanceFromIntro, 2800);
   }
 
   const Onboarding = {
