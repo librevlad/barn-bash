@@ -170,31 +170,33 @@
      * Load a painterly PNG and strip a baked checker-preview background.
      * Image-gen tools often export "transparent" assets by rendering a
      * neutral-grey + white checkerboard into the image instead of a true
-     * alpha channel. Two passes run in sequence:
+     * alpha channel.
      *
-     * Pass 1 (strict): clear every pixel whose RGB is near-neutral
-     * (chroma below tightChroma) and bright (min channel above tightBright).
-     * This catches most checker squares without touching saturated greens,
-     * browns, or oranges.
+     * Edge-seeded flood fill only — NO unconditional strict pass. Seeds
+     * from image-boundary pixels that match a strict neutral-bright
+     * threshold (the outside checker). BFS inward through neighbors
+     * matching a looser threshold. Interior neutral-bright pixels that
+     * are disconnected from the edge boundary by saturated-color ink
+     * outlines (e.g. white checker squares INSIDE a checker-flag
+     * painting, or snow caps in the canopy of a snow tree) stay opaque.
      *
-     * Pass 2 (edge-seeded flood fill): from every transparent edge pixel,
-     * BFS inward. Neighbors matching a looser neutral-bright threshold
-     * (looseChroma, looseBright) are cleared too. Interior bright
-     * highlights (snow caps, ember glow) stay opaque because they are not
-     * connected to the outside boundary. This sweeps up the faint
-     * chroma-tinted checker remnants that the strict pass leaves behind.
+     * A prior version also ran an unconditional pass that cleared every
+     * near-neutral-bright pixel in the image. That pass ate pure-white
+     * interior pixels in a checker racing flag, leaving only the black
+     * squares. The edge-seeded approach preserves disconnected interior
+     * whites by construction.
      * @param {string} name
      * @param {string} url
-     * @param {Object} [opts] - { tightChroma = 12, tightBright = 185,
-     *                            looseChroma = 40, looseBright = 165 }
+     * @param {Object} [opts] - { seedChroma = 12, seedBright = 185,
+     *                            expandChroma = 40, expandBright = 165 }
      * @returns {Promise}
      */
     loadPainterly: function (name, url, opts) {
       opts = opts || {};
-      var tightChroma = opts.tightChroma !== undefined ? opts.tightChroma : 12;
-      var tightBright = opts.tightBright !== undefined ? opts.tightBright : 185;
-      var looseChroma = opts.looseChroma !== undefined ? opts.looseChroma : 40;
-      var looseBright = opts.looseBright !== undefined ? opts.looseBright : 165;
+      var seedChroma = opts.seedChroma !== undefined ? opts.seedChroma : 12;
+      var seedBright = opts.seedBright !== undefined ? opts.seedBright : 185;
+      var expandChroma = opts.expandChroma !== undefined ? opts.expandChroma : 40;
+      var expandBright = opts.expandBright !== undefined ? opts.expandBright : 165;
       return loadImage(url).then(function (img) {
         var canvas = document.createElement('canvas');
         canvas.width = img.width;
@@ -204,28 +206,24 @@
         var data = cx.getImageData(0, 0, canvas.width, canvas.height);
         var px = data.data;
         var W = canvas.width, H = canvas.height;
-        // Pass 1: strict chroma-key
-        for (var i = 0; i < px.length; i += 4) {
-          var r = px[i], g = px[i + 1], b = px[i + 2];
-          var minC = r < g ? (r < b ? r : b) : (g < b ? g : b);
-          var maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
-          if ((maxC - minC) < tightChroma && minC > tightBright) {
-            px[i + 3] = 0;
-          }
-        }
-        // Pass 2: edge-seeded flood fill with loose threshold
         var visited = new Uint8Array(W * H);
         var stack = [];
-        for (var x = 0; x < W; x++) {
-          var topIdx = x, botIdx = (H - 1) * W + x;
-          if (px[topIdx * 4 + 3] === 0) { stack.push(topIdx); visited[topIdx] = 1; }
-          if (px[botIdx * 4 + 3] === 0) { stack.push(botIdx); visited[botIdx] = 1; }
+        // Seed: every edge pixel that matches the strict neutral-bright
+        // threshold. Those are the outside-checker pixels.
+        function trySeed(idx) {
+          var p = idx * 4;
+          var r = px[p], g = px[p + 1], b = px[p + 2];
+          var minC = r < g ? (r < b ? r : b) : (g < b ? g : b);
+          var maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
+          if ((maxC - minC) < seedChroma && minC > seedBright) {
+            px[p + 3] = 0;
+            stack.push(idx);
+            visited[idx] = 1;
+          }
         }
-        for (var y = 0; y < H; y++) {
-          var lIdx = y * W, rIdx = y * W + W - 1;
-          if (px[lIdx * 4 + 3] === 0) { stack.push(lIdx); visited[lIdx] = 1; }
-          if (px[rIdx * 4 + 3] === 0) { stack.push(rIdx); visited[rIdx] = 1; }
-        }
+        for (var x = 0; x < W; x++) { trySeed(x); trySeed((H - 1) * W + x); }
+        for (var y = 1; y < H - 1; y++) { trySeed(y * W); trySeed(y * W + W - 1); }
+        // BFS expand with loose threshold
         while (stack.length) {
           var idx = stack.pop();
           var ix = idx % W, iy = (idx / W) | 0;
@@ -243,7 +241,7 @@
             var nr = px[p], ng = px[p + 1], nb = px[p + 2];
             var nMin = nr < ng ? (nr < nb ? nr : nb) : (ng < nb ? ng : nb);
             var nMax = nr > ng ? (nr > nb ? nr : nb) : (ng > nb ? ng : nb);
-            if ((nMax - nMin) < looseChroma && nMin > looseBright) {
+            if ((nMax - nMin) < expandChroma && nMin > expandBright) {
               px[p + 3] = 0;
               stack.push(n);
             }
