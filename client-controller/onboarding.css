@@ -246,11 +246,16 @@
   position: absolute;
   bottom: 30px; left: 50%; transform: translateX(-50%);
   font-family: var(--font-accent);
-  font-size: 10px; letter-spacing: 2px;
-  color: var(--text-dim); opacity: 0;
-  animation: obFadeInSkip 400ms ease-out 600ms forwards;
+  font-size: 13px; letter-spacing: 2.5px;
+  color: var(--text-cream); opacity: 0;
+  animation: obFadeInSkip 400ms ease-out 600ms forwards,
+             obSkipBreathe 2.4s ease-in-out 1200ms infinite;
 }
-@keyframes obFadeInSkip { to { opacity: 0.6; } }
+@keyframes obFadeInSkip { to { opacity: 0.85; } }
+@keyframes obSkipBreathe {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 0.55; }
+}
 
 /* Name screen */
 .onboarding-root #ob-screen-name { justify-content: flex-start; }
