@@ -1398,6 +1398,38 @@ arches, scoreboard scroll, throne, podium), each overlay reads
 as a tangible carnival stage rather than a CSS card floating on
 dark scrim.
 
+Seventeenth realization: ornament motion — bunting sways,
+bulbs pulse, corners shimmer. CSS-only additions layered on
+the Phase 15 static ornaments (Phase 16, 2026-04-17).
+
+- `client-shared/theme.css` — three new keyframes added inline
+  within the Phase 15 ornament block:
+- `@keyframes buntingSway`: `rotate(-0.5deg)` ↔ `rotate(0.5deg)`
+  applied to the bunting `::before` selectors with
+  `transform-origin: 50% 0` (pivot at top-center, sway like
+  hanging fabric). 4s ease-in-out infinite.
+- `@keyframes buntingBulbPulse`: `filter: brightness(0.95)` ↔
+  `brightness(1.05)` on the same selectors. 2.2s ease-in-out
+  infinite. Gold bulbs + wooden end-caps breathe together —
+  reads as "sunlight shifting on the festival stage."
+- `@keyframes cornerShimmer`: same 0.95↔1.05 brightness band
+  on `.ornament-corner` at 6s ease-in-out. Per-corner mirror
+  transforms preserved; filter stacks without affecting
+  `scaleX/Y` values.
+- Cycles chosen DIFFERENT periods (4s sway / 2.2s bulb / 6s
+  shimmer / 3s Phase 14 title breathing) so compound motion
+  drifts out of phase and reads as ambient rather than
+  synchronized.
+- `prefers-reduced-motion: reduce` block extended: all four
+  ornament animations collapse to `animation: none`,
+  continuing the Phase 14 a11y pattern.
+
+Phase 16 adds the last layer of motion polish. Zero new assets;
+entirely driven by keyframes on existing elements. The product
+now breathes at rest: titles pulse subtly, cards shine on
+hover, bunting sways as if in a light breeze, gold corners
+catch the light slowly.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1523,11 +1555,18 @@ dark scrim.
     polish dimension. Spec:
     `docs/superpowers/specs/2026-04-17-background-ornaments-design.md`.
 
-After Phase 15 follow-ups (painterly pixel-car replacement if
-ever revisited, animation on ornaments — swaying bunting,
-flickering bulbs — plus the earlier-listed i18n / WebGL / GLB
-/ race-2nd-3rd-place items) each open their own spec when
-demand justifies.
+16. **Phase 16** (shipped 2026-04-17): ornament motion — CSS-
+    only keyframes added to the Phase 15 ornaments: bunting
+    sways ±0.5° at 4s cadence, bunting brightness pulses at
+    2.2s, corner flourishes shimmer at 6s. Cycles intentionally
+    out of phase for ambient-rather-than-pulse feel. Respects
+    `prefers-reduced-motion`. Spec:
+    `docs/superpowers/specs/2026-04-17-ornament-motion-design.md`.
+
+After Phase 16 follow-ups (painterly pixel-car replacement if
+ever revisited, plus the earlier-listed i18n / WebGL / GLB /
+race-2nd-3rd-place items) each open their own spec when demand
+justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -1620,3 +1659,6 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | One corner PNG + CSS transforms for 4 corners vs 4 commissioned pieces | Symmetric mirrors around a square container come for free via `scaleX(-1)` / `scaleY(-1)` / `scale(-1,-1)`. Commissioning 4 corners would have quadrupled the art request while producing visually identical results. Prompt anchored the flourish to occupy ONLY the top-left quarter of the 1024×1024 square so the mirrored composition frames the container naturally |
 | 2026-04-17 | `!important` on `.ornament-corner` position/z-index | Per-host Phase 10a rule `#lobby > *:not(.lobby-backdrop) { position: relative; z-index: 1 }` is more specific (ID + descendant combinator) than a bare class selector. Without `!important`, corner divs injected into `#lobby` were forced into the flex flow (stacked vertically in the middle of the viewport) instead of absolute-positioned at corners |
 | 2026-04-17 | Bunting loadPainterly uses custom `{ seedBright: 135, expandBright: 120, expandChroma: 25 }` | The bunting PNG's baked checker is two-tone ~150 / ~180, dimmer than the default seedBright 185. Default thresholds left grey checker in place. Lowered seedBright matches the actual baked-checker luminance; saturated flags / rope / gold bulbs have high chroma and stay untouched |
+| 2026-04-17 | Ornament motion amplitudes kept below perception threshold (≤5% filter, ≤0.5° rotation) | At AAA-polish level, static ornaments read as "painted on" rather than "hanging in space." But overshoot on amplitudes quickly creates "seasick" compound motion when multiple cycles overlap. Keeping each cycle's amplitude below perception threshold individually makes the compound compose smoothly as "ambient stage breathing" rather than synchronized pulse |
+| 2026-04-17 | Ornament cycle periods deliberately different (4s sway / 2.2s bulb / 6s shimmer / 3s title breathe) | Four simultaneous cycles at the SAME period would synchronize into an annoying pulse. Non-harmonic periods drift out of phase continuously, producing a sensed-not-seen "living room" background rather than a rhythmic wave. Cycles picked to have no simple integer ratios between them |
+| 2026-04-17 | Bunting transform-origin `50% 0` (pivot at top center) rather than center or bottom | Bunting in the physical world hangs from a central rope anchor — top-center pivot matches that physics. Rotating around center would swing the whole strip side-to-side like a pendulum, which reads wrong for a stretched-rope element. Top-center pivot gives the rope a natural "flag-in-wind" motion |
