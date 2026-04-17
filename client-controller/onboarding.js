@@ -126,6 +126,18 @@
         .then((canvas) => registerProcessed(a.id, canvas))
         .catch(() => {});
     });
+    // Phase 11a — preload the car-cell frame and set CSS custom property
+    // so .color-cell::before picks it up. Raw /assets/cell-car.png is the
+    // fallback in CSS; this swap strips the baked white surround so the
+    // frame sits transparently over the wood-plank backdrop.
+    SpriteLoader.loadPainterly('cell-car', '/assets/cell-car.png')
+      .then((canvas) => {
+        if (canvas) {
+          document.documentElement.style.setProperty(
+            '--cell-car-bg', 'url(' + canvas.toDataURL('image/png') + ')');
+        }
+      })
+      .catch(() => {});
   }
 
   function animalGlyph(a, extraClass) {

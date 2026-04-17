@@ -390,17 +390,33 @@
 }
 .onboarding-root .color-cell {
   width: 56px; height: 56px;
-  background: var(--bg-wood-warm);
-  border: 2px solid rgba(244,197,66,0.2);
-  border-radius: 8px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.4);
-  padding: 4px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 8px;
   cursor: pointer;
   position: relative;
-  transition: transform var(--dur-tap), border-color 200ms, box-shadow 200ms;
+  transition: transform var(--dur-tap), filter 200ms;
 }
 @media (max-width: 360px) {
-  .onboarding-root .color-cell { width: 48px; height: 48px; padding: 3px; border-width: 1.5px; }
+  .onboarding-root .color-cell { width: 48px; height: 48px; padding: 6px; }
+}
+/* Phase 11a — painterly ticket frame as backdrop behind car sprite.
+   CSS custom property is set at runtime to a loadPainterly-processed
+   data URL; when --cell-car-bg is unset, fallback to the raw PNG so
+   the frame still appears (with a brief baked-white surround for the
+   first ~100ms of page load). background-size:100% 100% stretches
+   the landscape frame to fill the square cell; the ornament (crest,
+   tassels, rope) survives mild aspect squish. */
+.onboarding-root .color-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--cell-car-bg, url('/assets/cell-car.png'));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
 }
 .onboarding-root .color-cell img {
   width: 100%; height: 100%;
@@ -409,6 +425,8 @@
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   pointer-events: none;
+  position: relative;
+  z-index: 1;
 }
 .onboarding-root .color-cell:hover {
   transform: translateY(-2px);
