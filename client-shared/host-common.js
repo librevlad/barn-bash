@@ -36,16 +36,46 @@ const HostCommon = (() => {
       if (!img.src.startsWith('data:')) img.src = processedCharAvatars[id];
     });
   }
-  // Defer so SpriteLoader script has time to execute in per-game hosts
-  // where it may load AFTER host-common.js in index.html.
-  setTimeout(() => {
+  // Defer to DOMContentLoaded so SpriteLoader script (loaded after
+  // host-common.js in per-game HTMLs) is guaranteed to be defined.
+  // setTimeout(0) isn't enough — subsequent <script src> tags fetch
+  // async, and setTimeout can fire BEFORE they finish loading.
+  function _initPainterlyPipeline() {
     if (typeof SpriteLoader === 'undefined') return;
     Object.keys(charAvatars).forEach((id) => {
       SpriteLoader.loadPainterly('charAvatar-' + id, charAvatars[id])
         .then((canvas) => _registerProcessedChar(id, canvas))
         .catch(() => {});
     });
-  }, 0);
+    // Phase 15a — preload carnival bunting ornament; inject a <style>
+    // tag with the processed data URL so every overlay's ::before
+    // renders the clean bunting. CSS custom-property path silently
+    // fails for long data URLs in Chrome.
+    // Custom thresholds: bunting PNG's checker is two-tone (~150 / ~180)
+    // and dimmer than the default 185-brightness seed. Lower seedBright
+    // to 135 to catch both tones; bunting's saturated reds + browns +
+    // golds stay untouched (high chroma).
+    SpriteLoader.loadPainterly('ornament-bunting', '/assets/ornament-bunting.png',
+      { seedBright: 135, expandBright: 120, expandChroma: 25 })
+      .then((canvas) => {
+        if (!canvas) return;
+        const styleEl = document.createElement('style');
+        styleEl.id = 'phase15a-bunting-override';
+        styleEl.textContent =
+          '#tournament-overlay::before,' +
+          '#postgame-overlay::before,' +
+          '#lobby::before {' +
+          '  background-image: url(' + canvas.toDataURL('image/png') + ') !important;' +
+          '}';
+        document.head.appendChild(styleEl);
+      })
+      .catch(() => {});
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initPainterlyPipeline);
+  } else {
+    _initPainterlyPipeline();
+  }
 
   // Renders an <img class="char-glyph"> with emoji text-node fallback on
   // load failure. Returns HTML string (for innerHTML / template use).

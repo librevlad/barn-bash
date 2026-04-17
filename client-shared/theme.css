@@ -253,6 +253,31 @@
    the tokens below resolve against the vendored binaries. */
 
 /* ============================================================
+   Phase 15 — background ornaments
+   ============================================================ */
+
+/* Phase 15a — carnival bunting drapes across the top of every full-
+   screen overlay (#tournament-overlay, #postgame-overlay, per-game
+   #lobby). CSS custom property --ornament-bunting-bg is set at
+   runtime from a loadPainterly-processed data URL; raw PNG fallback
+   via url() default. Layered via ::before at z-index 0 so overlay
+   content (text, backdrops, buttons) paints above it. */
+#tournament-overlay::before,
+#postgame-overlay::before,
+#lobby::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 90px;
+  background-image: var(--ornament-bunting-bg, url('/assets/ornament-bunting.png'));
+  background-size: auto 90px;
+  background-repeat: repeat-x;
+  background-position: center top;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
    Phase 14 — motion polish utilities
    ============================================================ */
 
