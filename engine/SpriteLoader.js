@@ -170,19 +170,31 @@
      * Load a painterly PNG and strip a baked checker-preview background.
      * Image-gen tools often export "transparent" assets by rendering a
      * neutral-grey + white checkerboard into the image instead of a true
-     * alpha channel. This pipes the load through a chroma-key pass that
-     * clears pixels whose RGB is near-neutral (chroma below maxChroma) and
-     * bright (min channel above minBright). Legitimate saturated colors
-     * (greens, browns, oranges) are preserved because their chroma is high.
+     * alpha channel. Two passes run in sequence:
+     *
+     * Pass 1 (strict): clear every pixel whose RGB is near-neutral
+     * (chroma below tightChroma) and bright (min channel above tightBright).
+     * This catches most checker squares without touching saturated greens,
+     * browns, or oranges.
+     *
+     * Pass 2 (edge-seeded flood fill): from every transparent edge pixel,
+     * BFS inward. Neighbors matching a looser neutral-bright threshold
+     * (looseChroma, looseBright) are cleared too. Interior bright
+     * highlights (snow caps, ember glow) stay opaque because they are not
+     * connected to the outside boundary. This sweeps up the faint
+     * chroma-tinted checker remnants that the strict pass leaves behind.
      * @param {string} name
      * @param {string} url
-     * @param {Object} [opts] - { minBright = 185, maxChroma = 12 }
+     * @param {Object} [opts] - { tightChroma = 12, tightBright = 185,
+     *                            looseChroma = 40, looseBright = 165 }
      * @returns {Promise}
      */
     loadPainterly: function (name, url, opts) {
       opts = opts || {};
-      var minBright = opts.minBright !== undefined ? opts.minBright : 185;
-      var maxChroma = opts.maxChroma !== undefined ? opts.maxChroma : 12;
+      var tightChroma = opts.tightChroma !== undefined ? opts.tightChroma : 12;
+      var tightBright = opts.tightBright !== undefined ? opts.tightBright : 185;
+      var looseChroma = opts.looseChroma !== undefined ? opts.looseChroma : 40;
+      var looseBright = opts.looseBright !== undefined ? opts.looseBright : 165;
       return loadImage(url).then(function (img) {
         var canvas = document.createElement('canvas');
         canvas.width = img.width;
@@ -191,12 +203,50 @@
         cx.drawImage(img, 0, 0);
         var data = cx.getImageData(0, 0, canvas.width, canvas.height);
         var px = data.data;
+        var W = canvas.width, H = canvas.height;
+        // Pass 1: strict chroma-key
         for (var i = 0; i < px.length; i += 4) {
           var r = px[i], g = px[i + 1], b = px[i + 2];
           var minC = r < g ? (r < b ? r : b) : (g < b ? g : b);
           var maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
-          if ((maxC - minC) < maxChroma && minC > minBright) {
+          if ((maxC - minC) < tightChroma && minC > tightBright) {
             px[i + 3] = 0;
+          }
+        }
+        // Pass 2: edge-seeded flood fill with loose threshold
+        var visited = new Uint8Array(W * H);
+        var stack = [];
+        for (var x = 0; x < W; x++) {
+          var topIdx = x, botIdx = (H - 1) * W + x;
+          if (px[topIdx * 4 + 3] === 0) { stack.push(topIdx); visited[topIdx] = 1; }
+          if (px[botIdx * 4 + 3] === 0) { stack.push(botIdx); visited[botIdx] = 1; }
+        }
+        for (var y = 0; y < H; y++) {
+          var lIdx = y * W, rIdx = y * W + W - 1;
+          if (px[lIdx * 4 + 3] === 0) { stack.push(lIdx); visited[lIdx] = 1; }
+          if (px[rIdx * 4 + 3] === 0) { stack.push(rIdx); visited[rIdx] = 1; }
+        }
+        while (stack.length) {
+          var idx = stack.pop();
+          var ix = idx % W, iy = (idx / W) | 0;
+          var ns = [];
+          if (ix > 0) ns.push(idx - 1);
+          if (ix < W - 1) ns.push(idx + 1);
+          if (iy > 0) ns.push(idx - W);
+          if (iy < H - 1) ns.push(idx + W);
+          for (var k = 0; k < ns.length; k++) {
+            var n = ns[k];
+            if (visited[n]) continue;
+            visited[n] = 1;
+            var p = n * 4;
+            if (px[p + 3] === 0) { stack.push(n); continue; }
+            var nr = px[p], ng = px[p + 1], nb = px[p + 2];
+            var nMin = nr < ng ? (nr < nb ? nr : nb) : (ng < nb ? ng : nb);
+            var nMax = nr > ng ? (nr > nb ? nr : nb) : (ng > nb ? ng : nb);
+            if ((nMax - nMin) < looseChroma && nMin > looseBright) {
+              px[p + 3] = 0;
+              stack.push(n);
+            }
           }
         }
         cx.putImageData(data, 0, 0);
