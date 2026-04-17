@@ -117,20 +117,33 @@ const Tournament = (() => {
         color: var(--accent-gold-hot, #ffdd6b);
         animation: tGoldGlow 2s ease-in-out infinite;
       }
+      /* Phase 12a — scoreboard scroll backdrop behind .t-scores stack */
+      #t-content .t-scroll-backdrop {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        max-height: 560px; max-width: 460px;
+        width: auto; height: auto;
+        opacity: 0.95;
+        z-index: 0;
+        pointer-events: none;
+      }
       #t-content .t-scores {
-        display:flex; justify-content:center; gap:18px; flex-wrap:wrap;
-        margin-bottom:20px;
+        /* Vertical stack to fit the scroll's four painted slot strips */
+        display:flex; flex-direction:column; align-items:center;
+        gap: 6px; margin: 6px auto 14px;
+        width: min(340px, 80%);
       }
       #t-content .t-player {
-        text-align:center; padding:14px 18px;
-        border-radius: 12px;
-        background: rgba(90, 58, 32, 0.72);
-        border: 1.5px solid rgba(244, 197, 66, 0.35);
-        min-width: 100px;
+        display: flex; align-items: center; gap: 12px;
+        padding: 6px 14px;
+        border-radius: 6px;
+        background: transparent;
+        border: none;
+        min-width: 100%;
         transition: transform 0.3s;
         opacity: 0;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.3),
-                    0 3px 8px rgba(0,0,0,0.4);
+        box-shadow: none;
       }
       #t-content .t-player.slide-in { animation: tSlideInLeft 0.5s ease-out forwards; }
       #t-content .t-player.leader {
@@ -141,23 +154,24 @@ const Tournament = (() => {
                     0 4px 10px rgba(0, 0, 0, 0.5);
       }
       #t-content .t-player-dot {
-        width: 28px; height: 28px; border-radius: 50%;
-        margin: 0 auto 8px;
-        box-shadow: 0 0 8px currentColor;
+        width: 22px; height: 22px; border-radius: 50%;
+        margin: 0; flex: 0 0 auto;
+        box-shadow: 0 0 6px currentColor;
       }
       #t-content .t-player-name {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
-        font-size: 12px;
-        color: var(--text-cream, #f5ead4);
-        opacity: 0.82;
+        font-size: 14px;
+        color: var(--text-on-gold, #3d2817);
         letter-spacing: 0.5px;
+        flex: 1 1 auto;
+        text-align: left;
       }
       #t-content .t-player-pts {
         font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
-        font-size: 26px; font-weight: 400;
-        color: var(--accent-gold, #f4c542);
-        text-shadow: 0 1px 0 var(--accent-red-deep, #6b1818);
-        margin-top: 6px;
+        font-size: 22px; font-weight: 400;
+        color: var(--accent-red-deep, #6b1818);
+        text-shadow: 0 1px 0 rgba(244, 197, 66, 0.3);
+        margin: 0; flex: 0 0 auto;
       }
       #t-content .t-player-pos-change {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
@@ -308,7 +322,10 @@ const Tournament = (() => {
       commentary = Narrator.tournamentStandingsCommentary(leaderName, lastName, data.round || 0, leaderScore);
     }
 
-    let html = '<div class="t-bar">TOURNAMENT</div>';
+    // Phase 12a — painterly scoreboard scroll backdrop; loadPainterly
+    // strips the baked white surround and swaps src on resolve.
+    let html = '<img class="t-scroll-backdrop" src="/assets/standings-scroll.png" onerror="this.remove()">';
+    html += '<div class="t-bar">TOURNAMENT</div>';
     html += '<div class="t-round">ROUND ' + data.round + ' OF ' + data.totalRounds + '</div>';
     html += '<div class="t-title">STANDINGS</div>';
     html += '<div class="t-scores">';
@@ -354,6 +371,24 @@ const Tournament = (() => {
     }
 
     content.innerHTML = html;
+
+    // Phase 12a — async-swap scroll backdrop img src to loadPainterly-
+    // processed data URL so the painted scroll loses its baked white
+    // surround. Raw PNG paints first (~100ms); processed version
+    // replaces it so the overlay scrim reads around the painted
+    // silhouette.
+    if (typeof SpriteLoader !== 'undefined') {
+      const applyProcessedScroll = () => {
+        const sprite = SpriteLoader.get('standings-scroll');
+        const img = content.querySelector('.t-scroll-backdrop');
+        if (sprite && img) img.src = sprite.toDataURL('image/png');
+      };
+      const cached = SpriteLoader.get('standings-scroll');
+      if (cached) applyProcessedScroll();
+      else SpriteLoader.loadPainterly('standings-scroll',
+        '/assets/standings-scroll.png').then(applyProcessedScroll).catch(() => {});
+    }
+
     show();
 
     // Start score count-up after cards slide in
