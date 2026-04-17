@@ -42,7 +42,21 @@ const Tournament = (() => {
     const style = document.createElement('style');
     style.textContent = `
       #tournament-overlay.show { opacity:1 !important; pointer-events:auto !important; }
-      #t-content { text-align:center; max-width:600px; width:90%; }
+      #t-content { text-align:center; max-width:600px; width:90%; position:relative; }
+      #t-content .t-backdrop {
+        position:absolute;
+        bottom:-40px; left:50%;
+        transform: translate(-50%, 0);
+        max-height: 440px; max-width: 480px;
+        width:auto; height:auto;
+        opacity: 0.85;
+        z-index: 0;
+        pointer-events: none;
+      }
+      #t-content > *:not(.t-backdrop) {
+        position: relative;
+        z-index: 1;
+      }
 
       /* Animations */
       @keyframes tSlideInLeft {
@@ -399,7 +413,13 @@ const Tournament = (() => {
 
     html += '<div class="t-next" style="opacity:0;animation:tFadeSlideUp 0.4s ease-out 2.5s forwards;">Returning to lobby...</div>';
 
-    content.innerHTML = html;
+    // Phase 9a — painterly throne backdrop behind the champion stack.
+    // Prepended so it sits first in DOM flow; absolute-positioned under
+    // the z-index:1 siblings via the .t-backdrop rule above. onerror
+    // removes the img so missing asset falls back to the prior text-
+    // only layout.
+    const backdropHTML = '<img class="t-backdrop" src="/assets/tournament-champion.png" onerror="this.remove()">';
+    content.innerHTML = backdropHTML + html;
     show();
 
     // Confetti burst if Visual is available
