@@ -102,21 +102,33 @@
    ============================================================ */
 .gameplay-root .gp-avatar-orb {
   position: absolute;
-  bottom: 128px; left: 24px;
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--bg-wood-lite), var(--bg-wood-warm));
+  bottom: 128px; left: 18px;
+  width: 76px; height: 76px;
+  background: transparent;
   display: flex; align-items: center; justify-content: center;
   font-size: 28px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 3px 8px rgba(0, 0, 0, 0.5);
   z-index: 3;
 }
+/* Phase 12b — painterly medallion frame behind the avatar.
+   Runtime --orb-frame-bg data URL swap; raw PNG fallback on first paint. */
 .gameplay-root .gp-avatar-orb::before {
   content: '';
-  position: absolute; inset: -3px;
-  border-radius: 50%;
-  border: 3px solid currentColor;
+  position: absolute; inset: 0;
+  background-image: var(--orb-frame-bg, url('/assets/orb-frame.png'));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: 0;
   animation: gpOrbPulse 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.gameplay-root .gp-avatar-img {
+  /* Fit inside the frame's cream center circle — the frame rim eats
+     ~20% of the orb's box on each side, so shrink avatar to match. */
+  width: 64%; height: 64%;
+  border-radius: 50%;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
 }
 @keyframes gpOrbPulse {
   0%, 100% { opacity: 0.65; }

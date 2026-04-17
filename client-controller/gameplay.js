@@ -42,6 +42,15 @@ window.Gameplay = (function () {
         }
       })
       .catch(function () {});
+    // Phase 12b — same treatment for orb-frame behind the avatar orb
+    SpriteLoader.loadPainterly('orb-frame', '/assets/orb-frame.png')
+      .then(function (canvas) {
+        if (canvas) {
+          document.documentElement.style.setProperty(
+            '--orb-frame-bg', 'url(' + canvas.toDataURL('image/png') + ')');
+        }
+      })
+      .catch(function () {});
   }, 0);
 
   var GAME_NAMES = {
@@ -177,8 +186,34 @@ window.Gameplay = (function () {
     els.scoreBlock = scoreBlock;
     root.appendChild(scoreBlock);
 
-    // Avatar orb
-    els.orb = el('div', 'gp-avatar-orb', { text: ANIMAL_EMOJI[o.character] || '\u2753' });
+    // Avatar orb — Phase 12b: painterly medallion frame via ::before
+    // backdrop; animal avatar as <img> inside so the character reads
+    // as a painted portrait instead of a raw emoji.
+    els.orb = el('div', 'gp-avatar-orb');
+    var avatarImg = document.createElement('img');
+    avatarImg.className = 'gp-avatar-img';
+    avatarImg.setAttribute('data-animal', o.character || 'cat');
+    avatarImg.alt = ANIMAL_EMOJI[o.character] || '?';
+    avatarImg.src = '/assets/animal-' + (o.character || 'cat') + '.png';
+    avatarImg.onerror = function () {
+      // Fall back to emoji text node on asset load failure
+      this.replaceWith(document.createTextNode(ANIMAL_EMOJI[o.character] || '\u2753'));
+    };
+    // Async-swap src to loadPainterly-processed data URL so the baked
+    // background (checker or solid) doesn't peek through the circle crop
+    setTimeout(function () {
+      if (typeof SpriteLoader === 'undefined') return;
+      var cacheKey = 'orb-avatar-' + (o.character || 'cat');
+      var cached = SpriteLoader.get(cacheKey);
+      var apply = function (canvas) {
+        if (canvas && avatarImg && !avatarImg.src.startsWith('data:')) {
+          avatarImg.src = canvas.toDataURL('image/png');
+        }
+      };
+      if (cached) apply(cached);
+      else SpriteLoader.loadPainterly(cacheKey, avatarImg.src).then(apply).catch(function () {});
+    }, 0);
+    els.orb.appendChild(avatarImg);
     els.avatarLabel = el('div', 'gp-avatar-label', { text: o.name || '' });
     root.appendChild(els.orb);
     root.appendChild(els.avatarLabel);
