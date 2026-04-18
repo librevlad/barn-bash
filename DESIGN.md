@@ -2365,6 +2365,31 @@ open as Phase 39+.
       driving the red-wedge sweep; cream inner disc holds the
       digits (0:25 → 0:00); pulses bloom every 1.4 s.
 
+41. **Phase 41** (shipped 2026-04-18): KotH lobby + post-game
+    UI. Closes the pre- and post-match experience gaps.
+
+    * **41a — painted lobby player slots**. Inline-pill list
+      replaced with 122 × 154 painted wood-panel cards: animal
+      avatar (colour-rimmed circular PNG, '?' fallback), name
+      plaque, brass-gradient slot-index badge top-right. Empty
+      skeleton slots (opacity 0.55 + grey rim) fill the row up
+      to 4 so 1-2-player lobbies don't look lonely. Slot-pop
+      entry animation per render. How-to-play hint strip below
+      (italic gold). HostHarness gains optional `onLobby(state)`
+      config hook so per-game main.js can inject custom lobby
+      rendering without touching the harness internals.
+
+    * **41b — post-game scorecard with per-player stats**.
+      Server tracks bumpsDealt, bumpsReceived, kingTicks,
+      powerupsGrabbed, maxCombo per-player across the round;
+      getState includes these under `players[id].stats`.
+      PostGame.show grows a `leaderboard` option that renders a
+      painted FINAL STANDINGS wood-scroll panel with rank + 34-
+      px animal avatar + name + 3 stat chips (Bumps / King
+      seconds / Combo xN) + big brass score. Winner row gold-
+      washed with gold inset border. Mobile fallback
+      (&lt; 640 px) hides chip column.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
