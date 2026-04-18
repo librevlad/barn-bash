@@ -12,7 +12,7 @@ const RaceGame = require('./raceGame');
 // message shape. Rejects unknown / malformed messages at the WS boundary.
 const Protocol = require('../client-shared/protocol');
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const GAMES = { escapeFox: EscapeFoxGame, hillKing: HillGame, meteor: MeteorGame, race: RaceGame };
 const GAME_IDS = ['escapeFox', 'hillKing', 'meteor', 'race'];
 
