@@ -130,6 +130,10 @@ const Render2D = (() => {
     // render without passing the camera to avoid double-transform.
     scene.render(ctx);
 
+    // Phase 38d — shockwave rings, drawn below particles so dust/sparks
+    // sit on top of the ring for depth.
+    _drawShockwaves(ctx, dt);
+
     // Particles (screen-space — spawned at screen coords from worldToScreen)
     particles.draw(ctx);
 
@@ -625,6 +629,20 @@ const Render2D = (() => {
       e.data.tX = pd.x || 0;
       e.data.tY = pd.y || 0;
 
+      // Phase 38d — dust puff on dash-start (false→true transition).
+      if (!e.data.dashing && pd.dashing) {
+        const ss = camera.worldToScreen(e.data.rX || 0, e.data.rY || 0);
+        particles.burst(ss.x, ss.y + 18, 9, {
+          speed: 2.2,
+          life: 0.55,
+          size: 4,
+          sizeEnd: 0,
+          gravity: 0.6,
+          color: '220,200,170',
+          friction: 0.92,
+        });
+        camera.shake(2, 0.1);
+      }
       e.data.dashing = pd.dashing;
       e.data.teetering = pd.teetering;
       e.data.facing = pd.facing || 0;
@@ -662,6 +680,146 @@ const Render2D = (() => {
   }
 
   // ============================================================
+  // PHASE 38d — IMPACT JUICE
+  //
+  // Shockwave rings + dust puffs + impact sparks driven from
+  // main.js bump / ground_pound / dash handlers via public API.
+  // Rings kept in a local array, drawn above arena but below the
+  // characters so they read as ground-level effects.
+  // ============================================================
+  const shockwaves = [];
+
+  function _addShockwave(worldX, worldY, opts) {
+    shockwaves.push({
+      wx: worldX, wy: worldY,
+      r0: opts.r0 || 0,
+      r1: opts.r1 || 3.2,
+      age: 0,
+      ttl: opts.ttl || 0.5,
+      color: opts.color || '255,200,120',
+      width: opts.width || 6,
+    });
+  }
+
+  function _drawShockwaves(ctx, dt) {
+    const SCALE = camera.getZoom();
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+      const w = shockwaves[i];
+      w.age += (dt || 0.016);
+      const t = w.age / w.ttl;
+      if (t >= 1) { shockwaves.splice(i, 1); continue; }
+      const s = camera.worldToScreen(w.wx, w.wy);
+      const r = (w.r0 + (w.r1 - w.r0) * t) * SCALE;
+      const alpha = 1 - t;
+      ctx.save();
+      ctx.strokeStyle = `rgba(${w.color},${(alpha * 0.85).toFixed(3)})`;
+      ctx.lineWidth = w.width * (1 - t * 0.6);
+      ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI * 2); ctx.stroke();
+      // Inner faint fill to sell the shockwave
+      ctx.strokeStyle = `rgba(255,255,255,${(alpha * 0.35).toFixed(3)})`;
+      ctx.lineWidth = Math.max(1, w.width * 0.35 * (1 - t));
+      ctx.beginPath(); ctx.arc(s.x, s.y, r * 0.92, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // Public trigger API — called from main.js message handlers.
+
+  function triggerDashStart(playerId) {
+    const e = entities.get(playerId);
+    if (!e) return;
+    const s = camera.worldToScreen(e.data.rX || 0, e.data.rY || 0);
+    // Dust puff — warm neutral so it reads on the wood floor
+    particles.burst(s.x, s.y + 18, 9, {
+      speed: 2.2,
+      life: 0.55,
+      size: 4,
+      sizeEnd: 0,
+      gravity: 0.6,
+      color: '220,200,170',
+      friction: 0.92,
+    });
+    camera.shake(3, 0.12);
+  }
+
+  function triggerBump(playerId, fromPlayerId) {
+    const a = entities.get(playerId);
+    if (!a) return;
+    // Spark burst at the target's feet
+    const s = camera.worldToScreen(a.data.rX || 0, a.data.rY || 0);
+    particles.burst(s.x, s.y, 14, {
+      speed: 4.5,
+      life: 0.5,
+      size: 4,
+      sizeEnd: 0,
+      gravity: 0,
+      color: '255,230,140',
+      friction: 0.92,
+    });
+    // Dust puff under the target
+    particles.burst(s.x, s.y + 16, 7, {
+      speed: 2.8,
+      life: 0.6,
+      size: 5,
+      sizeEnd: 0,
+      gravity: 0.5,
+      color: '220,200,170',
+      friction: 0.9,
+    });
+    // Halo shockwave at impact point
+    _addShockwave(a.data.rX || 0, a.data.rY || 0, {
+      r0: 0.25, r1: 1.6, ttl: 0.35, color: '255,220,140', width: 5,
+    });
+    camera.shake(6, 0.2);
+    if (a) a.data.hitFlash = 1;
+  }
+
+  function triggerGroundPound(playerId) {
+    const e = entities.get(playerId);
+    if (!e) return;
+    const s = camera.worldToScreen(e.data.rX || 0, e.data.rY || 0);
+    // Big dust cloud
+    particles.burst(s.x, s.y + 18, 22, {
+      speed: 3.5,
+      life: 0.9,
+      size: 7,
+      sizeEnd: 0,
+      gravity: 0.5,
+      color: '200,180,160',
+      friction: 0.9,
+    });
+    // Inner expanding ring
+    _addShockwave(e.data.rX || 0, e.data.rY || 0, {
+      r0: 0.2, r1: 2.4, ttl: 0.55, color: '176,112,255', width: 8,
+    });
+    // Outer wide ring (faster fade)
+    _addShockwave(e.data.rX || 0, e.data.rY || 0, {
+      r0: 0.4, r1: 3.0, ttl: 0.7, color: '255,200,120', width: 4,
+    });
+    camera.shake(14, 0.35);
+  }
+
+  function triggerGravityBomb(playerId) {
+    const e = entities.get(playerId);
+    if (!e) return;
+    // Implosion-then-explosion ring
+    _addShockwave(e.data.rX || 0, e.data.rY || 0, {
+      r0: 0.3, r1: 4.5, ttl: 0.9, color: '255,136,0', width: 10,
+    });
+    const s = camera.worldToScreen(e.data.rX || 0, e.data.rY || 0);
+    particles.burst(s.x, s.y, 30, {
+      speed: 6,
+      life: 1.0,
+      size: 6,
+      sizeEnd: 0,
+      gravity: -0.2,
+      color: '255,136,0',
+      friction: 0.93,
+    });
+    camera.shake(18, 0.5);
+  }
+
+  // ============================================================
   // HELPERS
   // ============================================================
   function shortAngleDiff(from, to) {
@@ -690,5 +848,9 @@ const Render2D = (() => {
     if (e) e.data.hitFlash = 1;
   }
 
-  return { init, updateState, triggerWin, triggerHit };
+  return {
+    init, updateState, triggerWin, triggerHit,
+    // Phase 38d juice triggers
+    triggerDashStart, triggerBump, triggerGroundPound, triggerGravityBomb,
+  };
 })();

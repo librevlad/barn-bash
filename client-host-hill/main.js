@@ -61,8 +61,8 @@ HostHarness.on({
 
   bump: (msg) => {
     Sound.play('bump');
-    if (typeof FX !== 'undefined') { FX.shake(8); FX.screenFlash('#fff', 0.2); FX.burst(640, 360, 15, { color: '#B070FF', speed: 4, life: 0.3, glow: true }); }
-    if (msg.to) Render2D.triggerHit(msg.to);
+    if (typeof FX !== 'undefined') FX.screenFlash('#fff', 0.15);
+    if (msg.to) Render2D.triggerBump(msg.to, msg.from);
     showMsg(pname(msg.from) + ' bumped ' + pname(msg.to) + '!', 1200);
   },
 
@@ -93,13 +93,15 @@ HostHarness.on({
 
   ground_pound: (msg) => {
     Sound.play('meteorImpact');
-    if (typeof FX !== 'undefined') { FX.shake(14); FX.screenFlash('#B070FF', 0.2); FX.burst(640, 360, 20, { color: '#B070FF', speed: 5, glow: true }); FX.textPopup(640, 320, 'GROUND POUND!', '#B070FF'); }
+    if (typeof FX !== 'undefined') { FX.screenFlash('#B070FF', 0.2); FX.textPopup(640, 320, 'GROUND POUND!', '#B070FF'); }
+    if (msg.playerId) Render2D.triggerGroundPound(msg.playerId);
     showMsg(pname(msg.playerId) + ' GROUND POUND!', 1200);
   },
 
-  gravity_bomb: () => {
+  gravity_bomb: (msg) => {
     Sound.play('foxLeap');
-    if (typeof FX !== 'undefined') { FX.shake(16); FX.screenFlash('#ff8800', 0.3); FX.burst(640, 360, 35, { color: '#ff8800', speed: 8, glow: true, life: 0.8 }); FX.textPopup(640, 300, 'GRAVITY BOMB!', '#ff8800'); }
+    if (typeof FX !== 'undefined') { FX.screenFlash('#ff8800', 0.3); FX.textPopup(640, 300, 'GRAVITY BOMB!', '#ff8800'); }
+    if (msg.playerId) Render2D.triggerGravityBomb(msg.playerId);
     showMsg('GRAVITY BOMB!', 1500);
   },
 
