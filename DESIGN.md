@@ -2225,6 +2225,79 @@ synchronized across screens.
     machinery: mock `broadcast` pushes emissions into an array
     and tests assert against that. Total test count now 59
     (up from 35).
+
+38. **Phase 38** (shipped 2026-04-18): no-compromises KotH
+    gameplay polish. Five sub-phases take King of the Hill from
+    school-project polar mechanics with generic space visuals to
+    Frantics-grade 2D party-game feel. Scoped to hill only; the
+    harness/sprite/juice modules are shared primitives other
+    games can adopt later.
+
+    * **38a — cartesian physics rewrite** (server/hillGame.js).
+      Replaces polar (angle + radius + auto-orbit +
+      gravity-to-center) with cartesian (x + y + vx + vy,
+      WASD-feel, penetration-resolved circle collisions). No
+      more passive orbiting; players stand still unless input
+      moves them. Collisions separate overlapping pairs along
+      the contact normal, impulse travels through the normal,
+      shield / anchor reduce returned force. State payload
+      swapped from {angle, radius} to {x, y, facing}.
+
+    * **38b — painted arena + visible hazards** (render2d).
+      Space-stars + purple-disc backdrop replaced with
+      wood-plank gradient + red-curtain proscenium + drifting
+      gold dust motes. Arena disc is a warm honey-to-walnut
+      radial gradient with 18 hand-planed wood rings, 14
+      radial scuff streaks, 12 brass rivets + double-ring
+      rim. New `hazards` scene layer (z=12) renders cracks
+      (jagged splats), ice zone (pie-slice with shimmer), and
+      bumper (red rubber / gold core with pulsing halo) as
+      visible features instead of event-only announcements.
+
+    * **38c — character sprite system with pose placeholders**
+      (client-shared/char-sprite.js). Replaces procedural
+      CharDraw.blob with CharSprite.draw that renders the
+      existing painted `/assets/animal-{id}.png` lobby avatar
+      with per-pose canvas transforms (idle / move / dash /
+      hit / teeter / cheer). Ground shadow ellipse,
+      player-colour tint via `source-atop` composite, pose
+      overlays (dash amber wash, teeter red pulse, hit white
+      flash). REQUIRED_ASSETS.md documents the 48 commissioned
+      PNGs (8 chars × 6 poses) + 6 environmental sprites;
+      SpriteLoader path will swap them in automatically.
+
+    * **38d — impact juice** (render2d public triggers). Adds
+      weight to collisions. `triggerBump` spawns 14 gold
+      sparks + 7 dust particles + 1.6-world-unit gold
+      shockwave ring at target feet with hit-flash. Custom
+      `triggerGroundPound` emits two-ring shockwave (inner
+      purple 2.4u, outer amber 3.0u) + 22-particle dust
+      cloud + camera.shake(14). `triggerGravityBomb` fires a
+      4.5u orange ring + 30-particle upward spray. `triggerDashStart`
+      auto-detected client-side from `dashing` false→true
+      transition. Shockwave list stored locally with age /
+      ttl / r0 / r1, advanced by dt, drawn above arena but
+      below particles.
+
+    * **38e — virtual joystick controller**
+      (client-controller/hill-joystick.js). Fullscreen touch-
+      drag joystick replaces discrete swipe-to-move on KotH.
+      Ring + gold knob appear at touch-start, thumb tracks
+      offset (clamped to 90 px = 1.0 magnitude, 8 px
+      deadzone), vectors emitted at 20 Hz. Analog
+      `{ action: 'move', vx, vy }` accepted on server, scales
+      per-tick impulse; released stick sends (0, 0) and
+      friction damps. Legacy discrete `direction` path kept
+      for escape / meteor / race until they migrate.
+
+After Phase 38 the KotH gameplay screen reads as a hand-painted
+carnival arena with Fall-Guys-tier feel: cartesian movement,
+visible hazards, painted characters with 6 poses, weighty
+shockwaves on every hit, smooth analog controller. The rest
+of the arc plan (escape / meteor / race to same bar) stays
+open as Phase 39+.
+
+After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
 Phase 23 rectangular + pill + dot UI objects gild themselves
