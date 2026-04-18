@@ -257,36 +257,59 @@ window.Gameplay = (function () {
     els.spectate.appendChild(specAwait);
     root.appendChild(els.spectate);
 
-    // Phase 18c — async-swap the spec backdrop src to the
-    // loadPainterly-processed data URL so the baked checker preview
-    // doesn't peek past the ornate scroll edges. Same pattern as
-    // tournament.js champion throne backdrop.
+    // Phase 18 — async-swap overlay backdrops to loadPainterly-
+    // processed data URLs so baked checker-preview fills don't peek
+    // past the painted edges. Same pattern as tournament.js champion
+    // throne backdrop.
     setTimeout(function () {
       if (typeof SpriteLoader === 'undefined') return;
-      var cached = SpriteLoader.get('standings-scroll-spec');
-      var apply = function (canvas) {
-        if (!canvas || !els.specBackdrop) return;
-        els.specBackdrop.src = canvas.toDataURL('image/png');
-      };
-      if (cached) apply(cached);
-      else SpriteLoader.loadPainterly('standings-scroll-spec',
-        '/assets/standings-scroll.png').then(apply).catch(function () {});
+      var swaps = [
+        { el: els.specBackdrop, key: 'standings-scroll-spec', src: '/assets/standings-scroll.png' },
+        { el: els.goBackdrop,   key: 'gameover-hall',         src: '/assets/gameover-hall.png' },
+        { el: els.elimBackdrop, key: 'elim-shadow',           src: '/assets/elim-shadow.png' },
+      ];
+      swaps.forEach(function (s) {
+        if (!s.el) return;
+        var cached = SpriteLoader.get(s.key);
+        var apply = function (canvas) {
+          if (!canvas || !s.el) return;
+          s.el.src = canvas.toDataURL('image/png');
+        };
+        if (cached) apply(cached);
+        else SpriteLoader.loadPainterly(s.key, s.src).then(apply).catch(function () {});
+      });
     }, 0);
 
-    // Eliminated overlay
+    // Eliminated overlay — Phase 18b: painterly "after the act"
+    // theatre backdrop (lowered red curtain + dim spotlight +
+    // fallen jester hat) frames the grayscale avatar + red
+    // ELIMINATED + GM quip composition.
     els.elim = el('div', 'gp-eliminated-overlay');
+    els.elimBackdrop = document.createElement('img');
+    els.elimBackdrop.className = 'gp-elim-backdrop';
+    els.elimBackdrop.src = '/assets/elim-shadow.png';
+    els.elimBackdrop.alt = '';
+    els.elimBackdrop.onerror = function () { this.remove(); };
     els.elimAvatar = el('div', 'gp-elim-avatar', { text: ANIMAL_EMOJI[o.character] || '\u2753' });
     var elimLabel = el('div', 'gp-elim-label', { text: 'ELIMINATED' });
     var elimNarrator = el('div', 'gp-elim-narrator-label', { text: 'Game Master' });
     els.elimQuip = el('div', 'gp-elim-quip');
+    els.elim.appendChild(els.elimBackdrop);
     els.elim.appendChild(els.elimAvatar);
     els.elim.appendChild(elimLabel);
     els.elim.appendChild(elimNarrator);
     els.elim.appendChild(els.elimQuip);
     root.appendChild(els.elim);
 
-    // Game over overlay
+    // Game over overlay — Phase 18a: painterly hall-of-fame backdrop
+    // (cover-fit) replaces the old flat dark-blur scrim. Winner
+    // composition sits in the painted center-stage spotlight.
     els.go = el('div', 'gp-gameover-overlay');
+    els.goBackdrop = document.createElement('img');
+    els.goBackdrop.className = 'gp-gameover-backdrop';
+    els.goBackdrop.src = '/assets/gameover-hall.png';
+    els.goBackdrop.alt = '';
+    els.goBackdrop.onerror = function () { this.remove(); };
     els.goLabel = el('div', 'gp-go-label', { text: 'Round complete' });
     els.goAvatar = el('div', 'gp-go-winner-avatar', { text: '\u{1F3C6}' });
     els.goHero = el('div', 'gp-go-hero', { text: '' });
@@ -296,6 +319,7 @@ window.Gameplay = (function () {
     els.goBtn.addEventListener('click', function () {
       if (opts && typeof opts.onLobby === 'function') opts.onLobby();
     });
+    els.go.appendChild(els.goBackdrop);
     els.go.appendChild(els.goLabel);
     els.go.appendChild(els.goAvatar);
     els.go.appendChild(els.goHero);

@@ -458,11 +458,14 @@
 .gameplay-root .gp-near-miss-flash.active { opacity: 1; transition: opacity 0s; }
 
 /* ============================================================
-   Eliminated overlay
+   Eliminated overlay — Phase 18b: painterly curtain-down + dim
+   spotlight backdrop. Dark scrim lifts from --scrim-dark to 0.55
+   so the painted atmosphere reads while still separating the
+   elim state from live gameplay behind.
    ============================================================ */
 .gameplay-root .gp-eliminated-overlay {
   position: absolute; inset: 0;
-  background: var(--scrim-dark);
+  background: rgba(47, 28, 12, 0.55);
   z-index: 10;
   display: none;
   flex-direction: column; align-items: center; justify-content: center;
@@ -470,6 +473,20 @@
   padding: 40px;
   opacity: 0;
   transition: opacity var(--dur-short) ease-out;
+}
+.gameplay-root .gp-elim-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.95;
+}
+.gameplay-root .gp-eliminated-overlay > :not(.gp-elim-backdrop) {
+  position: relative;
+  z-index: 1;
 }
 .gameplay-root.phase-eliminated .gp-eliminated-overlay { display: flex; opacity: 1; }
 .gameplay-root .gp-elim-avatar {
@@ -679,11 +696,14 @@
 }
 
 /* ============================================================
-   Game over
+   Game over — Phase 18a: painterly hall-of-fame backdrop covers
+   the full overlay. Heavy dark scrim dropped to 0.55 so the
+   painted spotlight pool + curtains read through while still
+   darkening the blurred gameplay behind.
    ============================================================ */
 .gameplay-root .gp-gameover-overlay {
   position: absolute; inset: 0;
-  background: rgba(47, 28, 12, 0.92);
+  background: rgba(47, 28, 12, 0.55);
   backdrop-filter: blur(6px);
   z-index: 12;
   display: none;
@@ -694,6 +714,20 @@
   padding: 30px;
   opacity: 0;
   transition: opacity 0.6s ease-out;
+}
+.gameplay-root .gp-gameover-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.95;
+}
+.gameplay-root .gp-gameover-overlay > :not(.gp-gameover-backdrop) {
+  position: relative;
+  z-index: 1;
 }
 .gameplay-root.phase-gameover .gp-gameover-overlay { display: flex; opacity: 1; }
 .gameplay-root .gp-go-label {
