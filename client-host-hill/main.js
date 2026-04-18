@@ -40,6 +40,29 @@ function updateHUD(s) {
   updateScoreboard(s, conn, alive);
 }
 
+// Phase 40c — sudden-death timer ring. Local countdown driven by
+// setInterval, showing total-seconds-remaining with a conic-gradient
+// ring filling down. Server broadcasts the `sudden_death` event once
+// at the sudden-death tick; we start a 25-second timer then.
+let _sdEndAt = 0, _sdInterval = null;
+function startSuddenDeathTimer(seconds) {
+  _sdEndAt = Date.now() + seconds * 1000;
+  const timer = document.getElementById('sd-timer');
+  const numEl = document.getElementById('sd-num');
+  if (!timer || !numEl) return;
+  timer.classList.add('show');
+  clearInterval(_sdInterval);
+  _sdInterval = setInterval(() => {
+    const remain = Math.max(0, _sdEndAt - Date.now()) / 1000;
+    const total = seconds;
+    const pct = Math.max(0, Math.min(100, (remain / total) * 100));
+    timer.style.setProperty('--pct', pct.toFixed(1));
+    const s = Math.ceil(remain);
+    numEl.textContent = '0:' + (s < 10 ? '0' + s : s);
+    if (remain <= 0) { clearInterval(_sdInterval); timer.classList.remove('show'); }
+  }, 100);
+}
+
 function updateScoreboard(state, conn, aliveCount) {
   const board = document.getElementById('scoreboard');
   const list = document.getElementById('sb-list');
@@ -145,7 +168,13 @@ HostHarness.on({
   shrink_warning: () => {
     Sound.play('foxGrowl');
     if (typeof FX !== 'undefined') FX.screenFlash('#ff4400', 0.15);
-    showMsg('Arena about to shrink!', 1200);
+    // Phase 40c — full-width shrink warning banner.
+    const w = document.getElementById('shrink-warn');
+    if (w) {
+      w.classList.add('show');
+      clearTimeout(w._t);
+      w._t = setTimeout(() => w.classList.remove('show'), 1400);
+    }
   },
 
   platform_shrink: () => {
@@ -211,6 +240,8 @@ HostHarness.on({
     if (typeof FX !== 'undefined') { FX.shake(12); FX.screenFlash('#ff0000', 0.3); FX.setVignette(0.4); }
     Narrator.custom('SUDDEN DEATH! No more second chances!');
     showMsg('SUDDEN DEATH!', 3000);
+    // Phase 40c — start local 25-second sudden-death countdown ring.
+    startSuddenDeathTimer(25);
   },
 
   dramatic_finish: () => {
