@@ -20,18 +20,23 @@
 
 const { Physics2D } = require('../engine/Physics2D');
 
+// Phase 47d — balance tuned for Fall-Guys-style feel: lighter
+// friction so players keep momentum after input release, wider
+// near-miss window for more combo opportunities, slightly shorter
+// dash CD so the button actually feels responsive, slower shrink
+// schedule so the early game has room to breathe before walls close.
 const TICK_MS = 50;
-const MOVE_ACCEL = 0.045;    // input impulse per tick
-const MOVE_MAX_SPEED = 0.35; // cap velocity magnitude when not dashing
-const FRICTION = 0.87;
+const MOVE_ACCEL = 0.042;    // per-tick impulse; slightly softer accel
+const MOVE_MAX_SPEED = 0.38; // +8% top speed
+const FRICTION = 0.90;       // was 0.87; longer glide tail
 const HIT_DIST = 1.4;
 const INIT_R = 4;            // starting arena radius (world units)
 const MIN_R = 1.8;           // cannot shrink below
-const SHRINK_INT = 80;       // shrink every 4s
+const SHRINK_INT = 100;      // 5s between shrinks (was 4s)
 const SUDDEN_DEATH_TICK = 700;
 const SHRINK_AMT = 0.35;
-const DASH_CD = 10;
-const PUSH_FORCE = 1.0;      // knockback impulse magnitude
+const DASH_CD = 8;           // 400 ms CD (was 500 ms)
+const PUSH_FORCE = 1.0;
 
 // King zone
 const KING_ZONE_R = 1.5;
@@ -41,11 +46,11 @@ const KING_SCORE_PER_TICK = 1;
 const TEETER_TICKS = 30;
 const TEETER_THRESHOLD = 0.5;
 
-// Near-miss
-const NEAR_MISS_DIST = 0.3;
+// Near-miss — Phase 47d: wider band so combo chains are easier to string
+const NEAR_MISS_DIST = 0.4;
 
-// Ground pound
-const GPOUND_RADIUS = 2.0;
+// Ground pound — Phase 47d: larger radius for a big-moment feel
+const GPOUND_RADIUS = 2.4;
 const GPOUND_FORCE = 0.45;
 
 // Power-ups
