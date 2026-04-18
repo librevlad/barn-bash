@@ -592,6 +592,79 @@
   margin-top: 14px;
 }
 
+/* ============================================================
+   Phase 18c — spectate painterly backdrop reuses Phase 12a
+   standings-scroll.png. <img> pattern (not background-image) so
+   the scroll renders at natural aspect ratio instead of stretching
+   to fit the overlay box. Same approach as tournament.js champion
+   throne and standings backdrops. <img>.src is async-swapped to
+   the loadPainterly-processed data URL after DOMContentLoaded.
+   ============================================================ */
+.gameplay-root .gp-spec-backdrop {
+  position: absolute;
+  top: calc(50% + 20px);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(94%, 360px);
+  height: auto;
+  max-height: 70%;
+  opacity: 0.95;
+  z-index: 0;
+  pointer-events: none;
+}
+.gameplay-root .gp-spectate-block > :not(.gp-spec-backdrop) {
+  position: relative; z-index: 1;
+}
+/* Spec list sits centered over the scroll's cream slot column.
+   Width tuned to match standings-scroll.png's cream strip span
+   (~60% of scroll width), so dots and meta stay inside slots. */
+.gameplay-root .gp-spectate-block .gp-spec-list {
+  width: min(220px, 62%);
+  margin: 24px auto 0;
+  gap: 2px;
+  flex: 0 0 auto;
+  align-self: center;
+}
+/* Spectate pill text flips per Phase 12a: painted cream slot
+   demands dark text, and transparent pill background stops fighting
+   the painted wooden scoreboard. */
+.gameplay-root .gp-spectate-block .gp-spec-pill {
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  gap: 8px;
+}
+.gameplay-root .gp-spectate-block .gp-spec-pill.leader {
+  background: transparent;
+  border: none;
+}
+.gameplay-root .gp-spectate-block .gp-spec-pill.leader .gp-spec-pill-name {
+  text-shadow: 0 0 6px rgba(255, 221, 107, 0.7);
+  font-weight: 600;
+}
+.gameplay-root .gp-spectate-block .gp-spec-pill.leader .gp-spec-pill-meta {
+  color: var(--accent-gold-hot);
+  text-shadow: 0 1px 0 var(--accent-red-deep);
+}
+.gameplay-root .gp-spectate-block .gp-spec-pill-dot {
+  width: 10px; height: 10px;
+  box-shadow: 0 0 4px currentColor;
+}
+.gameplay-root .gp-spectate-block .gp-spec-pill-emoji { display: none; }
+.gameplay-root .gp-spectate-block .gp-spec-pill-name {
+  color: var(--text-on-gold);
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+.gameplay-root .gp-spectate-block .gp-spec-pill-meta {
+  color: var(--accent-red-deep);
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0;
+  text-transform: none;
+  text-shadow: 0 1px 0 rgba(244, 197, 66, 0.25);
+}
+
 /* Hide HUD chrome during spectating / eliminated */
 .gameplay-root.phase-spectating .gp-score-block,
 .gameplay-root.phase-spectating .gp-avatar-orb,

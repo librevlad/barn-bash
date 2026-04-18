@@ -44,6 +44,7 @@ window.Gameplay = (function () {
       .catch(function () {});
     // Phase 12b-fix — orb reuses the cell-action slot-machine face
     // loaded above; no separate orb-frame asset needed.
+
   }, 0);
 
   var GAME_NAMES = {
@@ -234,17 +235,43 @@ window.Gameplay = (function () {
     });
     root.appendChild(els.hintbar);
 
-    // Spectating block
+    // Spectating block — Phase 18c: painterly backdrop reuses Phase 12a
+    // standings-scroll.png (wooden scoreboard with 4 cream slot strips)
+    // via <img> element sized at natural aspect ratio + centered, same
+    // pattern as tournament.js. Pill list constrained to the scroll's
+    // cream column; text color flips to --text-on-gold per Phase 12a.
     els.spectate = el('div', 'gp-spectate-block');
+    els.specBackdrop = document.createElement('img');
+    els.specBackdrop.className = 'gp-spec-backdrop';
+    els.specBackdrop.src = '/assets/standings-scroll.png';
+    els.specBackdrop.alt = '';
+    els.specBackdrop.onerror = function () { this.remove(); };
     var specTitle = el('div', 'gp-spec-title', { text: 'SPECTATING' });
     els.specQuip = el('div', 'gp-spec-quip', { text: 'the show goes on without you' });
     els.specList = el('div', 'gp-spec-list');
     var specAwait = el('div', 'gp-spec-awaiting', { text: '\u00b7 \u00b7 \u00b7 waiting for the show to end' });
+    els.spectate.appendChild(els.specBackdrop);
     els.spectate.appendChild(specTitle);
     els.spectate.appendChild(els.specQuip);
     els.spectate.appendChild(els.specList);
     els.spectate.appendChild(specAwait);
     root.appendChild(els.spectate);
+
+    // Phase 18c — async-swap the spec backdrop src to the
+    // loadPainterly-processed data URL so the baked checker preview
+    // doesn't peek past the ornate scroll edges. Same pattern as
+    // tournament.js champion throne backdrop.
+    setTimeout(function () {
+      if (typeof SpriteLoader === 'undefined') return;
+      var cached = SpriteLoader.get('standings-scroll-spec');
+      var apply = function (canvas) {
+        if (!canvas || !els.specBackdrop) return;
+        els.specBackdrop.src = canvas.toDataURL('image/png');
+      };
+      if (cached) apply(cached);
+      else SpriteLoader.loadPainterly('standings-scroll-spec',
+        '/assets/standings-scroll.png').then(apply).catch(function () {});
+    }, 0);
 
     // Eliminated overlay
     els.elim = el('div', 'gp-eliminated-overlay');
@@ -469,7 +496,10 @@ window.Gameplay = (function () {
       dot.style.color = p.color || 'var(--color-player-unknown)';
       var emoji = el('span', 'gp-spec-pill-emoji', { text: ANIMAL_EMOJI[p.character] || '' });
       var name = el('span', 'gp-spec-pill-name', { text: p.name || ('P' + p.id) });
-      var meta = el('span', 'gp-spec-pill-meta', { text: (p.score != null ? p.score + ' ' : '') + (p.leader ? '· LEADER' : '') });
+      // Phase 18c — painted scroll cream strip can't accommodate "· LEADER"
+      // text at 220px list width. Leader status is carried by the .leader
+      // CSS class (gold underline / emphasis) instead.
+      var meta = el('span', 'gp-spec-pill-meta', { text: p.score != null ? String(p.score) : '' });
       pill.appendChild(dot);
       pill.appendChild(emoji);
       pill.appendChild(name);
