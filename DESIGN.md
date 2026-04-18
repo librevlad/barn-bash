@@ -2490,6 +2490,36 @@ without code change, Sound.play(name, opts) takes a sample
 pack with one extension, music themes are data-driven so a
 composer can drop in new note arrays.
 
+48. **Phase 48** (shipped 2026-04-19): escape parity with KotH.
+    Three sub-phases lift fox-escape to the Phase 38-40 bar.
+    48a adopts CharSprite (stumbling → hit / sliding → windup
+    / jumpY > 0.05 → dash / running → move) and adds
+    /shared/char-sprite.js to the loader, with a CharDraw
+    fallback. 48b fires matchBell + startCrowd on first
+    running tick + onLobby reset. 48c paints the HUD with the
+    3-plaque + chevron-ribbon vocabulary (DISTANCE / banner
+    with live fox-warning / ALIVE), legacy class aliases
+    preserved so main.js textContent writes still land.
+
+49. **Phase 49** (shipped 2026-04-19): meteor parity. Same
+    template — CharSprite adoption (stumbling/warning/idle
+    poses), match bell + crowd, painted 3-plaque HUD (WAVE
+    plaque + Meteor Shower banner with warn sub-text + ALIVE
+    plaque).
+
+50. **Phase 50** (shipped 2026-04-19): race parity + HUD-
+    visibility fix. Race gets match bell + crowd + painted
+    3-plaque HUD (LAP + Grand Prix banner with leader
+    subtext + FINISHED). CharSprite skipped because race
+    renders cars from a pixel-art atlas, not animal sprites.
+    Also fixed a latent bug: the painted per-game #hud
+    shipped in 40a/48c/49 was actually invisible — harness
+    hid it on running transition while HUD.update was
+    simultaneously drawing the legacy shared strip on top.
+    Harness now clears the inline display instead of setting
+    'none', and every per-game main.js drops HUD.update so
+    only the painted plaques render.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
