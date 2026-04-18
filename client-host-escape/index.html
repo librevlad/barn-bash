@@ -36,6 +36,14 @@
       opacity: 0.9;
       text-transform: uppercase;
     }
+    /* In-lobby eyebrow sits on the painted arch; needs strong contrast. */
+    #lobby .hud-title {
+      font-size: 12px;
+      letter-spacing: 6px;
+      opacity: 1;
+      text-shadow: 0 1px 0 var(--accent-red-deep),
+                   0 0 14px rgba(0, 0, 0, 0.8);
+    }
     .hud-distance {
       font-family: var(--font-display);
       font-size: 40px; font-weight: 400;
@@ -174,7 +182,9 @@
     #lobby-info {
       font-family: var(--font-accent);
       font-size: 15px; font-style: italic;
-      color: var(--text-dim);
+      color: var(--text-cream);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
+                   0 0 12px rgba(0, 0, 0, 0.7);
       margin-bottom: 22px;
       letter-spacing: 0.3px;
     }
