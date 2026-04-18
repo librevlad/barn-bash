@@ -4,6 +4,66 @@ Render2D.init();
 const pname = HostCommon.pname;
 const showMsg = (text, ms) => HostHarness.showMsg(text, ms);
 
+// Phase 44 — KotH narrator taunt pools. Per-context random lines so
+// repeated matches stay fresh. Call `pickTaunt(pool)` for a one-off
+// quip, or one of the helpers below for event-specific commentary.
+const TAUNTS = {
+  firstBlood: [
+    'First blood!',
+    'And they\'re off — first hit lands!',
+    'The gloves are off.',
+    'Someone had to start it.',
+  ],
+  combo2: [
+    'Two in a row!',
+    'On a roll.',
+    'That\'s a combo.',
+  ],
+  combo3: [
+    'Unstoppable!',
+    'Three-hit streak — someone call a mop.',
+    'They\'re COOKING.',
+  ],
+  combo4: [
+    'DEVASTATING!',
+    'Four straight bumps. No mercy.',
+    'The hill fears them now.',
+  ],
+  combo5plus: [
+    'LEGENDARY!',
+    'This is a massacre.',
+    'Ring the bell — champion rising.',
+  ],
+  newLeader: [
+    '{name} takes the throne!',
+    'All hail {name}.',
+    'Crown goes to {name}.',
+    '{name} rules the hill.',
+  ],
+  teeterRecover: [
+    '{name} claws back from the edge!',
+    'Saved!',
+    '{name} refuses to fall.',
+  ],
+};
+
+function pickTaunt(pool) {
+  if (!pool || pool.length === 0) return '';
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+function fillTaunt(tmpl, vars) {
+  let s = tmpl;
+  for (const k in vars) s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+  return s;
+}
+
+// Per-round narrator state. Reset when HostHarness fires onLobby
+// (i.e. back to lobby) OR when the first state after countdown
+// transitions into running.
+let _firstBloodDone = false;
+let _lastLeaderId = null;
+let _teeterSince = {}; // id → tick of teeter start
+
 // Phase 40a — painted HUD + live scoreboard update. updateHUD now
 // writes to three painted plaques (ALIVE / BANNER / ARENA) and the
 // scoreboard panel, instead of the legacy flat text strip.
@@ -80,9 +140,30 @@ function updateScoreboard(state, conn, aliveCount) {
   for (const p of rows) {
     if (p.alive && (p.score || 0) >= 3) { leaderId = p.id; break; }
   }
-  // Ensure leader computed by walking the sorted array above; fall back
-  // to first-alive when nobody has ≥ 3 yet.
   if (!leaderId && rows.length > 0) leaderId = (rows.find(p => p.alive) || {}).id || null;
+
+  // Phase 44 — narrator taunt on leader change (only once per swap,
+  // ignores the first-crown case when _lastLeaderId was null).
+  if (leaderId && _lastLeaderId && leaderId !== _lastLeaderId) {
+    const newLeader = rows.find(p => p.id === leaderId);
+    if (newLeader && newLeader.name) {
+      Narrator.custom(fillTaunt(pickTaunt(TAUNTS.newLeader), { name: newLeader.name }));
+    }
+  }
+  _lastLeaderId = leaderId;
+
+  // Phase 44 — teeter-recovery taunt. If a player WAS teetering but
+  // isn't any more (and is still alive), they clawed back.
+  for (const p of rows) {
+    if (_teeterSince[p.id] && !p.teetering && p.alive) {
+      delete _teeterSince[p.id];
+      if (Math.random() < 0.5 && p.name) {
+        Narrator.custom(fillTaunt(pickTaunt(TAUNTS.teeterRecover), { name: p.name }));
+      }
+    } else if (_teeterSince[p.id] && !p.alive) {
+      delete _teeterSince[p.id]; // they fell; elimination handler already spoke
+    }
+  }
 
   list.innerHTML = '';
   for (const p of rows) {
@@ -196,7 +277,14 @@ HostHarness.boot({
   introKey: 'hillKing',
   countdownFinal: 'FIGHT!',
   lobbyReadyMsg: 'Ready to fight!',
-  onLobby: renderLobbyCards,
+  onLobby: (state) => {
+    // Reset narrator state when returning to lobby so the next match
+    // can have its own first-blood and leader drama.
+    _firstBloodDone = false;
+    _lastLeaderId = null;
+    _teeterSince = {};
+    renderLobbyCards(state);
+  },
   onStateRunning: updateHUD,
   buildPostGameOpts: (state, msg) => {
     const w = msg.winnerId ? state.players[msg.winnerId] : null;
@@ -259,19 +347,30 @@ HostHarness.on({
   },
 
   bump: (msg) => {
-    // Phase 43 — combo sound layering. Each subsequent hit in the
-    // same combo streak plays a hotter (higher pitch, louder) bump.
-    // Combo ≥ 3 also fires a crowd-cheer horn.
+    // Phase 43 — combo sound layering.
     const combo = Math.max(1, msg.combo || 1);
     const pitch = 1 + Math.min(4, combo - 1) * 0.12;
     const volume = 1 + Math.min(4, combo - 1) * 0.06;
     Sound.play('bump', { pitch: pitch, volume: volume });
-    if (combo >= 3) {
-      Sound.play('comboCheer', { level: Math.min(4, combo - 2) });
-    }
+    if (combo >= 3) Sound.play('comboCheer', { level: Math.min(4, combo - 2) });
+
     if (typeof FX !== 'undefined') FX.screenFlash('#fff', 0.15);
     if (msg.to) Render2D.triggerBump(msg.to, msg.from);
     showMsg(pname(msg.from) + ' bumped ' + pname(msg.to) + (combo > 1 ? (' \u00D7' + combo + '!') : '!'), 1200);
+
+    // Phase 44 — narrator taunts.
+    if (!_firstBloodDone) {
+      _firstBloodDone = true;
+      Narrator.custom(pickTaunt(TAUNTS.firstBlood));
+    } else if (combo === 2) {
+      if (Math.random() < 0.35) Narrator.custom(pickTaunt(TAUNTS.combo2));
+    } else if (combo === 3) {
+      Narrator.custom(pickTaunt(TAUNTS.combo3));
+    } else if (combo === 4) {
+      Narrator.custom(pickTaunt(TAUNTS.combo4));
+    } else if (combo >= 5) {
+      Narrator.custom(pickTaunt(TAUNTS.combo5plus));
+    }
   },
 
   shieldBlock: (msg) => {
@@ -299,6 +398,7 @@ HostHarness.on({
   teetering: (msg) => {
     Sound.play('stumble');
     showMsg(pname(msg.playerId) + ' is teetering!', 1500);
+    _teeterSince[msg.playerId] = Date.now();
   },
 
   near_miss: () => {
