@@ -343,6 +343,16 @@ const Render2D = (() => {
   // ============================================================
   // LAYER: PLAYERS (using EntityManager)
   // ============================================================
+  // Phase 49 — hex → 'r,g,b' for CharSprite color tint.
+  function _hexToRgb(hex) {
+    if (!hex || hex.charAt(0) !== '#') return '255,255,255';
+    const h = hex.slice(1);
+    const r = parseInt(h.slice(0, 2), 16) || 255;
+    const g = parseInt(h.slice(2, 4), 16) || 255;
+    const b = parseInt(h.slice(4, 6), 16) || 255;
+    return r + ',' + g + ',' + b;
+  }
+
   function drawPlayers(ctx) {
     const clock = renderLoop ? renderLoop.getClock() : 0;
 
@@ -373,7 +383,25 @@ const Render2D = (() => {
         ctx.shadowBlur = 0;
       }
 
-      CharDraw.blob(ctx, s.x, s.y, 22, e.color, { idx: e.data.idx, clock, expression: expr, running: false, character: e.character });
+      // Phase 49 — CharSprite with pose mapping. Meteor has no
+      // facing/direction so we just use idle / hit when singed /
+      // dash when dodging to safety.
+      if (typeof CharSprite !== 'undefined') {
+        const pose = e.data.stumbling ? 'hit'
+          : (subPhase === 'warning' && !safe) ? 'move'
+          : 'idle';
+        CharSprite.draw(ctx, s.x, s.y, 22, {
+          character: e.character || 'cat',
+          colorRgb: _hexToRgb(e.color),
+          color: e.color,
+          pose: pose,
+          clock: clock,
+          idx: e.data.idx || 0,
+          facing: 0,
+        });
+      } else {
+        CharDraw.blob(ctx, s.x, s.y, 22, e.color, { idx: e.data.idx, clock, expression: expr, running: false, character: e.character });
+      }
 
       // Name label above player
       if (e.data.name) {

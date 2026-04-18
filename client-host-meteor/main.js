@@ -4,15 +4,24 @@ Render2D.init();
 const pname = HostCommon.pname;
 const showMsg = (text, ms) => HostHarness.showMsg(text, ms);
 
+// Phase 49 — match-start bell + ambient crowd.
+let _matchStarted = false;
+
 function updateHUD(s) {
   const $ = id => document.getElementById(id);
   const $hudWave = $('hud-wave'), $hudAlive = $('hud-alive'), $hudWarn = $('hud-warn');
 
-  $hudWave.textContent = 'Wave ' + (s.wave || 1);
+  if (!_matchStarted) {
+    _matchStarted = true;
+    try { Sound.play('matchBell'); } catch (_) {}
+    try { Sound.startCrowd(); } catch (_) {}
+  }
+
+  $hudWave.textContent = String(s.wave || 1);
   const alive = Object.values(s.players).filter(p => p.connected && p.alive).length;
   const total = Object.values(s.players).filter(p => p.connected === true).length;
-  $hudAlive.textContent = alive + '/' + total + ' alive';
-  $hudWarn.textContent = s.subPhase === 'warning' ? '⚠ METEORS INCOMING' : '';
+  $hudAlive.textContent = alive + '/' + total;
+  $hudWarn.textContent = s.subPhase === 'warning' ? 'METEORS INCOMING' : 'Stay sharp';
 
   if (typeof HUD !== 'undefined') {
     const warn = s.subPhase === 'warning' ? '⚠ METEORS INCOMING' : '';
@@ -32,6 +41,10 @@ HostHarness.boot({
   introKey: 'meteor',
   countdownFinal: 'DODGE!',
   lobbyReadyMsg: 'Ready to dodge!',
+  onLobby: () => {
+    _matchStarted = false;
+    try { Sound.stopCrowd(); } catch (_) {}
+  },
   onStateRunning: updateHUD,
   buildPostGameOpts: (state, msg) => {
     const w = msg.winnerId ? state.players[msg.winnerId] : null;
