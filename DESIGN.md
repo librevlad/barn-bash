@@ -2027,13 +2027,25 @@ synchronized across screens.
     Spec:
     `docs/superpowers/specs/2026-04-18-ornate-object-frames-v2-design.md`.
 
+24. **Phase 24** (shipped 2026-04-18): parallax drift +
+    torchlight flicker — two CSS keyframes applied to painted
+    backdrops. 24a `backdropDrift` 14s sinusoidal translate
+    ±0.3% + scale 0.998↔1.002 on cover-fit backdrops; 24b
+    `torchFlicker` 42s brightness 0.97↔1.03 + hue-rotate ±2deg
+    on all backdrops (cover-fit AND centered). Compound reads
+    as "camera floating in inn-lit room" without commissioning
+    new parallax-layer art. Zero new assets. Honors
+    prefers-reduced-motion. Spec:
+    `docs/superpowers/specs/2026-04-18-parallax-torchlight-design.md`.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
 Phase 23 rectangular + pill + dot UI objects gild themselves
-with carved-brass treatments. Remaining Hearthstone-polish
-arc: Phase 24 parallax backgrounds, Phase 25 sound design,
-Phase 26 animation polish.
+with carved-brass treatments. After Phase 24 the painted
+backdrops themselves gently drift (camera-float) and flicker
+(torchlight). Remaining Hearthstone-polish arc: Phase 25 sound
+design, Phase 26 animation polish.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
