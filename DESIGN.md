@@ -2390,6 +2390,62 @@ open as Phase 39+.
       washed with gold inset border. Mobile fallback
       (&lt; 640 px) hides chip column.
 
+42. **Phase 42** (shipped 2026-04-18): KotH dash-charge
+    mechanic. Controller gains a dedicated 106 px painted
+    brass dash button (bottom-right) that the player holds
+    to charge, releases to unleash. Fill ring grows 0 →
+    100 % red-gold over a 500 ms active window; release
+    emits `{ action:'dash', power: 0.45..1.0 }`. Server
+    scales `DASH_IMPULSE` by 0.6 + power × 1.0 (weak =
+    0.72×, full = 1.6×) and stretches the dash phase by
+    up to +4 ticks at full charge. Quick taps still resolve
+    to a baseline 0.45 power so legacy tap-dash flows keep
+    working. Haptic pulse at release scales with power.
+
+43. **Phase 43** (shipped 2026-04-18): combo sound layering.
+    `Sound.play(name, opts)` now forwards opts to the effect
+    so callers can modulate synth params. `bump({pitch,
+    volume})` raises the noise midband + square thud
+    frequency with each combo step; server includes
+    `combo` in the bump broadcast so the client has the
+    fresh count without waiting for the next state tick.
+    New `comboCheer({level})` horn fires at combo ≥ 3,
+    scaling 330 + 60 × level Hz with a delayed third note.
+    Host message text gets the ×N combo suffix.
+
+44. **Phase 44** (shipped 2026-04-18): KotH narrator taunt
+    pool. Inline `TAUNTS` object with 5 contexts (firstBlood,
+    combo2/3/4/5+, newLeader, teeterRecover) of 3-4 random
+    lines each. Bump handler fires tiered combo quips
+    (always at 3+, 35 % at combo 2); scoreboard update
+    detects leader swaps after first crown and announces
+    "{name} takes the throne!"; teeter-recovery detection
+    compares teetering flag frame-to-frame and fires a
+    coin-flip taunt + SFX. Round state resets on onLobby.
+
+45. **Phase 45** (shipped 2026-04-18): KotH bespoke SFX.
+    `dash({power})` redone as a triangle-sweep whoosh
+    (260 → peak → 180 Hz) with noise tail; peak scales with
+    power so charged dashes sound heftier. New
+    `groundPoundSlam` (80 → 42 Hz bass thud + rattle +
+    spark), `crownShift` (perfect-5th chime on leader
+    swap), `teeterSave` (soft triangle swell on teeter
+    recovery). Hill main.js routes ground_pound to
+    groundPoundSlam (was shared meteorImpact), crownShift
+    fires alongside narrator newLeader line, teeterSave
+    on teeter recovery.
+
+46. **Phase 46** (shipped 2026-04-18): KotH controller
+    gameplay indicators. Dash button grows two visual state
+    modifiers — `.cooling` (brightness 0.55 + conic-gradient
+    dark sweep over face, driven by `--cd-pct`) and
+    `.shielded` (blue-tint filter + rotating dashed cyan
+    ring). Controller main.js handleRunningState for
+    hillKing now switches score readout from a stale
+    00:00 elapsed timer to actual king-zone score and
+    feeds me.cd / 10 + me.shielding into the dash button
+    each tick.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
