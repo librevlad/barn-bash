@@ -1553,6 +1553,62 @@ token row. Spec:
 Audit doc:
 `.gstack/design-audit-20260417/design-audit-frantics.md`.
 
+Nineteenth realization: controller gameplay overlay backdrops —
+Phase 18, shipped 2026-04-18 across 4 commits. Paints the three
+full-screen overlays that stack above controller gameplay
+(`.gp-eliminated-overlay`, `.gp-spectate-block`,
+`.gp-gameover-overlay`) with the same painted-theatre register
+established by Phases 8c (race podium) and 10 (lobby backdrops).
+
+- **18a — `gameover-hall.png`.** Painterly hall-of-fame: red velvet
+  curtains parted at the sides, gold-braided rope tiebacks, wooden
+  proscenium with gold-leaf carvings, warm center-stage spotlight
+  pool, carnival bunting hint at the top rail. One universal asset
+  fires on all four games' controller game-over. Winner composition
+  (eyebrow + avatar + hero name + subline + quip + BACK TO LOBBY)
+  sits inside the spotlight. Host-side Phase 8c race podium
+  continues independently — different surface.
+- **18b — `elim-shadow.png`.** Painterly "after the act" theatre:
+  lowered red curtain with a thin gold seam of light peeking
+  between the panels, dim warm spotlight on wooden floorboards, a
+  fallen jester hat resting near the hem, stage-dust motes in the
+  light. Dimmer than hall-of-fame but still daylight-pastel —
+  never sinister. Grayscale elim avatar + red `ELIMINATED` + GM
+  quip composition sits on the dim stage.
+- **18c — spectate reuses `standings-scroll.png`** (Phase 12a, no
+  new asset). `<img class="gp-spec-backdrop">` centers the wooden
+  scoreboard at natural aspect ratio; pill list constrained to the
+  cream slot column (220px × 62%); dot 10px; emoji hidden; names
+  flip to `--text-on-gold`; scores become display-font red; leader
+  row gets gold glow instead of the previous `· LEADER` text tag.
+  Tournament pattern applied to controller.
+- **18d — WebP siblings via Phase 17c pipeline.**
+  `gameover-hall.webp` 394KB (-81% of the 2.08MB PNG),
+  `elim-shadow.webp` 336KB (-85% of 2.22MB PNG). Modern clients
+  pay ~730KB instead of ~4.3MB for both painted atmospheres;
+  server's existing `preferWebp()` + `Vary: Accept` does the
+  negotiation.
+
+Shared CSS pattern across the three overlays: `<img>` backdrop is
+first child with `position: absolute; inset: 0; object-fit: cover;
+z-index: 0; opacity: 0.95`. All siblings get `position: relative;
+z-index: 1`. For gameover and elim, the heavy dark-blur scrim
+drops from 0.92 to 0.55 so the painted atmosphere reads while the
+blur still separates the state from live gameplay underneath. JS
+side: one `setTimeout` array loop drives `SpriteLoader.loadPainterly`
+for the three backdrops in parallel, async-swapping each `<img>.src`
+to the processed data URL so baked checker previews never peek past
+the painted edges. Raw PNG renders from first paint via the
+fallback; processed data URL replaces once loadPainterly resolves.
+
+Phase 18 depth-polishes the final emotional-beat surfaces that Phase
+12b touched only at the orb level. Audit grade stays at A+ (3.84) —
+the 2026-04-17 audit didn't score controller overlay backdrops as a
+separate dimension; this is internal visual-depth polish. A
+follow-up audit against live-game conditions would exercise the
+new painted overlays. Spec:
+`docs/superpowers/specs/2026-04-18-controller-hud-polish-design.md`.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1708,6 +1764,28 @@ After Phase 17 the project is at audit grade A+. Follow-ups
 `<main>` landmark, i18n / WebGL / GLB / race-2nd-3rd-place
 items) each open their own spec when demand justifies.
 
+18. **Phase 18** (shipped 2026-04-18): controller gameplay
+    overlay backdrops — 18a universal `gameover-hall.png`
+    painted hall-of-fame behind all four games' controller
+    game-over (red-velvet curtains + gold proscenium +
+    spotlight pool); 18b `elim-shadow.png` after-the-act
+    theatre (lowered curtain + dim spotlight + fallen jester
+    hat) behind `.gp-eliminated-overlay`; 18c `.gp-spectate-
+    block` reuses Phase 12a `standings-scroll.png` wooden
+    scoreboard with pill list retuned into the cream slot
+    column; 18d WebP siblings via Phase 17c pipeline (-81%
+    and -85%). CSS pattern uniform: `<img>` first-child
+    backdrop at `object-fit: cover; z-index: 0`, content
+    siblings at `z-index: 1`. Spec:
+    `docs/superpowers/specs/2026-04-18-controller-hud-polish-design.md`.
+
+After Phase 18 the controller gameplay surface has painted
+atmospheres on every full-screen emotional beat (elim,
+spectate, gameover). In-game HUD chrome (top-bar banner,
+score plaque, hintbar stage, item-pill medallion) remains
+CSS-only — candidate for a potential Phase 19 if demand
+accumulates.
+
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
 first, and this document is updated to reflect the addition.
@@ -1807,3 +1885,8 @@ first, and this document is updated to reflect the addition.
 | 2026-04-18 | Pretext hooks are additive, never load-bearing | If the dynamic import fails or `document.fonts.ready` rejects, `PretextHooks.measure` stays a no-op and elements keep their CSS-defined heights. No caller branches on `isReady`; the pattern degrades silently. This is why the hook script can be added to every HTML entry point without a fallback-asset audit |
 | 2026-04-18 | WebP content-negotiation via server-side MIME swap + `Vary: Accept`, not per-asset `<picture>` tags | Rewriting every HTML / JS / CSS / canvas call site to emit a `<picture><source type="image/webp">` fallback would have meant dozens of edits and broken the canvas renderers (which `new Image()` — no picture element). `server/index.js preferWebp()` intercepts the byte-serving layer: requests for `/assets/foo.png` carrying `Accept: image/webp` with a `foo.webp` sibling on disk silently get the WebP; everything else gets the PNG. `Vary: Accept` keeps proxies honest. Every existing asset path keeps working |
 | 2026-04-18 | PNG stays the source-canonical format; WebP is wire-only | Canvas renderers that sample pixels (`SpriteLoader.loadPainterly` chroma-key, `CharDraw.blob` procedural reads) need predictable RGBA data. Browser WebP decoding is visually identical to PNG but the workflow stays simpler when the art pipeline outputs PNG and the server compresses at serve time. Keeps the 89MB of canonical PNGs in the repo (no double-commit of PNG + WebP authoritative sources) |
+| 2026-04-18 | Phase 18 overlay backdrops use `<img>` element, not CSS `background-image` | Phase 10 lobby-backdrops + Phase 12a standings + Phase 9 tournament throne all converged on the `<img>` pattern because it enables `object-fit: cover` / natural aspect ratio + easy JS `.src` swap to the loadPainterly data URL. Background-image would need a CSS custom property + `<style>` injection (Phase 15 path) AND separate per-overlay inset math. `<img>` with `inset: 0; object-fit: cover` is simpler and already works across the tournament codebase |
+| 2026-04-18 | Single universal `gameover-hall.png` for all four games, not per-game backdrops | Per-game gameover backdrops would have meant four commissions + a switch in `buildDom` reading `o.gameId`. But the `.gp-gameover-overlay` DOM is shared across all four games, the winner composition is game-agnostic (eyebrow + hero + subline + quip + button), and the host-side Phase 8c race-podium already handles race's per-game visual differentiation on the HOST screen. One universal backdrop on controller + one podium on host is enough. Hill / meteor / escape get their per-game personality from the in-game canvas art, not the post-game stage |
+| 2026-04-18 | Gameover + elim dark scrim lifted from 0.92 to 0.55 | The original solid dark-blur scrim was paired with a flat dark overlay — no painted atmosphere to compete with, so max opacity was fine. With painted backdrops under the content, 0.92 buries the painting. 0.55 preserves the blur-separation from live gameplay while letting the painted spotlight and curtain atmospheres read. Text over the spotlight uses existing `text-shadow` (gold hero, red letterpress elim) which stays legible |
+| 2026-04-18 | Spectate leader gold-glow replaces `· LEADER` text tag | The painted cream slot strips in standings-scroll can't fit "42 · LEADER" at 220px list width without horizontal overflow. Tournament's own standings already relies on visual emphasis (scale + glow on `.leader`) rather than an inline "LEADER" tag. Controller spectate adopts the same: `.gp-spec-pill.leader .gp-spec-pill-name` gains a gold text-shadow, `.gp-spec-pill-meta` flips to `--accent-gold-hot` with a red letterpress. Meta stripped to just the score string |
+| 2026-04-18 | Three backdrop loadPainterly swaps batched into one setTimeout array loop | Phase 12b had one swap (orb `cell-action`). Phase 18 adds three more (spec standings-scroll, gameover hall, elim shadow). Rather than four separate setTimeouts, the Phase 18 change collapses into a single loop over a `swaps` array inside the existing setTimeout. Fewer task-queue tasks, easier to extend when a future overlay gets a backdrop too |
