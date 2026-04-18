@@ -251,8 +251,11 @@ function advanceTournament() {
           winnerId = alive[0].id;
         }
         currentGame.phase = 'result';
-        if (currentGame._iv) clearInterval(currentGame._iv);
-        if (currentGame._interval) clearInterval(currentGame._interval);
+        // Legacy interval handles live on the game instance under
+        // various names; clear both for safety.
+        /** @type {any} */ const g = currentGame;
+        if (g._iv) clearInterval(g._iv);
+        if (g._interval) clearInterval(g._interval);
         broadcast({ type: 'game_over', winnerId, gameId: currentGameId });
         currentGame.broadcastState();
       }, 60000);
