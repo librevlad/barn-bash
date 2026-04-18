@@ -626,21 +626,130 @@ const Render2D = (() => {
         idx: e.data.idx || 0,
       });
 
-      if (e.data.score > 0) {
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillStyle = 'rgba(255,200,50,0.9)';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText(e.data.score, s.x, s.y + 28);
-      }
-      if (e.data.name) {
-        ctx.font = '10px sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(e.data.name, s.x, s.y - 28);
-      }
+      // Phase 39b — painted name plate + score plaque replace the
+      // prior plain-text labels. Plate: dark background, gold border,
+      // cream text. Plaque: gold gradient, dark text. Both are small,
+      // rounded, 2-4 px padding to stay legible at 22 px char size.
+      if (e.data.name) _drawNamePlate(ctx, s.x, s.y - 32, e.data.name);
+      if (e.data.score > 0) _drawScorePlaque(ctx, s.x, s.y + 30, e.data.score);
     }
+
+    // Phase 39b — crown over current leader. Only shown once a player
+    // has ≥ 3 points so the crown doesn't instantly land on P1 at
+    // game start.
+    const leader = _findLeader();
+    if (leader) {
+      const ls = camera.worldToScreen(leader.data.rX || 0, leader.data.rY || 0);
+      _drawCrown(ctx, ls.x, ls.y - 48, clock);
+    }
+  }
+
+  function _findLeader() {
+    let best = null, bestScore = 2;
+    for (const e of entities.all()) {
+      if (!e.visible) continue;
+      if ((e.data.score || 0) > bestScore) { bestScore = e.data.score; best = e; }
+    }
+    return best;
+  }
+
+  function _drawNamePlate(ctx, cx, cy, text) {
+    ctx.save();
+    ctx.font = 'bold 11px var(--font-display, sans-serif)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const metrics = ctx.measureText(text);
+    const w = Math.max(40, metrics.width + 12);
+    const h = 16;
+    // Background capsule
+    ctx.fillStyle = 'rgba(30, 18, 10, 0.85)';
+    _roundRect(ctx, cx - w / 2, cy - h / 2, w, h, 4); ctx.fill();
+    // Gold border
+    ctx.strokeStyle = 'rgba(255, 221, 107, 0.7)';
+    ctx.lineWidth = 1;
+    _roundRect(ctx, cx - w / 2, cy - h / 2, w, h, 4); ctx.stroke();
+    // Text
+    ctx.fillStyle = 'rgba(255, 231, 170, 0.95)';
+    ctx.fillText(text, cx, cy + 0.5);
+    ctx.restore();
+  }
+
+  function _drawScorePlaque(ctx, cx, cy, score) {
+    ctx.save();
+    ctx.font = 'bold 13px var(--font-display, sans-serif)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const text = String(score);
+    const metrics = ctx.measureText(text);
+    const w = Math.max(32, metrics.width + 16);
+    const h = 18;
+    // Brass gradient bg
+    const grad = ctx.createLinearGradient(0, cy - h / 2, 0, cy + h / 2);
+    grad.addColorStop(0, '#ffdc7a');
+    grad.addColorStop(0.5, '#d6962b');
+    grad.addColorStop(1, '#8a5918');
+    ctx.fillStyle = grad;
+    _roundRect(ctx, cx - w / 2, cy - h / 2, w, h, 5); ctx.fill();
+    // Dark rim
+    ctx.strokeStyle = 'rgba(60, 36, 14, 0.85)';
+    ctx.lineWidth = 1.5;
+    _roundRect(ctx, cx - w / 2, cy - h / 2, w, h, 5); ctx.stroke();
+    // Highlight stroke on top edge
+    ctx.strokeStyle = 'rgba(255, 246, 200, 0.6)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(cx - w / 2 + 3, cy - h / 2 + 1);
+    ctx.lineTo(cx + w / 2 - 3, cy - h / 2 + 1);
+    ctx.stroke();
+    // Dark text with subtle shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillText(text, cx, cy + 1.5);
+    ctx.fillStyle = '#2a160a';
+    ctx.fillText(text, cx, cy + 0.5);
+    ctx.restore();
+  }
+
+  function _drawCrown(ctx, cx, cy, clock) {
+    const sprite = (typeof SpriteLoader !== 'undefined')
+      ? SpriteLoader.get('hill-crown') : null;
+    const bob = Math.sin(clock * 2.4) * 2;
+    const glowPulse = 0.45 + Math.sin(clock * 3.2) * 0.25;
+    // Glow halo behind crown
+    const halo = ctx.createRadialGradient(cx, cy + bob, 0, cx, cy + bob, 28);
+    halo.addColorStop(0, `rgba(255, 221, 107, ${glowPulse.toFixed(3)})`);
+    halo.addColorStop(1, 'rgba(255, 221, 107, 0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(cx, cy + bob, 28, 0, Math.PI * 2); ctx.fill();
+
+    if (sprite) {
+      const size = 44;
+      ctx.save();
+      ctx.drawImage(sprite, cx - size / 2, cy - size / 2 + bob, size, size);
+      ctx.restore();
+    } else {
+      // Emoji fallback
+      ctx.save();
+      ctx.font = 'bold 34px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffdd6b';
+      ctx.fillText('\uD83D\uDC51', cx, cy + bob);
+      ctx.restore();
+    }
+  }
+
+  function _roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
   }
 
   // ============================================================

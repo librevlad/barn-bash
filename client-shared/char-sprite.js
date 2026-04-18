@@ -100,6 +100,17 @@
       ctx.rotate(xf.rot);
       ctx.scale(xf.sx, xf.sy);
 
+      // Phase 39b — rim-glow outline. Soft dark halo under the sprite
+      // so painted characters pop off the wood floor. Keeps the silhouette
+      // legible at small (22 px) sizes without a hard pixel stroke.
+      ctx.save();
+      ctx.shadowColor = 'rgba(10, 6, 3, 0.85)';
+      ctx.shadowBlur = size * 0.34;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = size * 0.08;
+      ctx.drawImage(sprite, -s / 2, -s / 2, s, s);
+      ctx.restore();
+
       // Sprite
       ctx.drawImage(sprite, -s / 2, -s / 2, s, s);
 
