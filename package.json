@@ -6,7 +6,7 @@
     "start": "node server/index.js",
     "dev": "vite",
     "typecheck": "tsc --noEmit",
-    "test": "node --test server/players.test.js client-shared/protocol.test.js client-shared/error-reporter.test.js server/smoke.test.js"
+    "test": "node --test server/players.test.js client-shared/protocol.test.js client-shared/error-reporter.test.js server/games.test.js server/smoke.test.js"
   },
   "dependencies": {
     "ws": "^8.18.0"
