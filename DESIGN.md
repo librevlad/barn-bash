@@ -2006,12 +2006,23 @@ synchronized across screens.
     reduced-motion. Spec:
     `docs/superpowers/specs/2026-04-18-ambient-visual-depth-design.md`.
 
+22. **Phase 22** (shipped 2026-04-18): typography embellishments
+    — 22a multi-layer emboss tokens (`--text-emboss-hero`,
+    `--text-emboss-strong`) applied to hero titles (CHAMPION!,
+    ROUND N, game-names, winner-name, gameover hero); 22b
+    `.hero-flourish` class with flanking ❖ unicode ornaments
+    (`heroFlourishFadeIn` keyframe bloom); 22c illuminated
+    first-letter on narrator italic paragraphs (Alfa Slab gold
+    1.35x inline). Zero new fonts, zero new assets. Honors
+    prefers-reduced-motion. Spec:
+    `docs/superpowers/specs/2026-04-18-typography-embellishments-design.md`.
+
 After Phase 21 the painted surfaces breathe AND drift AND
-catch moving light. Remaining Hearthstone-polish arc: Phase
-22 typography embellishments, Phase 23 ornate object frames
-v2, Phase 24 parallax backgrounds, Phase 25 sound design,
-Phase 26 animation polish. Each its own spec when demand
-accumulates.
+catch moving light. After Phase 22 hero titles also EMBOSS
+with theatrical weight and bloom flanking gold flourishes.
+Remaining Hearthstone-polish arc: Phase 23 ornate object
+frames v2, Phase 24 parallax backgrounds, Phase 25 sound
+design, Phase 26 animation polish.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
