@@ -131,7 +131,12 @@ class RaceGame {
         maxSpeed: trait.maxSpeed,
         accel: trait.accel,
         handling: trait.handling,
-        steerInput: 0, // -1 left, 0 straight, 1 right
+        steerInput: 0,
+        // Phase 52a — per-player stats for postgame leaderboard.
+        itemsUsed: 0,
+        drifts: 0,
+        bumps: 0,
+        oilSlips: 0,
       };
     });
 
@@ -314,6 +319,7 @@ class RaceGame {
           g.stunTimer = STUN_TICKS;
           g.speed *= 0.2;
           g.angle += (Math.random() - 0.5) * 1.0; // spin out
+          g.oilSlips++;
           this.broadcast({ type: 'player_stunned', playerId: p.id, reason: 'oil', gameId: 'race' });
           this.oilSlicks.splice(i, 1);
           break;
@@ -337,8 +343,8 @@ class RaceGame {
           a.x += nx * overlap; a.z += nz * overlap;
           b.x -= nx * overlap; b.z -= nz * overlap;
           // Slower player gets stunned briefly
-          if (a.speed < b.speed) { a.stunTimer = 5; a.speed *= 0.5; }
-          else if (b.speed < a.speed) { b.stunTimer = 5; b.speed *= 0.5; }
+          if (a.speed < b.speed) { a.stunTimer = 5; a.speed *= 0.5; b.bumps++; }
+          else if (b.speed < a.speed) { b.stunTimer = 5; b.speed *= 0.5; a.bumps++; }
           this.broadcast({ type: 'bump', from: conn[i].id, to: conn[j].id, gameId: 'race' });
         }
       }
@@ -508,6 +514,7 @@ class RaceGame {
           g.boostTimer = DRIFT_BOOST_TICKS;
           g.boostType = 'drift';
           g.speed += DRIFT_BOOST_SPEED;
+          g.drifts++;
           this.broadcast({ type: 'drift_boost', playerId: p.id, gameId: 'race' });
         }
         g.drifting = false;
@@ -527,6 +534,7 @@ class RaceGame {
         g.boostTimer = BOOST_TICKS;
         g.boostType = 'item';
         g.speed += BOOST_SPEED;
+        g.itemsUsed++;
         this.broadcast({ type: 'item_used', playerId: player.id, item: 'boost', gameId: 'race' });
         break;
 
@@ -536,6 +544,7 @@ class RaceGame {
           z: g.z - Math.sin(g.angle) * 0.8,
           ownerId: player.id, life: 400,
         });
+        g.itemsUsed++;
         this.broadcast({ type: 'item_used', playerId: player.id, item: 'oil', gameId: 'race' });
         break;
 
@@ -564,6 +573,7 @@ class RaceGame {
         }
         if (targetId) {
           this.missiles.push({ x: g.x, z: g.z, targetId, life: 100 });
+          g.itemsUsed++;
           this.broadcast({ type: 'item_used', playerId: player.id, item: 'missile', target: targetId, gameId: 'race' });
         }
         break;
@@ -606,6 +616,17 @@ class RaceGame {
         stunned: g ? (g.stunTimer > 0) : false,
         item: g ? g.item : null,
         score: g ? g.score || 0 : 0,
+        finishTime: g ? g.finishTime || 0 : 0,
+        // Phase 52a — per-player stats for postgame leaderboard.
+        stats: g ? {
+          itemsUsed: g.itemsUsed || 0,
+          drifts: g.drifts || 0,
+          bumps: g.bumps || 0,
+          oilSlips: g.oilSlips || 0,
+          finishPos: g.finished
+            ? (this.finishOrder.indexOf(p.id) + 1)
+            : 0,
+        } : null,
       };
     }
     return {
