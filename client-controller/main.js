@@ -233,20 +233,37 @@ function sendMoveAnalog(vx, vy) {
   ws.send(JSON.stringify({ type: 'input', action: 'move', vx: vx, vy: vy }));
 }
 
-// Phase 38e — hill virtual joystick installer. Active only while
-// gameId === 'hillKing' and the player is in the running phase.
+// Phase 38e / 42 — hill virtual joystick + dash-charge button. Both
+// installed only while gameId === 'hillKing' and the player is in the
+// running phase. The joystick zone excludes the dash button.
 let hillJoystick = null;
+let hillDashBtn = null;
 function updateJoystickMode() {
   const active = (gameId === 'hillKing' && phase === 'running');
   if (active && !hillJoystick && typeof HillJoystick !== 'undefined') {
     hillJoystick = new HillJoystick({
       onMove: sendMoveAnalog,
-      excludeSelector: '.gp-action, .gp-go-btn, .gp-countdown, .gameover-root',
+      excludeSelector: '.gp-action, .gp-go-btn, .gp-countdown, .gameover-root, .hill-dash-btn',
     });
     hillJoystick.install();
   } else if (!active && hillJoystick) {
     hillJoystick.destroy();
     hillJoystick = null;
+  }
+
+  if (active && !hillDashBtn && typeof HillDashButton !== 'undefined') {
+    hillDashBtn = new HillDashButton({
+      onRelease: (power) => {
+        if (!ws || ws.readyState !== 1) return;
+        ws.send(JSON.stringify({ type: 'input', action: 'dash', power: power }));
+        if (gameplayReady) Gameplay.onLocalAction('DASH!');
+        Sound.play('dash');
+      },
+    });
+    hillDashBtn.install();
+  } else if (!active && hillDashBtn) {
+    hillDashBtn.destroy();
+    hillDashBtn = null;
   }
 }
 

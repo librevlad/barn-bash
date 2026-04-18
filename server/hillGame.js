@@ -553,13 +553,24 @@ class HillGame {
         dashAngle = nearestAngle;
       }
 
-      g.vx += Math.cos(dashAngle) * DASH_IMPULSE;
-      g.vy += Math.sin(dashAngle) * DASH_IMPULSE;
+      // Phase 42 — dash power scaling. `msg.power` in [0, 1] scales
+      // the impulse from 0.6× (weak flick) to 1.6× (held charge) and
+      // lengthens the dash phase by up to 4 ticks at full charge.
+      // Default 0.6 so a plain `{ type: 'input', action: 'dash' }`
+      // from legacy / untyped callers behaves like the pre-42 dash.
+      const rawP = (msg && typeof msg.power === 'number') ? msg.power : 0.6;
+      const power = Math.max(0.2, Math.min(1, rawP));
+      const impulse = DASH_IMPULSE * (0.6 + power * 1.0);
+      const ticks = DASH_TICKS + Math.round(power * 4);
+
+      g.vx += Math.cos(dashAngle) * impulse;
+      g.vy += Math.sin(dashAngle) * impulse;
       g.facing = dashAngle;
       g.dashing = true;
-      g.dashT = DASH_TICKS;
+      g.dashT = ticks;
       g.cd = DASH_CD;
       g.shielding = false;
+      g.lastDashPower = power; // exposed via state for client FX scaling
     }
   }
 

@@ -336,6 +336,7 @@ declare global {
   var CharSprite: FranticsCharSprite;
   var CharDraw: any;
   var HillJoystick: any;
+  var HillDashButton: any;
   var Physics2D: any;
   var Camera2D: any;
   var Scene: any;
