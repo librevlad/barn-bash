@@ -225,6 +225,30 @@ function send(action, direction) {
   ws.send(JSON.stringify(msg));
 }
 
+// Phase 38e — analog move for hillKing virtual joystick. Sends vx/vy
+// floats in [-1, 1] alongside the existing discrete move protocol.
+function sendMoveAnalog(vx, vy) {
+  if (!ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'input', action: 'move', vx: vx, vy: vy }));
+}
+
+// Phase 38e — hill virtual joystick installer. Active only while
+// gameId === 'hillKing' and the player is in the running phase.
+let hillJoystick = null;
+function updateJoystickMode() {
+  const active = (gameId === 'hillKing' && phase === 'running');
+  if (active && !hillJoystick && typeof HillJoystick !== 'undefined') {
+    hillJoystick = new HillJoystick({
+      onMove: sendMoveAnalog,
+      excludeSelector: '.gp-action, .gp-go-btn, .gp-countdown, .gameover-root',
+    });
+    hillJoystick.install();
+  } else if (!active && hillJoystick) {
+    hillJoystick.destroy();
+    hillJoystick = null;
+  }
+}
+
 // ============================================================
 // WEBSOCKET MESSAGES → Gameplay API
 // ============================================================
@@ -295,6 +319,7 @@ function onMessage(e) {
       if (!playerId) break;
       ensureGameplay(gameId);
       phase = msg.gameState.phase;
+      updateJoystickMode();
 
       if (phase === 'lobby') {
         Gameplay.setPhase('idle');

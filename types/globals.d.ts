@@ -334,6 +334,7 @@ declare global {
   var ErrorReporter: FranticsErrorReporter;
   var CharSprite: FranticsCharSprite;
   var CharDraw: any;
+  var HillJoystick: any;
   var Physics2D: any;
   var Camera2D: any;
   var Scene: any;

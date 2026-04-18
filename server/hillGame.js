@@ -475,8 +475,21 @@ class HillGame {
 
     if (g.teetering) return;
 
-    if (action === 'move' && msg && msg.direction) {
+    if (action === 'move' && msg) {
       const accel = g.moveAccel;
+      // Phase 38e — analog joystick vector. vx/vy in [-1, 1] scales the
+      // per-tick impulse; tiny residual magnitudes are treated as zero
+      // so a released stick damps cleanly via friction.
+      if (typeof msg.vx === 'number' && typeof msg.vy === 'number') {
+        const m = Math.sqrt(msg.vx * msg.vx + msg.vy * msg.vy);
+        if (m > 0.01) {
+          g.vx += msg.vx * accel;
+          g.vy += msg.vy * accel;
+        }
+        return;
+      }
+      // Legacy discrete path — keeps the swipe-based controllers on
+      // escape / meteor / race working unchanged until they migrate.
       if (msg.direction === 'left')  g.vx -= accel;
       else if (msg.direction === 'right') g.vx += accel;
       else if (msg.direction === 'up')    g.vy -= accel;
