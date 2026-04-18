@@ -511,6 +511,16 @@ const Render2D = (() => {
   // ============================================================
   // LAYER: PLAYERS (using EntityManager)
   // ============================================================
+  // Phase 48a — hex → 'r,g,b' string for CharSprite tint.
+  function _hexToRgb(hex) {
+    if (!hex || hex.charAt(0) !== '#') return '255,255,255';
+    const h = hex.slice(1);
+    const r = parseInt(h.slice(0, 2), 16) || 255;
+    const g = parseInt(h.slice(2, 4), 16) || 255;
+    const b = parseInt(h.slice(4, 6), 16) || 255;
+    return r + ',' + g + ',' + b;
+  }
+
   function drawPlayers(ctx) {
     const clock = renderLoop ? renderLoop.getClock() : 0;
     const groundY = H * 0.62;
@@ -549,11 +559,30 @@ const Render2D = (() => {
       // Stumble blink
       if (stumbling && Math.floor(clock * 10) % 2 === 0) ctx.globalAlpha = 0.4;
 
-      CharDraw.blob(ctx, px, sy, 20, e.color, {
-        jumpY, idx: i, clock, expression: expr, running: true,
-        sliding: sliding,
-        character: pdata.character || null,
-      });
+      // Phase 48a — CharSprite path with pose-driven animation.
+      // Falls back to CharDraw.blob if CharSprite isn't loaded.
+      if (typeof CharSprite !== 'undefined') {
+        const pose = stumbling ? 'hit'
+          : sliding ? 'windup'
+          : jumpY > 0.05 ? 'dash'
+          : 'move';
+        CharSprite.draw(ctx, px, sy, 20, {
+          character: pdata.character || 'cat',
+          colorRgb: _hexToRgb(e.color),
+          color: e.color,
+          pose: pose,
+          clock: clock,
+          idx: i,
+          facing: 0, // escape always faces right
+          charge: sliding ? 1 : 0,
+        });
+      } else {
+        CharDraw.blob(ctx, px, sy, 20, e.color, {
+          jumpY, idx: i, clock, expression: expr, running: true,
+          sliding: sliding,
+          character: pdata.character || null,
+        });
+      }
 
       // Shield ring
       if (pdata.shield) {
