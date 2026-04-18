@@ -34,10 +34,28 @@ const Render2D = (() => {
   // around the threshold don't flicker.
   let crestFade = 0;
 
-  // Stars (pre-generated, same count & distribution as original)
-  const stars = [];
-  for (let i = 0; i < 80; i++) {
-    stars.push({ x: Math.random(), y: Math.random(), s: 0.5 + Math.random() * 1.5, b: Math.random() });
+  // Phase 38b — painted arena backdrop. Procedural wood-grain rings +
+  // carnival-red vignette to match the rest of the Frantics aesthetic.
+  // When hill-floor.png / hill-bumper.png etc. ship, SpriteLoader swaps
+  // the procedural draws for the painterly PNGs (Phase 38c hook).
+  const woodRings = [];
+  for (let i = 0; i < 18; i++) {
+    woodRings.push({
+      t: 0.08 + i * 0.045,           // 0..1 radius fraction
+      thick: 0.6 + Math.random() * 1.8, // variable stroke
+      warp: (Math.random() - 0.5) * 0.06, // slight non-concentric
+      tone: 0.85 + Math.random() * 0.15, // brightness jitter
+    });
+  }
+  // Dust motes that drift over the arena to sell the "stage" feel.
+  const motes = [];
+  for (let i = 0; i < 22; i++) {
+    motes.push({
+      x: Math.random(), y: Math.random(),
+      s: 0.6 + Math.random() * 1.4,
+      drift: 0.0006 + Math.random() * 0.0012,
+      phase: Math.random() * Math.PI * 2,
+    });
   }
 
   // ============================================================
@@ -51,18 +69,19 @@ const Render2D = (() => {
     if (typeof FX !== 'undefined') FX.init(W, H);
     if (typeof Visual !== 'undefined') Visual.init(W, H);
 
-    // Setup scene layers
-    // 'ui' layer name is special in Scene — it skips camera transform (screen-space).
-    // Background stars/nebula use screen-space coords, so we draw them before scene.render().
+    // Scene layers. 'ui' skips camera transform (screen-space). Phase 38b
+    // inserts a `hazards` layer between kingzone and players so cracks /
+    // ice zone / bumper render ON the arena but UNDER the characters.
     scene.createLayer('arena', 5);
     scene.createLayer('kingzone', 8);
+    scene.createLayer('hazards', 12);
     scene.createLayer('players', 20);
     scene.createLayer('crest', 22);
     scene.createLayer('ui', 40);
 
-    // Register render functions per layer
     scene.getLayer('arena').addFn(drawArena);
     scene.getLayer('kingzone').addFn(drawKingZone);
+    scene.getLayer('hazards').addFn(drawHazards);
     scene.getLayer('players').addFn(drawPlayers);
     scene.getLayer('crest').addFn(drawHillCrest);
 
@@ -101,13 +120,10 @@ const Render2D = (() => {
     // Smoothly interpolate platform radius
     renderPlatR += (targetPlatR - renderPlatR) * 0.04;
 
-    // Clear
-    ctx.fillStyle = '#06060f';
-    ctx.fillRect(0, 0, W, H);
+    // Phase 38b — painted carnival backdrop (wood-plank gradient +
+    // red proscenium vignette). Replaces the prior space-stars look.
+    drawCarnivalBackdrop(ctx);
     if (typeof FX !== 'undefined') FX.drawBefore(ctx);
-
-    // Draw background (screen-space stars + nebula) before scene
-    drawStars(ctx);
 
     // Render scene layers — all draw functions use camera.worldToScreen()
     // for coordinate conversion (which includes shake offset), so we
@@ -123,93 +139,167 @@ const Render2D = (() => {
   }
 
   // ============================================================
-  // BACKGROUND (stars + nebula) — drawn in screen space before
-  // the scene layers, so it is unaffected by camera transform.
+  // PHASE 38b — CARNIVAL BACKDROP (screen-space, behind scene)
+  // Deep wood-plank gradient with red-curtain vignette + drifting
+  // dust motes. Matches the painted-carnival aesthetic of the rest
+  // of the product (lobby backdrops, tournament scoreboard, etc.).
   // ============================================================
-  function drawStars(ctx) {
+  function drawCarnivalBackdrop(ctx) {
     const clock = renderLoop ? renderLoop.getClock() : 0;
 
-    // Nebula clouds (slow-moving colored gradients)
-    const nebulas = [
-      { x: 0.3, y: 0.25, r: 0.2, color: '80,40,140', speed: 0.02 },
-      { x: 0.7, y: 0.6, r: 0.15, color: '40,60,120', speed: 0.015 },
-      { x: 0.5, y: 0.8, r: 0.18, color: '100,30,80', speed: 0.01 },
-    ];
-    for (const n of nebulas) {
-      const nx = (n.x + Math.sin(clock * n.speed) * 0.05) * W;
-      const ny = (n.y + Math.cos(clock * n.speed * 1.3) * 0.03) * H;
-      const nr = n.r * Math.min(W, H);
-      const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr);
-      grad.addColorStop(0, `rgba(${n.color},0.06)`);
-      grad.addColorStop(0.5, `rgba(${n.color},0.02)`);
-      grad.addColorStop(1, `rgba(${n.color},0)`);
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(nx, ny, nr, 0, Math.PI * 2); ctx.fill();
+    // Wood-plank radial gradient — brown core, darker at edges.
+    const cx = W / 2, cy = H / 2;
+    const bgGrad = ctx.createRadialGradient(cx, cy * 0.7, 0, cx, cy, Math.max(W, H));
+    bgGrad.addColorStop(0,    '#3a2416');
+    bgGrad.addColorStop(0.55, '#241510');
+    bgGrad.addColorStop(1,    '#110806');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Vertical plank seams — thin dark lines every ~120px to suggest
+    // a wooden stage floor even outside the arena disc.
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.strokeStyle = '#0c0705';
+    ctx.lineWidth = 1;
+    const seam = 140;
+    for (let x = (cx % seam) - seam; x < W; x += seam) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    ctx.restore();
+
+    // Red-curtain proscenium vignette — warm red glow in the top
+    // corners, fading to the centre. Reads as "spotlit stage".
+    const curtainL = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(W, H) * 0.8);
+    curtainL.addColorStop(0,   'rgba(140, 40, 30, 0.22)');
+    curtainL.addColorStop(0.6, 'rgba(80, 15, 10, 0.08)');
+    curtainL.addColorStop(1,   'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = curtainL;
+    ctx.fillRect(0, 0, W, H);
+    const curtainR = ctx.createRadialGradient(W, 0, 0, W, 0, Math.max(W, H) * 0.8);
+    curtainR.addColorStop(0,   'rgba(140, 40, 30, 0.22)');
+    curtainR.addColorStop(0.6, 'rgba(80, 15, 10, 0.08)');
+    curtainR.addColorStop(1,   'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = curtainR;
+    ctx.fillRect(0, 0, W, H);
+
+    // Drifting dust motes — warm gold, sparse, small.
+    for (const m of motes) {
+      const mx = ((m.x + clock * m.drift) % 1) * W;
+      const my = (m.y + Math.sin(clock * 0.4 + m.phase) * 0.02) * H;
+      const alpha = 0.12 + Math.sin(clock * 1.2 + m.phase) * 0.08;
+      ctx.fillStyle = `rgba(255, 210, 140, ${alpha.toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(mx, my, m.s, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Stars with twinkle
-    for (const s of stars) {
-      const twinkle = 0.25 + Math.sin(clock * 1.5 + s.b * 10) * 0.3;
-      ctx.fillStyle = `rgba(200,180,255,${twinkle})`;
-      ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.s, 0, Math.PI * 2); ctx.fill();
-    }
+    // Bottom shadow — heavy grade at the floor-line to seat the arena.
+    const floor = ctx.createLinearGradient(0, H * 0.6, 0, H);
+    floor.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    floor.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
+    ctx.fillStyle = floor;
+    ctx.fillRect(0, H * 0.6, W, H * 0.4);
   }
 
   // ============================================================
-  // LAYER: ARENA — disc with gradient, glow, concentric rings
+  // LAYER: ARENA — painted wood disc (Phase 38b)
+  //
+  // Placeholder for a commissioned hill-floor.png. Procedural build:
+  //   1. Soft ambient glow (warm amber).
+  //   2. Wood-plank disc — radial gradient from warm honey centre
+  //      to dark walnut edge.
+  //   3. Concentric wood rings (variable thickness + slight warp)
+  //      suggest hand-planed grain.
+  //   4. Radial "scuff" streaks cross a few rings for painted
+  //      looseness.
+  //   5. Brass rim + danger pulse (kept from legacy render).
   // ============================================================
   function drawArena(ctx) {
-    const radius = renderPlatR;
     const SCALE = camera.getZoom();
-    const r = radius * SCALE;
-    const center = camera.worldToScreen(0, 0);
-    const ax = center.x;
-    const ay = center.y;
-
-    // Outer glow
-    const glow = ctx.createRadialGradient(ax, ay, r * 0.85, ax, ay, r * 1.4);
-    glow.addColorStop(0, 'rgba(140,90,240,0.18)');
-    glow.addColorStop(0.6, 'rgba(140,90,240,0.05)');
-    glow.addColorStop(1, 'rgba(140,90,240,0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(ax, ay, r * 1.5, 0, Math.PI * 2); ctx.fill();
-
-    // Arena disc (richer gradient)
-    const grad = ctx.createRadialGradient(ax - r * 0.15, ay - r * 0.15, 0, ax, ay, r);
-    grad.addColorStop(0, '#352868');
-    grad.addColorStop(0.5, '#221a50');
-    grad.addColorStop(0.8, '#161040');
-    grad.addColorStop(1, '#120C30');
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
-
-    // Concentric rings
-    ctx.strokeStyle = 'rgba(120,80,220,0.08)';
-    ctx.lineWidth = 1;
-    for (let f = 0.25; f < 1; f += 0.25) {
-      ctx.beginPath(); ctx.arc(ax, ay, r * f, 0, Math.PI * 2); ctx.stroke();
-    }
-
-    // Brass rim — carnival signature. Outer gold-edge ring wraps the
-    // whole platform, inner gold-hot highlight makes the arena read
-    // as a bronze platter the king gets pushed around on.
+    const r = renderPlatR * SCALE;
+    const c = camera.worldToScreen(0, 0);
+    const ax = c.x, ay = c.y;
     const clock = renderLoop ? renderLoop.getClock() : 0;
     const danger = renderPlatR < 3.5;
-    ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldEdge : 'rgba(138,103,24,0.8)');
+
+    // Ambient warm glow (spotlight-on-stage)
+    const glow = ctx.createRadialGradient(ax, ay, r * 0.85, ax, ay, r * 1.55);
+    glow.addColorStop(0, 'rgba(255, 195, 120, 0.20)');
+    glow.addColorStop(0.6, 'rgba(190, 120, 60, 0.06)');
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(ax, ay, r * 1.55, 0, Math.PI * 2); ctx.fill();
+
+    // Wood disc — warm honey-to-walnut gradient
+    const wood = ctx.createRadialGradient(ax - r * 0.18, ay - r * 0.18, 0, ax, ay, r);
+    wood.addColorStop(0,    '#a6733d');
+    wood.addColorStop(0.45, '#7a4e24');
+    wood.addColorStop(0.82, '#4e2f17');
+    wood.addColorStop(1,    '#3a200f');
+    ctx.fillStyle = wood;
+    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
+
+    // Clip further rendering to the disc so grain + cracks never
+    // escape the arena outline.
+    ctx.save();
+    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.clip();
+
+    // Wood-grain rings — variable thickness, slightly warped
+    ctx.strokeStyle = 'rgba(30, 18, 10, 0.38)';
+    for (const ring of woodRings) {
+      ctx.lineWidth = ring.thick;
+      ctx.strokeStyle = `rgba(${Math.floor(40 * ring.tone)}, ${Math.floor(24 * ring.tone)}, ${Math.floor(12 * ring.tone)}, 0.38)`;
+      ctx.beginPath();
+      ctx.arc(ax + ring.warp * r, ay + ring.warp * r * 0.7, r * ring.t, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Radial scuff streaks — hand-painted look
+    ctx.strokeStyle = 'rgba(30, 18, 10, 0.15)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      const r1 = r * (0.3 + Math.sin(i * 12.9) * 0.2);
+      const r2 = r * (0.7 + Math.cos(i * 7.3) * 0.15);
+      ctx.beginPath();
+      ctx.moveTo(ax + Math.cos(a) * r1, ay + Math.sin(a) * r1);
+      ctx.lineTo(ax + Math.cos(a) * r2, ay + Math.sin(a) * r2);
+      ctx.stroke();
+    }
+
+    // Soft vignette inside the disc — recessed-stage feel
+    const inner = ctx.createRadialGradient(ax, ay, r * 0.6, ax, ay, r);
+    inner.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    inner.addColorStop(1, 'rgba(0, 0, 0, 0.35)');
+    ctx.fillStyle = inner;
+    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
+
+    ctx.restore(); // unclip
+
+    // Brass rim — double-ring carnival signature
+    ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldEdge : 'rgba(138,103,24,0.85)');
     ctx.lineWidth = 6;
     ctx.beginPath(); ctx.arc(ax, ay, r + 3, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldDim : 'rgba(176,133,28,0.7)');
+    ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldDim : 'rgba(176,133,28,0.8)');
     ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(ax, ay, r + 1, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,221,107,0.45)';
+    ctx.strokeStyle = 'rgba(255, 221, 107, 0.55)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(ax, ay, r - 2, 0, Math.PI * 2); ctx.stroke();
 
-    // Pulsing edge ring — danger flip uses danger-red token
-    const pulse = 0.4 + Math.sin(clock * (danger ? 6 : 3)) * 0.2;
+    // Brass rivets — 12 studs around the rim
+    ctx.fillStyle = 'rgba(255, 221, 107, 0.85)';
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const rx = ax + Math.cos(a) * (r + 1);
+      const ry = ay + Math.sin(a) * (r + 1);
+      ctx.beginPath(); ctx.arc(rx, ry, 2.4, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Pulsing danger edge
+    const pulse = 0.5 + Math.sin(clock * (danger ? 6 : 2.5)) * 0.25;
     ctx.strokeStyle = danger
-      ? (typeof Palette !== 'undefined' ? `rgba(217,83,79,${pulse})` : `rgba(255,60,60,${pulse})`)
-      : `rgba(120,80,220,${pulse * 0.7})`;
+      ? `rgba(217, 83, 79, ${pulse})`
+      : `rgba(255, 200, 120, ${pulse * 0.35})`;
     ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.stroke();
   }
@@ -270,6 +360,121 @@ const Render2D = (() => {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('\uD83D\uDC51', ax, ay);
     }
+  }
+
+  // ============================================================
+  // LAYER: HAZARDS (Phase 38b) — cracks + ice zone + bumper
+  //
+  // Reads state set by updateState(). Each hazard has a procedural
+  // placeholder that carries the carnival aesthetic; when a
+  // commissioned PNG ships (hill-crack.png / hill-ice.png /
+  // hill-bumper.png), SpriteLoader.loadPainterly swaps it in.
+  // ============================================================
+  let hazardState = { cracks: [], iceZone: null, bumperActive: false, bumperAngle: 0 };
+  function drawHazards(ctx) {
+    const SCALE = camera.getZoom();
+    const c = camera.worldToScreen(0, 0);
+    const ax = c.x, ay = c.y;
+    const clock = renderLoop ? renderLoop.getClock() : 0;
+    const r = renderPlatR * SCALE;
+
+    // Clip hazards to arena disc so they don't bleed onto backdrop.
+    ctx.save();
+    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.clip();
+
+    // Ice zone — light-blue pie slice with shimmer
+    if (hazardState.iceZone) {
+      const iz = hazardState.iceZone;
+      ctx.save();
+      const grad = ctx.createRadialGradient(ax, ay, 0, ax, ay, r);
+      grad.addColorStop(0, 'rgba(180, 230, 255, 0)');
+      grad.addColorStop(0.5, 'rgba(180, 230, 255, 0.28)');
+      grad.addColorStop(1, 'rgba(220, 240, 255, 0.45)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.arc(ax, ay, r, iz.angle - iz.spread, iz.angle + iz.spread);
+      ctx.closePath();
+      ctx.fill();
+
+      // Shimmer highlights — short bright strokes drifting
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 9; i++) {
+        const ta = iz.angle + (Math.sin(clock * 1.3 + i) * iz.spread * 0.7);
+        const tr = r * (0.35 + ((i * 0.13 + clock * 0.05) % 0.55));
+        const x = ax + Math.cos(ta) * tr;
+        const y = ay + Math.sin(ta) * tr;
+        ctx.beginPath();
+        ctx.moveTo(x - 4, y);
+        ctx.lineTo(x + 4, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Cracks — dark jagged scars on the floor
+    for (const crack of hazardState.cracks) {
+      const cx = ax + Math.cos(crack.angle) * crack.radius * SCALE;
+      const cy = ay + Math.sin(crack.angle) * crack.radius * SCALE;
+      const rad = 0.8 * SCALE;
+
+      // Shadow base
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.beginPath(); ctx.arc(cx, cy, rad * 1.05, 0, Math.PI * 2); ctx.fill();
+
+      // Jagged crack lines radiating from centre — painted splat feel
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.lineWidth = 2;
+      const seed = (crack.angle * 17.3 + crack.radius * 4.1);
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2 + (seed % 1) * 0.5;
+        const r1 = rad * 0.15;
+        const r2 = rad * (0.65 + ((seed * (k + 1)) % 1) * 0.35);
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+        // One bend so crack reads as jagged rather than a line
+        const ma = a + 0.25 - ((seed + k) % 1) * 0.5;
+        const mr = (r1 + r2) * 0.55;
+        ctx.lineTo(cx + Math.cos(ma) * mr, cy + Math.sin(ma) * mr);
+        ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+        ctx.stroke();
+      }
+      // Highlight rim — thin gold rim reading "danger marker"
+      ctx.strokeStyle = 'rgba(255, 200, 100, 0.35)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // Bumper — rotating gold-red stud at 0.8 world units from centre
+    if (hazardState.bumperActive) {
+      const bx = ax + Math.cos(hazardState.bumperAngle) * 0.8 * SCALE;
+      const by = ay + Math.sin(hazardState.bumperAngle) * 0.8 * SCALE;
+      const br = 0.8 * SCALE;
+
+      // Rubber rim (red)
+      const rimGrad = ctx.createRadialGradient(bx, by, br * 0.5, bx, by, br);
+      rimGrad.addColorStop(0, 'rgba(200, 60, 50, 0.9)');
+      rimGrad.addColorStop(1, 'rgba(120, 20, 15, 1)');
+      ctx.fillStyle = rimGrad;
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+
+      // Gold centre disc with bright highlight
+      const coreGrad = ctx.createRadialGradient(bx - br * 0.2, by - br * 0.2, 0, bx, by, br * 0.6);
+      coreGrad.addColorStop(0, '#ffe08a');
+      coreGrad.addColorStop(0.7, '#d4952d');
+      coreGrad.addColorStop(1, '#8a5918');
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath(); ctx.arc(bx, by, br * 0.6, 0, Math.PI * 2); ctx.fill();
+
+      // Pulsing halo
+      const halo = 0.35 + Math.sin(clock * 5) * 0.2;
+      ctx.strokeStyle = `rgba(255, 180, 80, ${halo})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(bx, by, br + 3, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    ctx.restore(); // unclip
   }
 
   // ============================================================
@@ -364,6 +569,12 @@ const Render2D = (() => {
     lastStateTime = performance.now();
     targetPlatR = state.platR;
     if (state.kingZoneR) kingZoneR = state.kingZoneR;
+
+    // Phase 38b — hazard state for the hazards layer.
+    hazardState.cracks = state.cracks || [];
+    hazardState.iceZone = state.iceZone || null;
+    hazardState.bumperActive = !!state.bumperActive;
+    hazardState.bumperAngle = state.bumperAngle || 0;
 
     const SCALE = Math.min(W || 1280, H || 720) / 13;
     camera.setZoom(SCALE);
