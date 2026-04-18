@@ -21,50 +21,104 @@
       position: fixed; inset: 0; pointer-events: none; z-index: 1;
       background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.55) 100%);
     }
+    /* Phase 48c — painted HUD adapted from KotH vocabulary. Three
+       brass plaques + red-ribbon title banner replace the old flat
+       gradient strip. Legacy IDs kept so existing main.js updates
+       still write to the right fields. */
     #hud {
       position: fixed; top: 0; left: 0; right: 0; z-index: 5;
-      display: flex; justify-content: space-between;
-      padding: 16px 32px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: start;
+      gap: 20px;
+      padding: 14px 24px 0;
       pointer-events: none;
-      background: linear-gradient(180deg, rgba(61, 40, 23, 0.72) 0%, transparent 100%);
+      background: linear-gradient(180deg, rgba(20, 12, 7, 0.55) 0%, transparent 100%);
     }
-    .hud-title {
+    .hud-plaque {
+      position: relative;
+      min-width: 130px;
+      padding: 8px 16px 10px;
+      border-radius: 10px;
+      background:
+        linear-gradient(180deg, #ffe290 0%, #d5972b 50%, #8d5a18 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 246, 200, 0.75),
+        inset 0 -2px 3px rgba(40, 22, 10, 0.45),
+        0 3px 10px rgba(0, 0, 0, 0.55),
+        0 0 0 2px rgba(50, 28, 10, 0.85);
+      text-align: center;
+    }
+    .hud-plaque::before {
+      content: '';
+      position: absolute; top: 3px; left: 10%; right: 10%; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.85), transparent);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .hud-plaque .hud-title {
+      display: block;
       font-family: var(--font-accent);
       font-size: 10px;
-      letter-spacing: var(--tracking-widest);
-      color: var(--accent-gold);
-      opacity: 0.9;
+      letter-spacing: 4px;
+      color: rgba(60, 30, 8, 0.85);
       text-transform: uppercase;
     }
-    /* In-lobby eyebrow sits on the painted arch; needs strong contrast. */
+    .hud-plaque .hud-value {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: #2a160a;
+      text-shadow: 0 1px 0 rgba(255, 246, 200, 0.45);
+      letter-spacing: 1.5px;
+      line-height: 1.1;
+    }
+    .hud-banner {
+      justify-self: center;
+      position: relative;
+      padding: 9px 36px 11px;
+      margin-top: 2px;
+      background: linear-gradient(180deg, #c73a2d 0%, #8b1d16 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 180, 160, 0.45),
+        inset 0 -2px 4px rgba(40, 8, 4, 0.6),
+        0 0 0 2px #6d1712,
+        0 0 0 4px #d4952d,
+        0 3px 14px rgba(0, 0, 0, 0.55);
+      text-align: center;
+      clip-path: polygon(
+        10px 0, calc(100% - 10px) 0, 100% 50%,
+        calc(100% - 10px) 100%, 10px 100%, 0 50%
+      );
+    }
+    .hud-banner-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      color: #ffe290;
+      letter-spacing: 4px;
+      text-shadow: 0 2px 0 #4a0d09, 0 0 10px rgba(255, 190, 110, 0.45);
+    }
+    .hud-banner-sub {
+      font-family: var(--font-accent);
+      font-size: 11px;
+      color: rgba(255, 230, 200, 0.85);
+      margin-top: 1px;
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Aliases so legacy main.js writes (.hud-distance, .hud-speed,
+       .hud-alive) still find the painted numerals inside .hud-value. */
+    .hud-distance { display: inline; }
+    .hud-speed    { display: inline; font-size: 11px; color: rgba(60,30,8,0.75); letter-spacing: 2px; font-family: var(--font-accent); }
+    .hud-alive    { display: inline; }
+
     #lobby .hud-title {
       font-size: 12px;
       letter-spacing: 6px;
       opacity: 1;
       text-shadow: 0 1px 0 var(--accent-red-deep),
                    0 0 14px rgba(0, 0, 0, 0.8);
-    }
-    .hud-distance {
-      font-family: var(--font-display);
-      font-size: 40px; font-weight: 400;
-      color: var(--accent-gold);
-      text-shadow: 0 2px 0 var(--accent-red-deep),
-                   0 0 20px rgba(244, 197, 66, 0.4);
-      letter-spacing: 1px;
-    }
-    .hud-speed {
-      font-family: var(--font-accent);
-      font-size: 13px;
-      color: var(--text-dim);
-      margin-top: 2px;
-      letter-spacing: 1px;
-    }
-    .hud-alive {
-      font-family: var(--font-display);
-      font-size: 20px; font-weight: 400;
-      color: var(--accent-gold-hot);
-      text-shadow: 0 1px 0 var(--accent-red-deep);
-      letter-spacing: 1px;
     }
     #countdown {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -200,13 +254,20 @@
 <body>
   <canvas id="game-canvas"></canvas>
   <div id="vignette"></div>
+  <!-- Phase 48c — painted three-plaque HUD. -->
   <div id="hud" style="display:none">
-    <div>
-      <div class="hud-title">ESCAPE THE FOX</div>
-      <div class="hud-distance" id="hud-distance">0m</div>
-      <div class="hud-speed" id="hud-speed"></div>
+    <div class="hud-plaque">
+      <span class="hud-title">Distance</span>
+      <span class="hud-value hud-distance" id="hud-distance">0m</span>
     </div>
-    <div class="hud-alive" id="hud-alive"></div>
+    <div class="hud-banner">
+      <div class="hud-banner-title">&#x1F98A; Escape the Fox</div>
+      <div class="hud-banner-sub hud-speed" id="hud-speed">&#x2014;</div>
+    </div>
+    <div class="hud-plaque">
+      <span class="hud-title">Alive</span>
+      <span class="hud-value hud-alive" id="hud-alive">0/0</span>
+    </div>
   </div>
   <div id="countdown"></div>
   <div id="message"></div>

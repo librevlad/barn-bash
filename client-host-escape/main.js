@@ -20,14 +20,24 @@ function updateHUD(s) {
     try { Sound.startCrowd(); } catch (_) {}
   }
 
+  // Phase 48c — painted plaque values stay short; fox warning moves
+  // into the banner subtext slot.
   $hudDist.textContent = Math.floor(s.worldDist) + 'm';
   const alive = Object.values(s.players).filter(p => p.connected && p.alive).length;
   const total = Object.values(s.players).filter(p => p.connected === true).length;
-  $hudAlive.textContent = alive + '/' + total + ' alive';
+  $hudAlive.textContent = alive + '/' + total;
   const prox = s.foxProximity || 0;
-  if (prox > 0.7) { $hudSpeed.textContent = '🦊 FOX IS CATCHING UP!'; $hudSpeed.style.color = '#FF4422'; }
-  else if (prox > 0.4) { $hudSpeed.textContent = '🦊 Fox getting close...'; $hudSpeed.style.color = '#FFAA44'; }
-  else { const sp = Math.round((s.speed / 0.3 - 1) * 100); $hudSpeed.textContent = sp > 0 ? '+' + sp + '% speed' : ''; $hudSpeed.style.color = ''; }
+  if (prox > 0.7) {
+    $hudSpeed.textContent = 'FOX IS ON YOU!';
+    $hudSpeed.style.color = '#ffb4a0';
+  } else if (prox > 0.4) {
+    $hudSpeed.textContent = 'Fox closing in...';
+    $hudSpeed.style.color = '#ffd8aa';
+  } else {
+    const sp = Math.round((s.speed / 0.3 - 1) * 100);
+    $hudSpeed.textContent = sp > 0 ? '+' + sp + '% speed' : 'Keep running';
+    $hudSpeed.style.color = '';
+  }
 
   if (typeof HUD !== 'undefined') {
     const foxWarn = prox > 0.7 ? '🦊 FOX IS CATCHING UP!' : (prox > 0.4 ? '🦊 Fox getting close...' : '');
