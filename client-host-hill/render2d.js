@@ -305,25 +305,18 @@ const Render2D = (() => {
     for (const e of entities.all()) {
       if (!e.visible) continue;
 
-      // Time-based interpolation between prev and target server states
-      // Server sends every 100ms. We interpolate from prev→target over that window.
+      // Cartesian interpolation (Phase 38a). Server sends every 100ms;
+      // we ease prev → target over that window.
       const elapsed = performance.now() - lastStateTime;
       const t = Math.min(1, elapsed / 100);
-      const prevAngle = e.data._prevAngle !== undefined ? e.data._prevAngle : e.data.rAngle;
-      const prevRadius = e.data._prevRadius !== undefined ? e.data._prevRadius : e.data.rRadius;
-      const tgtAngle = e.data.tAngle !== undefined ? e.data.tAngle : prevAngle;
-      const tgtRadius = e.data.tRadius !== undefined ? e.data.tRadius : prevRadius;
-      // Angle: shortest path
-      let da = tgtAngle - prevAngle;
-      while (da > Math.PI) da -= Math.PI * 2;
-      while (da < -Math.PI) da += Math.PI * 2;
-      e.data.rAngle = prevAngle + da * t;
-      e.data.rRadius = prevRadius + (tgtRadius - prevRadius) * t;
+      const prevX = e.data._prevX !== undefined ? e.data._prevX : e.data.rX;
+      const prevY = e.data._prevY !== undefined ? e.data._prevY : e.data.rY;
+      const tgtX = e.data.tX !== undefined ? e.data.tX : prevX;
+      const tgtY = e.data.tY !== undefined ? e.data.tY : prevY;
+      e.data.rX = prevX + (tgtX - prevX) * t;
+      e.data.rY = prevY + (tgtY - prevY) * t;
 
-      // Convert polar (angle, radius) stored in entity to screen coords
-      const gx = Math.cos(e.data.rAngle) * e.data.rRadius;
-      const gz = Math.sin(e.data.rAngle) * e.data.rRadius;
-      const s = camera.worldToScreen(gx, gz);
+      const s = camera.worldToScreen(e.data.rX, e.data.rY);
 
       // Dash trail particles
       if (e.data.dashing) {
@@ -336,7 +329,7 @@ const Render2D = (() => {
         });
       }
 
-      // Draw character blob
+      // Character blob (Phase 38c will replace with painterly sprites)
       const expr = e.data.dashing ? 'determined' : 'happy';
       CharDraw.blob(ctx, s.x, s.y, 22, e.color, {
         idx: e.data.idx || 0,
@@ -347,7 +340,6 @@ const Render2D = (() => {
         character: e.character,
       });
 
-      // Score label below player
       if (e.data.score > 0) {
         ctx.font = 'bold 11px sans-serif';
         ctx.fillStyle = 'rgba(255,200,50,0.9)';
@@ -355,8 +347,6 @@ const Render2D = (() => {
         ctx.textBaseline = 'top';
         ctx.fillText(e.data.score, s.x, s.y + 28);
       }
-
-      // Name label above player
       if (e.data.name) {
         ctx.font = '10px sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
@@ -375,7 +365,6 @@ const Render2D = (() => {
     targetPlatR = state.platR;
     if (state.kingZoneR) kingZoneR = state.kingZoneR;
 
-    // Set camera zoom to match original SCALE = Math.min(W,H) / 13
     const SCALE = Math.min(W || 1280, H || 720) / 13;
     camera.setZoom(SCALE);
     camera.setPosition(0, 0);
@@ -386,27 +375,29 @@ const Render2D = (() => {
       let e = entities.get(id);
       if (!e) {
         e = entities.create(id, 'player');
-        e.data.rAngle = pd.angle;
-        e.data.rRadius = pd.radius;
-        e.data._prevAngle = pd.angle;
-        e.data._prevRadius = pd.radius;
-        e.data.tAngle = pd.angle;
-        e.data.tRadius = pd.radius;
+        // Phase 38a — cartesian x/y. Back-compat with polar (angle/radius)
+        // payload from an older server build is not needed — the server
+        // always emits x/y after Phase 38a.
+        e.data.rX = pd.x || 0;
+        e.data.rY = pd.y || 0;
+        e.data._prevX = e.data.rX;
+        e.data._prevY = e.data.rY;
+        e.data.tX = e.data.rX;
+        e.data.tY = e.data.rY;
         e.data.wasAlive = true;
         e.data.idx = i;
         e.color = pd.color;
         e.character = pd.character || null;
-        // Pre-compute RGB string from hex color for particles
         e.data.colorRgb = hexToRgb(pd.color);
       }
 
-      // Store previous as current before updating target
-      e.data._prevAngle = e.data.rAngle;
-      e.data._prevRadius = e.data.rRadius;
-      e.data.tAngle = pd.angle;
-      e.data.tRadius = pd.radius;
+      e.data._prevX = e.data.rX;
+      e.data._prevY = e.data.rY;
+      e.data.tX = pd.x || 0;
+      e.data.tY = pd.y || 0;
 
       e.data.dashing = pd.dashing;
+      e.data.facing = pd.facing || 0;
       e.data.score = pd.score || 0;
       e.data.name = pd.name || null;
       e.visible = pd.alive;
@@ -414,12 +405,9 @@ const Render2D = (() => {
       e.character = pd.character || null;
       e.data.colorRgb = hexToRgb(pd.color);
 
-      // Poof on elimination
       if (e.data.wasAlive && !pd.alive) {
         e.data.wasAlive = false;
-        const gx = Math.cos(pd.angle) * pd.radius;
-        const gz = Math.sin(pd.angle) * pd.radius;
-        const s = camera.worldToScreen(gx, gz);
+        const s = camera.worldToScreen(pd.x || 0, pd.y || 0);
         spawnPoof(s.x, s.y, pd.color);
       }
       if (pd.alive) e.data.wasAlive = true;
