@@ -1721,6 +1721,57 @@ Audit grade stays at A+ (3.84) — internal visual-depth polish.
 Spec:
 `docs/superpowers/specs/2026-04-18-host-polish-design.md`.
 
+Twenty-second realization: ambient visual depth — Phase 21,
+shipped 2026-04-18. Opens the Hearthstone-polish arc (Phases
+22-26 — typography, object frames v2, parallax backgrounds,
+sound design, animation polish — each to follow). Three compound
+additions, zero new art assets.
+
+- **21a — `client-shared/ambient-fx.js`.** New shared module
+  (~220 lines, no deps) that injects a `<canvas class="ambient-
+  fx-layer">` behind any overlay's content and renders pool-
+  allocated drifting particles. Three presets: `sparkles` (gold/
+  white specks, additive glow, 2-4s life, rising), `embers`
+  (amber flicker, larger, wind drift), `dustmotes` (cream
+  specks, near-horizontal, 5-9s life). One shared RAF loop
+  across all attached canvases, auto-pauses when parent has
+  zero-area rect, honors `prefers-reduced-motion`. Wired into
+  7 surfaces: main lobby + per-game lobbies (dustmotes),
+  tournament overlay (sparkles), PostGame overlay (sparkles),
+  controller spectate (dustmotes), controller elim (embers),
+  controller gameover (sparkles).
+- **21b — corner glint sweep.** `.ornament-corner::after`
+  pseudo-element renders a diagonal linear-gradient streak
+  (transparent 42% → cream 50% → transparent 58%) that
+  translates from -110% to +110% over 6s with
+  screen-blend-mode. Staggered per corner (tl 0s / tr 1.5s /
+  bl 3s / br 4.5s) so the sweep travels around the overlay
+  perimeter rather than firing synchronized. `overflow:
+  hidden` added to `.ornament-corner` so the streak clips
+  cleanly at the corner bounds. Compound with the Phase 16b
+  `cornerShimmer` brightness cycle — two layered motions
+  (filter brightness + sweeping position) reading as "gold
+  catching ambient light."
+- **21c — spring-easing on overlay entries.** The four shared
+  overlay transitions (tournament, PostGame, controller
+  gameover, controller elim) swap `ease-out` / `ease-in-out`
+  for `var(--ease-bounce)` — existing token at
+  `cubic-bezier(0.34, 1.56, 0.64, 1)`. Duration bumped 0.6s
+  → 0.7s so the overshoot reads as weighted theatrical entry
+  rather than a glitch. No new token added; reused the
+  Phase 14 bounce curve.
+
+Compound effect of Phase 16 + 21 motion layers: painted
+backdrops breathe (existing ornament-bulb pulse + bunting
+sway + title idle), particles drift (new ambient canvas), gold
+catches light (new glint sweep), overlays enter with weight
+(new spring easing). Moves the product from "painted" toward
+"painted AND alive" — Hearthstone-tier ambient atmosphere.
+
+Audit grade stays at A+ (3.84) — Phase 21 is internal
+atmospheric polish, not a new scored dimension. Spec:
+`docs/superpowers/specs/2026-04-18-ambient-visual-depth-design.md`.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1944,6 +1995,24 @@ PostGame states (non-race winner + gameover) show the same
 Phase 18 painted hall — the product's visual atmosphere is now
 synchronized across screens.
 
+21. **Phase 21** (shipped 2026-04-18): ambient visual depth —
+    opens the Hearthstone-polish arc. 21a `client-shared/
+    ambient-fx.js` shared canvas particle layer (sparkles /
+    embers / dustmotes) on 7 painted surfaces; 21b corner
+    glint sweeps via `::after` gradient translating with
+    staggered per-corner delays; 21c spring-easing
+    (`var(--ease-bounce)`) on overlay entry transitions. Zero
+    new art, zero typography, zero sound. Honors prefers-
+    reduced-motion. Spec:
+    `docs/superpowers/specs/2026-04-18-ambient-visual-depth-design.md`.
+
+After Phase 21 the painted surfaces breathe AND drift AND
+catch moving light. Remaining Hearthstone-polish arc: Phase
+22 typography embellishments, Phase 23 ornate object frames
+v2, Phase 24 parallax backgrounds, Phase 25 sound design,
+Phase 26 animation polish. Each its own spec when demand
+accumulates.
+
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
 first, and this document is updated to reflect the addition.
@@ -2061,3 +2130,7 @@ first, and this document is updated to reflect the addition.
 | 2026-04-18 | E2E audit: ornament-corner strict sweep widened chroma 12 → 40 | Phase 7c switched `SpriteLoader.loadPainterly` from two-pass strict+edge to edge-seeded-only because the strict-everywhere pass ate pure-white interior pockets of the race-flag checker. But `ornament-corner.png` has interior checker pockets bounded by the painted flourish's ink outlines — edge-seeded BFS can't reach them. Re-introduced a GLOBAL strict sweep just for the corner asset in host-common.js's post-load step, widening chroma tolerance to 40 so warm-tinted grey pixels (image-gen preview can bake with color cast) also clear. Saturated gold (chroma 75+) and dark ink outlines (brightness <100) both survive |
 | 2026-04-18 | E2E audit: painted-backdrop text legibility recipe | Pattern applied to 6 surfaces: `.t-bar`, `.t-final-scores-label`, `.t-next`, `.t-standings-commentary` (tournament), `.pg-narrator`, `.pg-countdown` (PostGame), `.gp-score-context` (controller HUD). All previously used `var(--text-dim)` (55% cream) — invisible on painted cream panels or bright painted sky/floor zones. Standard recipe: flip color to `--accent-gold` or `--text-cream` (or `--text-on-gold` if ON cream panels), add a double text-shadow (`0 1px 0 rgba(0,0,0,0.75), 0 0 12px rgba(0,0,0,0.6)` for light text on bright painted areas, `0 1px 0 rgba(255,221,107,0.3)` gold letterpress for dark text on cream). Round-intro TOURNAMENT + GET READY gain semi-transparent dark pill backgrounds for full contrast regardless of painted tonal zone behind |
 | 2026-04-18 | E2E audit: char-glyph default sizing on per-game hosts | Phase 5a animal PNGs (1024x1024 natural) rendered at full resolution inside per-game host lobby pills (escape / hill / meteor / race) because only `client-host/index.html` carried the `.player-pill-icon img.char-glyph { width: 22px }` rule. On every other per-game host `HostCommon.lobbyPlayersHTML` emitted `<img class="char-glyph char-glyph-inline">` with no sizing CSS, so Bob + Carla appeared as screen-dominating giants. Fix: inject base `img.char-glyph { width: 1em }` + `img.char-glyph-inline { width: 1.4em }` rules into host-common.js's module-init `<style>` block so every host inherits glyph defaults. Main lobby's more specific rule still overrides to 22px for pill context |
+| 2026-04-18 | Phase 21 ambient particles on a shared canvas layer, not per-surface SVG | A single module with a pool-allocated 120-element array + one RAF loop across all attached layers beats 50+ moving DOM elements per surface (reflow cost + paint). Canvas allows additive `shadowBlur` glow on sparkles/embers that DOM approximations would need expensive `filter` on each element. Zero dependencies — the module fits in 220 lines with the three presets baked in |
+| 2026-04-18 | Glint sweeps via CSS gradient `::after` translation, not extra painted asset | Two-layer painting (flourish PNG + glint gradient layer) exists as a Phase 15a pattern for the bunting overlay::before. Extending to `.ornament-corner::after` with `mix-blend-mode: screen` + `transform: translateX()` reuses the pattern with zero new assets. Per-corner staggered `animation-delay` (0 / 1.5 / 3 / 4.5s) makes the sweep travel around the overlay perimeter instead of 4 synchronized flashes |
+| 2026-04-18 | Phase 21c reused existing `--ease-bounce` token instead of adding `--ease-spring` | The Phase 21 spec originally proposed a new `--ease-spring` token at `cubic-bezier(0.34, 1.56, 0.64, 1)` overshoot. But that IS the existing `--ease-bounce` token (Phase 14 motion polish). Reusing keeps the design-system tokens deduplicated — one "gentle overshoot" curve used by both hero-title breathing and now overlay entry timing. Consistency over new-name freshness |
+| 2026-04-18 | Ambient particles are attach-based, not auto-probing | `AmbientFx.attach(overlayEl, presetName)` requires explicit opt-in per surface — rather than the module scanning the DOM and injecting layers behind every detected overlay. Explicit opt-in keeps the integration traceable (grep for `AmbientFx.attach` to find all active surfaces) and lets each surface choose its preset. Scanning would have coupled the module to specific selectors and been harder to opt OUT from for surfaces that shouldn't have particles (e.g., per-game canvas gameplay — busy visual field already) |
