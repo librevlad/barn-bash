@@ -2551,6 +2551,32 @@ composer can drop in new note arrays.
       slots so anyone who drops the markup in picks up the
       painted treatment automatically.
 
+52. **Phase 52** (shipped 2026-04-19): per-game post-game
+    leaderboards for race / escape / meteor (hill already
+    shipped in Phase 41b). Each game's server now tracks
+    per-player stats through the round; buildPostGameOpts
+    feeds them into the shared PostGame.leaderboard API.
+
+    * **52a — race**. gameData tracks itemsUsed / drifts /
+      bumps / oilSlips; finishOrder index becomes finishPos.
+      Sort order: finished asc by finishPos, unfinished by
+      lap desc → waypoint desc. Value column '#N' / 'LM'.
+      Chips: Items / Drifts / Bumps.
+
+    * **52b — escape**. gameData tracks jumps / slides /
+      laneChanges / powerupsGrabbed / nearMisses /
+      survivedDist. survivedDist captured at stumble-death;
+      for still-alive players getState reports live
+      worldDist. Sort: alive desc → survivedDist desc.
+      Value column '{m}m'. Chips: Jumps / Close / Pickups.
+
+    * **52c — meteor**. gameData tracks wavesSurvived /
+      dodges / sprints / powerupsGrabbed / shieldsTaken.
+      wavesSurvived updated at each wave-start for alive
+      players, frozen at death tick. Sort: alive desc →
+      wavesSurvived desc → dodges desc. Value column 'W{n}'.
+      Chips: Dodges / Sprints / Pickups.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
