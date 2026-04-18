@@ -252,6 +252,14 @@ interface FranticsProtocol {
   makeInput(action: string, extras?: Record<string, unknown>): FranticsProtocolMessage;
   makePing(t?: number): FranticsProtocolMessage;
   makeLeave(): FranticsProtocolMessage;
+  // Server → client constructors (Phase 29)
+  makeInit(playerId: number | string, p: { color?: string; colorId?: number | string; name?: string; character?: string }): FranticsProtocolMessage;
+  makePlayerJoined(playerId: number | string, p: { name?: string; character?: string; color?: string; colorId?: number | string }): FranticsProtocolMessage;
+  makePlayerLeft(playerId: number | string): FranticsProtocolMessage;
+  makeGameOver(winnerId: number | string | null, gameId: string): FranticsProtocolMessage;
+  makeGameSelected(gameId: string): FranticsProtocolMessage;
+  makeTournamentStarted(totalRounds: number, sequence: string[]): FranticsProtocolMessage;
+  makeEliminated(playerId: number | string): FranticsProtocolMessage;
   send(ws: { send(data: string): void; readyState?: number }, msg: FranticsProtocolMessage): void;
 }
 

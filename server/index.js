@@ -209,7 +209,7 @@ function startTournament() {
   for (const p of players.connected()) {
     tournament.scores[p.id] = 0;
   }
-  broadcastRaw({ type: 'tournamentStarted', totalRounds: tournament.totalRounds, sequence: shuffled.map(id => id) });
+  broadcastRaw(Protocol.makeTournamentStarted(tournament.totalRounds, shuffled.map(id => id)));
   advanceTournament();
 }
 
@@ -259,7 +259,7 @@ function advanceTournament() {
         /** @type {any} */ const g = currentGame;
         if (g._iv) clearInterval(g._iv);
         if (g._interval) clearInterval(g._interval);
-        broadcast({ type: 'game_over', winnerId, gameId: currentGameId });
+        broadcast(Protocol.makeGameOver(winnerId, currentGameId));
         currentGame.broadcastState();
       }, 60000);
     }
@@ -379,12 +379,12 @@ wss.on('connection', (ws) => {
       case 'join':
         playerId = players.add(ws, msg.name, msg.character, msg.carColor);
         const p = players.get(playerId);
-        ws.send(JSON.stringify({ type: 'init', playerId, color: p.color, colorId: p.colorId, name: p.name, character: p.character }));
+        Protocol.send(ws, Protocol.makeInit(playerId, p));
         if (tournament) {
           tournament.scores[playerId] = tournament.scores[playerId] || 0;
         }
         // Broadcast player join event so host can react
-        broadcast({ type: 'player_joined', playerId, name: p.name, character: p.character, color: p.color, colorId: p.colorId });
+        broadcast(Protocol.makePlayerJoined(playerId, p));
         currentGame.broadcastState();
         break;
 
@@ -436,7 +436,7 @@ wss.on('connection', (ws) => {
         if (!GAMES[msg.gameId]) break;
         currentGameId = msg.gameId;
         currentGame = new GAMES[msg.gameId](players, broadcast);
-        broadcastRaw({ type: 'gameSelected', gameId: currentGameId });
+        broadcastRaw(Protocol.makeGameSelected(currentGameId));
         currentGame.broadcastState();
         break;
 

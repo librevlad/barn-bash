@@ -125,3 +125,53 @@ test('predicates match exact type field', () => {
   assert.strictEqual(Protocol.isSelectGame({ type: 'selectGame', gameId: 'x' }), true);
   assert.strictEqual(Protocol.isSelectGame({ type: 'selectGame' }), false);
 });
+
+// ---- Phase 29 server→client constructors ----
+
+test('makeInit packs player fields', () => {
+  const m = Protocol.makeInit(3, { color: '#abc', colorId: 2, name: 'Bob', character: 'cat' });
+  assert.deepStrictEqual(m, {
+    type: 'init', playerId: 3,
+    color: '#abc', colorId: 2, name: 'Bob', character: 'cat',
+  });
+});
+
+test('makePlayerJoined packs player fields', () => {
+  const m = Protocol.makePlayerJoined(5, { name: 'Carla', character: 'wolf', color: '#3a7ad9', colorId: 4 });
+  assert.deepStrictEqual(m, {
+    type: 'player_joined', playerId: 5,
+    name: 'Carla', character: 'wolf', color: '#3a7ad9', colorId: 4,
+  });
+});
+
+test('makePlayerLeft / makeEliminated carry playerId', () => {
+  assert.deepStrictEqual(Protocol.makePlayerLeft(7), { type: 'player_left', playerId: 7 });
+  assert.deepStrictEqual(Protocol.makeEliminated(2), { type: 'eliminated', playerId: 2 });
+});
+
+test('makeGameOver carries winner + gameId', () => {
+  assert.deepStrictEqual(
+    Protocol.makeGameOver(3, 'escapeFox'),
+    { type: 'game_over', winnerId: 3, gameId: 'escapeFox' },
+  );
+  assert.deepStrictEqual(
+    Protocol.makeGameOver(null, 'hillKing'),
+    { type: 'game_over', winnerId: null, gameId: 'hillKing' },
+  );
+});
+
+test('makeGameSelected + makeTournamentStarted shapes', () => {
+  assert.deepStrictEqual(
+    Protocol.makeGameSelected('meteor'),
+    { type: 'gameSelected', gameId: 'meteor' },
+  );
+  assert.deepStrictEqual(
+    Protocol.makeTournamentStarted(3, ['escapeFox', 'hillKing', 'race']),
+    { type: 'tournamentStarted', totalRounds: 3, sequence: ['escapeFox', 'hillKing', 'race'] },
+  );
+});
+
+test('startTournament round-trip', () => {
+  assert.deepStrictEqual(Protocol.makeStartTournament(), { type: 'startTournament' });
+  assert.strictEqual(Protocol.validate({ type: 'startTournament' }), null);
+});

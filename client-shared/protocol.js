@@ -208,6 +208,75 @@
   /** @returns {LeaveMessage} */
   function makeLeave() { return { type: 'leave' }; }
 
+  // ---- Server → Client constructors (Phase 29) ----
+
+  /**
+   * @param {number|string} playerId
+   * @param {{ color?: string; colorId?: number|string; name?: string;
+   *           character?: string }} p
+   */
+  function makeInit(playerId, p) {
+    return {
+      type: 'init',
+      playerId: playerId,
+      color: p && p.color,
+      colorId: p && p.colorId,
+      name: p && p.name,
+      character: p && p.character,
+    };
+  }
+
+  /**
+   * @param {number|string} playerId
+   * @param {{ name?: string; character?: string; color?: string;
+   *           colorId?: number|string }} p
+   */
+  function makePlayerJoined(playerId, p) {
+    return {
+      type: 'player_joined',
+      playerId: playerId,
+      name: p && p.name,
+      character: p && p.character,
+      color: p && p.color,
+      colorId: p && p.colorId,
+    };
+  }
+
+  /** @param {number|string} playerId */
+  function makePlayerLeft(playerId) {
+    return { type: 'player_left', playerId: playerId };
+  }
+
+  /**
+   * @param {number|string|null} winnerId
+   * @param {string} gameId
+   */
+  function makeGameOver(winnerId, gameId) {
+    return { type: 'game_over', winnerId: winnerId, gameId: gameId };
+  }
+
+  /** @param {string} gameId */
+  function makeGameSelected(gameId) {
+    return { type: 'gameSelected', gameId: gameId };
+  }
+
+  /**
+   * @param {number} totalRounds
+   * @param {Array<string>} sequence
+   */
+  function makeTournamentStarted(totalRounds, sequence) {
+    return {
+      type: 'tournamentStarted',
+      totalRounds: totalRounds,
+      sequence: sequence,
+    };
+  }
+
+  /** @param {number|string} playerId */
+  function makeEliminated(playerId) {
+    return { type: 'eliminated', playerId: playerId };
+  }
+
   /**
    * Convenience: send a protocol-typed message over a WebSocket-like.
    * Accepts anything with a `.send()` method that takes a string.
@@ -246,6 +315,14 @@
     makeInput: makeInput,
     makePing: makePing,
     makeLeave: makeLeave,
+    // Server → client
+    makeInit: makeInit,
+    makePlayerJoined: makePlayerJoined,
+    makePlayerLeft: makePlayerLeft,
+    makeGameOver: makeGameOver,
+    makeGameSelected: makeGameSelected,
+    makeTournamentStarted: makeTournamentStarted,
+    makeEliminated: makeEliminated,
     send: send,
   };
 });
