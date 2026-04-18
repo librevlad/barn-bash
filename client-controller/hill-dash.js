@@ -53,6 +53,28 @@
   };
 
   HillDashButton.prototype._buildDom = function () {
+    // Phase 46 — cooldown + shielded styles injected once via <style>
+    // tag on the first install (idempotent).
+    if (!document.getElementById('hill-dash-styles')) {
+      const style = document.createElement('style');
+      style.id = 'hill-dash-styles';
+      style.textContent =
+        '.hill-dash-btn.cooling { filter: brightness(0.55) saturate(0.35); transition: filter 0.15s; }' +
+        '.hill-dash-btn.cooling::after {' +
+          'content: ""; position: absolute; inset: 0; border-radius: 50%;' +
+          'background: conic-gradient(from -90deg, rgba(10,6,3,0.65) calc(var(--cd-pct, 0) * 1%), transparent 0);' +
+          'pointer-events: none; z-index: 2;' +
+        '}' +
+        '.hill-dash-btn.shielded { filter: brightness(0.85) hue-rotate(180deg) saturate(0.7); }' +
+        '.hill-dash-btn.shielded::before {' +
+          'content: ""; position: absolute; inset: -6px; border-radius: 50%;' +
+          'border: 2px dashed rgba(93,194,232,0.75);' +
+          'animation: hillDashShield 3s linear infinite; pointer-events:none;' +
+        '}' +
+        '@keyframes hillDashShield { to { transform: rotate(360deg); } }';
+      document.head.appendChild(style);
+    }
+
     const wrap = document.createElement('div');
     wrap.className = 'hill-dash-btn';
     wrap.setAttribute('role', 'button');
@@ -159,6 +181,29 @@
       this._anim = requestAnimationFrame(tick);
     };
     tick();
+  };
+
+  // Phase 46 — cooldown indicator. Fraction ∈ [0, 1] where 1 means
+  // "just dashed, full cooldown" and 0 means "ready". Draws a dark
+  // clockwise sweep overlay over the face (conic gradient).
+  HillDashButton.prototype.setCooldown = function (fraction) {
+    if (!this._el) return;
+    const pct = Math.max(0, Math.min(1, fraction)) * 100;
+    if (pct <= 0) {
+      this._el.style.setProperty('--cd-pct', '0');
+      this._el.classList.remove('cooling');
+    } else {
+      this._el.style.setProperty('--cd-pct', pct.toFixed(1));
+      this._el.classList.add('cooling');
+    }
+  };
+
+  // Phase 46 — shield state visual. true = light-blue tint + scale
+  // dimmer so the player sees they're shielded and the tap would
+  // do nothing right now.
+  HillDashButton.prototype.setShielded = function (on) {
+    if (!this._el) return;
+    this._el.classList.toggle('shielded', !!on);
   };
 
   if (typeof module !== 'undefined' && module.exports) {

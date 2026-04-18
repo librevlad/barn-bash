@@ -559,11 +559,15 @@ function handleRunningState(state) {
     Gameplay.setMeteorWarn(warning);
     Gameplay.setItem(null);
   } else if (gameId === 'hillKing') {
-    const seconds = Math.floor((state.elapsedMs || 0) / 1000);
-    const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
-    const ss = String(seconds % 60).padStart(2, '0');
-    Gameplay.setScore(mm + ':' + ss, { context: 'on the hill' });
+    // Phase 46 — controller dash cooldown + shield indicators driven
+    // from state. me.cd is in ticks (50 ms each, max DASH_CD=10);
+    // me.shielding = true while the player holds the shield button.
+    Gameplay.setScore(String(me.score || 0), { context: 'on the hill' });
     Gameplay.setItem(null);
+    if (hillDashBtn) {
+      hillDashBtn.setCooldown((me.cd || 0) / 10);
+      hillDashBtn.setShielded(!!me.shielding);
+    }
   } else if (gameId === 'race') {
     const totalLaps = state.totalLaps || 3;
     if (me.finished) {
