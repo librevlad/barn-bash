@@ -464,6 +464,57 @@ const Sound = (() => {
         osc.start(now); osc.stop(now + beatMs / 1500);
       }
 
+      // Phase 47b — kick drum on beats 1 and 3 (odd indices at the
+      // 2-beat grid). Low sine thump + noise snap.
+      if (step % 2 === 0) {
+        const kick = ctx.createOscillator();
+        const kg = ctx.createGain();
+        kick.type = 'sine';
+        kick.frequency.setValueAtTime(96, now);
+        kick.frequency.exponentialRampToValueAtTime(42, now + 0.12);
+        kg.gain.setValueAtTime(0.15, now);
+        kg.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        kick.connect(kg).connect(musicGain);
+        kick.start(now); kick.stop(now + 0.16);
+      }
+
+      // Phase 47b — hi-hat click on the off-beat (beat 2 & 4) so the
+      // rhythm grid reads clearly; noise burst through a highpass-ish
+      // feel via short envelope.
+      if (step % 2 === 1) {
+        const bufLen = Math.floor(ctx.sampleRate * 0.05);
+        const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * 0.55;
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const hg = ctx.createGain();
+        hg.gain.setValueAtTime(0.04, now);
+        hg.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+        src.connect(hg).connect(musicGain);
+        src.start(now); src.stop(now + 0.05);
+      }
+
+      // Phase 47b — sustained chord pad on beat 1 of every 4-beat bar.
+      // Holds a triad (root, third, fifth relative to current bass)
+      // through the bar for body and warmth.
+      if (step % 4 === 0 && bassNote) {
+        const root = bassNote;
+        const third = root * 1.189; // minor third ≈ 2^(3/12)
+        const fifth = root * 1.498; // perfect fifth ≈ 2^(7/12)
+        [root, third, fifth].forEach((f, idx) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = f;
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(0.025, now + 0.08);
+          g.gain.exponentialRampToValueAtTime(0.001, now + beatMs / 1000 * 3.5);
+          osc.connect(g).connect(filter);
+          osc.start(now); osc.stop(now + beatMs / 1000 * 3.6);
+        });
+      }
+
       step++;
       arpStep++;
     }, beatMs);
