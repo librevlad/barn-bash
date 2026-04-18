@@ -2335,6 +2335,36 @@ open as Phase 39+.
       peripheral red vignette (`:has(.teetering)::before`) so
       the danger state lands with no question.
 
+40. **Phase 40** (shipped 2026-04-18): KotH UI round — painted
+    HUD, live scoreboard, painted countdown + message, sudden-
+    death timer ring, shrink-warning banner. Closes the DOM-UI
+    gap that the canvas polish (Phase 38-39) left behind.
+
+    * **40a — painted HUD + live scoreboard**. Top HUD strip
+      replaced with three painted elements: ALIVE plaque +
+      ribbon-title banner (red-painted chevron-ended clip-path,
+      double gold trim) + ARENA plaque. Each plaque is a brass
+      vertical gradient with top specular, dark rim, inner
+      highlight. New scoreboard panel pinned right-edge: wood-
+      scroll backdrop, per-player rows sorted by score, leader
+      row with gold wash + 👑 crown, teetering row with red
+      blink, dead row greyed.
+
+    * **40b — painted countdown + message ribbon**. #countdown
+      renders as a 240×240 brass medallion (radial brass gradient
+      + triple rim + cream inner disc + 8 radial studs +
+      letterpress numeral). Final step flips to a 480×160 red
+      banner via `.go` class (added by host-harness). #message
+      now a cream-and-honey clip-path ribbon with chevron ends.
+
+    * **40c — shrink-warning banner + sudden-death timer ring**.
+      Full-width 42 px diagonal-stripe danger banner slides in
+      on `shrink_warning` event, pulses 3× in 1 s, auto-hides.
+      52 px conic-gradient countdown ring appears on
+      `sudden_death`: main.js writes `--pct` CSS var each 100 ms
+      driving the red-wedge sweep; cream inner disc holds the
+      digits (0:25 → 0:00); pulses bloom every 1.4 s.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
