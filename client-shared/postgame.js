@@ -96,7 +96,9 @@ const PostGame = (() => {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
         font-size: 16px; font-style: italic;
         color: var(--text-cream, #f5ead4);
-        opacity: 0.85;
+        opacity: 1;
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75),
+                     0 0 12px rgba(0, 0, 0, 0.6);
         margin-bottom: 24px; max-width: 460px;
         text-align: center;
         line-height: 1.5;
@@ -133,7 +135,9 @@ const PostGame = (() => {
       #postgame-overlay .pg-countdown {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
         font-size: 14px; font-style: italic;
-        color: var(--text-dim, rgba(245, 234, 212, 0.55));
+        color: var(--text-cream, #f5ead4);
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75),
+                     0 0 10px rgba(0, 0, 0, 0.6);
         letter-spacing: 1px;
         margin-bottom: 18px;
       }
