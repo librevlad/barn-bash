@@ -137,6 +137,10 @@ const Render2D = (() => {
     // Particles (screen-space — spawned at screen coords from worldToScreen)
     particles.draw(ctx);
 
+    // Phase 39a — score floaters on top of everything so +N reads
+    // even through a spark burst or dust cloud.
+    _drawFloaters(ctx, dt);
+
     // Post-processing (screen space)
     if (typeof FX !== 'undefined') FX.drawAfter(ctx);
     if (typeof Visual !== 'undefined') Visual.drawPost(ctx, { vignette: 0.25, grain: 0.015 });
@@ -374,7 +378,14 @@ const Render2D = (() => {
   // commissioned PNG ships (hill-crack.png / hill-ice.png /
   // hill-bumper.png), SpriteLoader.loadPainterly swaps it in.
   // ============================================================
-  let hazardState = { cracks: [], iceZone: null, bumperActive: false, bumperAngle: 0 };
+  let hazardState = { cracks: [], iceZone: null, bumperActive: false, bumperAngle: 0, powerups: [] };
+
+  // Phase 39a — powerup palette (type → color + single-letter glyph).
+  const POWERUP_STYLE = {
+    anchor:      { rgb: '160,140,150', glyph: 'A', label: 'ANCHOR' },
+    superDash:   { rgb: '80,160,240',  glyph: 'D', label: 'SUPER DASH' },
+    gravityBomb: { rgb: '255,140,40',  glyph: 'B', label: 'BOMB' },
+  };
   function drawHazards(ctx) {
     const SCALE = camera.getZoom();
     const c = camera.worldToScreen(0, 0);
@@ -476,6 +487,54 @@ const Render2D = (() => {
       ctx.strokeStyle = `rgba(255, 180, 80, ${halo})`;
       ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(bx, by, br + 3, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // Phase 39a — powerup orbs floating above arena. Each renders as a
+    // colored puck with halo, a bright glyph letter, and a gentle bob.
+    const SCALE_P = camera.getZoom();
+    for (const pu of hazardState.powerups) {
+      const px = ax + Math.cos(pu.angle) * pu.radius * SCALE_P;
+      const py = ay + Math.sin(pu.angle) * pu.radius * SCALE_P;
+      const style = POWERUP_STYLE[pu.type] || POWERUP_STYLE.anchor;
+      const orbR = 0.42 * SCALE_P;
+      const bob = Math.sin(clock * 2 + pu.angle * 5) * (orbR * 0.12);
+
+      // Floor shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(px, py + orbR * 0.9, orbR * 0.7, orbR * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Halo pulse
+      const halo = 0.35 + Math.sin(clock * 4 + pu.angle * 9) * 0.2;
+      ctx.fillStyle = `rgba(${style.rgb},${halo.toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(px, py - bob, orbR * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Orb body — darker rim, brighter core
+      const orb = ctx.createRadialGradient(px - orbR * 0.25, py - bob - orbR * 0.25, 0, px, py - bob, orbR);
+      orb.addColorStop(0, `rgba(255,255,255,0.9)`);
+      orb.addColorStop(0.5, `rgba(${style.rgb},1)`);
+      orb.addColorStop(1, `rgba(${style.rgb},0.7)`);
+      ctx.fillStyle = orb;
+      ctx.beginPath();
+      ctx.arc(px, py - bob, orbR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Gold rim
+      ctx.strokeStyle = 'rgba(255,221,107,0.75)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(px, py - bob, orbR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Glyph
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.font = `bold ${Math.round(orbR * 1.1)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(style.glyph, px, py - bob);
     }
 
     ctx.restore(); // unclip
@@ -592,11 +651,12 @@ const Render2D = (() => {
     targetPlatR = state.platR;
     if (state.kingZoneR) kingZoneR = state.kingZoneR;
 
-    // Phase 38b — hazard state for the hazards layer.
+    // Phase 38b/39a — hazard + powerup state for the hazards layer.
     hazardState.cracks = state.cracks || [];
     hazardState.iceZone = state.iceZone || null;
     hazardState.bumperActive = !!state.bumperActive;
     hazardState.bumperAngle = state.bumperAngle || 0;
+    hazardState.powerups = state.powerups || [];
 
     const SCALE = Math.min(W || 1280, H || 720) / 13;
     camera.setZoom(SCALE);
@@ -646,7 +706,21 @@ const Render2D = (() => {
       e.data.dashing = pd.dashing;
       e.data.teetering = pd.teetering;
       e.data.facing = pd.facing || 0;
-      e.data.score = pd.score || 0;
+
+      // Phase 39a — score-delta floater, throttled per player.
+      const newScore = pd.score || 0;
+      if (e.data._prevScore === undefined) e.data._prevScore = newScore;
+      const delta = newScore - e.data._prevScore;
+      if (delta >= 2) {
+        const since = performance.now() - (e.data._lastFloaterAt || 0);
+        if (since > 650) {
+          _addFloater((pd.x || 0), (pd.y || 0) - 0.6, '+' + delta, hexToRgb(pd.color), { size: 24 });
+          e.data._lastFloaterAt = performance.now();
+        }
+      }
+      e.data._prevScore = newScore;
+
+      e.data.score = newScore;
       e.data.name = pd.name || null;
       e.visible = pd.alive;
       e.color = pd.color;
@@ -699,6 +773,57 @@ const Render2D = (() => {
       color: opts.color || '255,200,120',
       width: opts.width || 6,
     });
+  }
+
+  // Phase 39a — score floaters. `+N` text that rises above the player
+  // after king-zone scoring or big combos. Additive over particles so
+  // it reads even over a spark burst.
+  const floaters = [];
+
+  function _addFloater(worldX, worldY, text, colorRgb, opts) {
+    opts = opts || {};
+    floaters.push({
+      wx: worldX, wy: worldY,
+      text: String(text),
+      color: colorRgb || '255,221,107',
+      age: 0,
+      ttl: opts.ttl || 1.1,
+      dy: opts.dy !== undefined ? opts.dy : -1.1,  // world units per second
+      size: opts.size || 22,
+      weight: opts.weight || 'bold',
+    });
+  }
+
+  function _drawFloaters(ctx, dt) {
+    for (let i = floaters.length - 1; i >= 0; i--) {
+      const f = floaters[i];
+      f.age += (dt || 0.016);
+      const t = f.age / f.ttl;
+      if (t >= 1) { floaters.splice(i, 1); continue; }
+      const SCALE = camera.getZoom();
+      const wy = f.wy + f.dy * f.age;
+      const s = camera.worldToScreen(f.wx, wy);
+      const alpha = 1 - t * t;
+      const scale = 1 + Math.min(0.3, t * 1.2);
+
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.scale(scale, scale);
+      ctx.font = `${f.weight} ${f.size}px var(--font-display, sans-serif)`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Dark drop shadow
+      ctx.fillStyle = `rgba(0,0,0,${(alpha * 0.6).toFixed(3)})`;
+      ctx.fillText(f.text, 0, 3);
+      // Main fill
+      ctx.fillStyle = `rgba(${f.color},${alpha.toFixed(3)})`;
+      ctx.fillText(f.text, 0, 0);
+      // Bright core highlight
+      ctx.fillStyle = `rgba(255,255,255,${(alpha * 0.35).toFixed(3)})`;
+      ctx.fillText(f.text, 0, -1);
+      ctx.restore();
+    }
   }
 
   function _drawShockwaves(ctx, dt) {
@@ -799,6 +924,29 @@ const Render2D = (() => {
     camera.shake(14, 0.35);
   }
 
+  // Phase 39a — powerup collection feedback. Spawns a big labelled
+  // floater above the collecting player + a burst matching the orb
+  // color so the pickup reads from the other side of the arena.
+  function triggerPowerupCollected(playerId, type) {
+    const e = entities.get(playerId);
+    if (!e) return;
+    const style = POWERUP_STYLE[type] || POWERUP_STYLE.anchor;
+    const s = camera.worldToScreen(e.data.rX || 0, e.data.rY || 0);
+    particles.burst(s.x, s.y, 18, {
+      speed: 4.5,
+      life: 0.7,
+      size: 5,
+      sizeEnd: 0,
+      gravity: -0.3,
+      color: style.rgb,
+      friction: 0.93,
+    });
+    _addFloater((e.data.rX || 0), (e.data.rY || 0) - 0.6, style.label + '!', style.rgb, {
+      ttl: 1.4, size: 28, dy: -1.4,
+    });
+    camera.shake(4, 0.15);
+  }
+
   function triggerGravityBomb(playerId) {
     const e = entities.get(playerId);
     if (!e) return;
@@ -852,5 +1000,7 @@ const Render2D = (() => {
     init, updateState, triggerWin, triggerHit,
     // Phase 38d juice triggers
     triggerDashStart, triggerBump, triggerGroundPound, triggerGravityBomb,
+    // Phase 39a
+    triggerPowerupCollected,
   };
 })();

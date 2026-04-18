@@ -116,6 +116,7 @@ HostHarness.on({
   powerup_collected: (msg) => {
     const labels = { anchor: 'ANCHOR', superDash: 'SUPER DASH', gravityBomb: 'GRAVITY BOMB' };
     Sound.play('shieldPickup');
+    if (msg.playerId) Render2D.triggerPowerupCollected(msg.playerId, msg.powerup);
     showMsg(pname(msg.playerId) + ' got ' + (labels[msg.powerup] || ''), 1200);
   },
 
