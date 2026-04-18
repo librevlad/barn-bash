@@ -35,6 +35,8 @@ const PostGame = (() => {
     const style = document.createElement('style');
     style.textContent = `
       #postgame-overlay.show { opacity: 1 !important; pointer-events: auto !important; }
+      /* Phase 8c — default 'podium' mode: backdrop anchored bottom-center,
+         bounded size. Race race-podium.png uses this. */
       #postgame-overlay .pg-backdrop {
         position: absolute;
         bottom: 0; left: 50%;
@@ -45,7 +47,28 @@ const PostGame = (() => {
         pointer-events: none;
         z-index: 0;
       }
-      #postgame-overlay > *:not(.pg-backdrop) {
+      /* Phase 20a — 'hall' mode: cover-fit painterly atmosphere (Phase
+         18 gameover-hall.png reused on non-race postgame overlays). */
+      #postgame-overlay .pg-backdrop-hall {
+        position: absolute;
+        inset: 0;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%; height: 100%;
+        max-width: none; max-height: none;
+        transform: none;
+        object-fit: cover;
+        object-position: center;
+        opacity: 0.95;
+        pointer-events: none;
+        z-index: 0;
+      }
+      /* Phase 20a — scrim drops from 0.92 to 0.55 for hall mode so the
+         painted hall reads; podium mode keeps 0.92 behind the bottom-
+         anchored composition. */
+      #postgame-overlay[data-backdrop-mode="hall"] {
+        background: rgba(47, 28, 12, 0.55) !important;
+      }
+      #postgame-overlay > *:not(.pg-backdrop):not(.pg-backdrop-hall) {
         position: relative;
         z-index: 1;
       }
@@ -203,12 +226,16 @@ const PostGame = (() => {
       narratorHTML = `<div class="pg-narrator">"${opts.loseQuote}"</div>`;
     }
 
-    // Phase 8c — optional painterly backdrop (race passes race-podium.png).
+    // Phase 8c / 20a — optional painterly backdrop.
+    //   backdropMode: 'podium' (default) — race-style bottom-anchored
+    //   backdropMode: 'hall'             — cover-fit atmosphere (hill/meteor/escape)
+    const backdropMode = opts.backdropMode || 'podium';
+    overlay.setAttribute('data-backdrop-mode', backdropMode);
     // Sits first in DOM so flex-flow siblings paint above it without any
     // z-index gymnastics. onerror removes the img so a missing asset
     // falls back cleanly to the text-only layout.
     const backdropHTML = opts.backdrop
-      ? `<img class="pg-backdrop" src="${opts.backdrop}" onerror="this.remove()">`
+      ? `<img class="pg-backdrop pg-backdrop-${backdropMode}" src="${opts.backdrop}" onerror="this.remove()">`
       : '';
     overlay.innerHTML = backdropHTML + `
       <div class="pg-winner-icon" style="${hasWinner ? 'filter:drop-shadow(0 0 20px ' + opts.winnerColor + ')' : ''}">${icon}</div>

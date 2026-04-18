@@ -145,6 +145,9 @@ ws.onmessage = (e) => {
           loseIcon: '💀', loseText: 'NOBODY SURVIVED!',
           loseQuote: 'The hill claims all...',
           stats: [],
+          // Phase 20a — reuse Phase 18 universal gameover-hall
+          backdrop: '/assets/gameover-hall.png',
+          backdropMode: 'hall',
           onPlayAgain: () => ws.send(JSON.stringify({ type: 'restart' })),
           onLobby: () => { ws.send(JSON.stringify({ type: 'restart' })); setTimeout(() => window.location.href = '/host/', 200); },
         });

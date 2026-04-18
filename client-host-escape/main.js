@@ -130,6 +130,9 @@ ws.onmessage = (e) => {
           stats: [
             { label: 'Distance', value: Math.floor(state.worldDist || 0) + 'm' },
           ],
+          // Phase 20a — reuse Phase 18 universal gameover-hall
+          backdrop: '/assets/gameover-hall.png',
+          backdropMode: 'hall',
           onPlayAgain: () => ws.send(JSON.stringify({ type: 'restart' })),
           onLobby: () => { ws.send(JSON.stringify({ type: 'restart' })); setTimeout(() => window.location.href = '/host/', 200); },
         });
