@@ -2297,6 +2297,44 @@ shockwaves on every hit, smooth analog controller. The rest
 of the arc plan (escape / meteor / race to same bar) stays
 open as Phase 39+.
 
+39. **Phase 39** (shipped 2026-04-18): KotH feedback + legibility
+    round 2. Three sub-phases focus on "reading" the game:
+    every scoring event, the leader, and the teeter danger state
+    now communicate visually.
+
+    * **39a — powerup orbs + score floaters**. State.powerups
+      lived on the wire since Phase 38 but the host never drew
+      them; fixed. Each orb renders as colored puck (anchor
+      grey, superDash blue, gravityBomb orange) with radial-
+      gradient body, gold rim, single-letter glyph, pulsing
+      halo, floor shadow, and gentle bob. Score-delta floaters
+      rise above any player whose score increments by ≥2,
+      throttled to one per 650 ms so king-zone +1/tick doesn't
+      flood. `triggerPowerupCollected` emits a bigger painted
+      'ANCHOR!' / 'SUPER DASH!' / 'BOMB!' floater on pickup.
+
+    * **39b — crown leader + sprite rim + score plaque**.
+      Current score leader (threshold ≥3) gets the painterly
+      `hill-crown.png` 48 px above their head with gold halo +
+      bob — same sprite already loaded for king-zone centre, no
+      new asset. CharSprite.draw now draws each sprite twice
+      (shadowBlur halo then sprite) so painted animals pop off
+      the wood-plank floor. Name plate and score plaque replace
+      plain 10/11 px text: dark-capsule gold-bordered name,
+      brass-gradient ticket score with dark rim + top highlight
+      + drop-shadowed dark numerals.
+
+    * **39c — dash afterimage + controller alarms**. Host
+      renders a 5-frame ghost trail behind dashing characters
+      (rising alpha through CharSprite 'dash' pose), so dashes
+      read as speed-lines even at small sprite size. Controller
+      gets a new 'bump' handler (vibrate + 'BUMPED!' reject),
+      the existing 'teetering' handler now also sets a
+      `.teetering` modifier on the avatar orb for 1.5 s — CSS
+      animates it with a red 320 ms pulse + full-screen
+      peripheral red vignette (`:has(.teetering)::before`) so
+      the danger state lands with no question.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
