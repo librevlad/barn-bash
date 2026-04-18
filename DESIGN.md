@@ -2446,6 +2446,50 @@ open as Phase 39+.
     feeds me.cd / 10 + me.shielding into the dash button
     each tick.
 
+47. **Phase 47** (shipped 2026-04-18): KotH procedural-ceiling
+    push — animation depth + music layers + ambient sound +
+    balance tuning. Four sub-phases move every sensible
+    procedural dial up toward Hearthstone/Brawl-Stars polish
+    without needing commissioned art.
+
+    * **47a — CharSprite animation depth**. Single-PNG sprites
+      now mirror-flip by server `facing` (cos-sign picks scale
+      sign), lean into walking direction, run on a 4-step
+      cadence (sine bob + cos×2 step offset for fake legs),
+      and dance harder on victory (bigger bounce + 0.12 rad
+      spin). New `windup` pose for anticipatory dash-charge
+      crouches. FranticsCharPose enum extended to 7 entries.
+
+    * **47b — layered music**. Adds kick drum (sine 96 → 42 Hz
+      thump), hi-hat noise click on off-beats, and sustained
+      chord pad on beat 1 of every bar (root + minor-third +
+      fifth via equal-temperament ratios) to every theme on
+      top of the existing bass + melody + arp. Six voices of
+      procedural music instead of three.
+
+    * **47c — match bell + ambient crowd**. New `matchBell`
+      (3-partial inharmonic sine bell with 2.8 s tail) fires
+      on match start and at lower pitch on sudden death.
+      `startCrowd` / `stopCrowd` run a pink-noise loop through
+      a bandpass with an LFO-modulated cutoff — ambient
+      stadium murmur under gameplay. Hill main.js wires
+      start-on-running, stop-on-lobby.
+
+    * **47d — balance pass**. Six tuning constants nudged for
+      Fall-Guys feel: FRICTION 0.87 → 0.90, MOVE_MAX_SPEED
+      +8 %, DASH_CD 10 → 8 ticks, SHRINK_INT 80 → 100 ticks,
+      NEAR_MISS_DIST 0.3 → 0.4, GPOUND_RADIUS 2.0 → 2.4. Net
+      effect: lighter glide, faster dash recovery, wider combo
+      window, larger slam aura, slower early-game shrink.
+
+After Phase 47 the ceiling on pure-procedural polish is
+visible — further gains come from commissioned art + recorded
+audio, not more code. Architecturally the asset pipeline is
+ready: SpriteLoader swaps painterly PNGs into CharSprite
+without code change, Sound.play(name, opts) takes a sample
+pack with one extension, music themes are data-driven so a
+composer can drop in new note arrays.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
