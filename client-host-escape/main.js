@@ -57,6 +57,36 @@ HostHarness.boot({
   onStateRunning: updateHUD,
   buildPostGameOpts: (state, msg) => {
     const w = msg.winnerId ? state.players[msg.winnerId] : null;
+
+    // Phase 52b — per-player leaderboard. Sorted by survivedDist
+    // desc (winner always highest since alive at end). Value column:
+    // '{m}m'. Chips: jumps / near-misses / powerups.
+    const entries = Object.entries(state.players || {}).map(([id, p]) => ({
+      id: id,
+      name: p.name || ('Player ' + id),
+      color: p.color || '#fff',
+      character: p.character,
+      alive: p.alive,
+      stats: p.stats || {},
+    }));
+    entries.sort((a, b) => {
+      if (a.alive && !b.alive) return -1;
+      if (!a.alive && b.alive) return 1;
+      return (b.stats.survivedDist || 0) - (a.stats.survivedDist || 0);
+    });
+    const leaderboard = entries.map(e => ({
+      id: e.id,
+      name: e.name,
+      color: e.color,
+      character: e.character,
+      score: (e.stats.survivedDist || 0) + 'm',
+      chips: [
+        { label: 'Jumps', value: e.stats.jumps || 0 },
+        { label: 'Close', value: e.stats.nearMisses || 0 },
+        { label: 'Pickups', value: e.stats.powerupsGrabbed || 0 },
+      ],
+    }));
+
     return {
       winnerId: msg.winnerId,
       winnerName: w ? (w.name || 'Player ' + msg.winnerId) : null,
@@ -65,9 +95,8 @@ HostHarness.boot({
       winLabel: 'SURVIVED!',
       loseIcon: '🦊', loseText: 'THE FOX WINS!',
       loseQuote: 'Nobody survived. I love it when that happens.',
-      stats: [
-        { label: 'Distance', value: Math.floor(state.worldDist || 0) + 'm' },
-      ],
+      stats: [],
+      leaderboard: leaderboard,
       // Phase 20a — reuse Phase 18 universal gameover-hall
       backdrop: '/assets/gameover-hall.png',
       backdropMode: 'hall',

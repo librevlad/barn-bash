@@ -136,6 +136,10 @@ class EscapeFoxGame {
         coins: 0, score: 0, combo: 0, nearMissCombo: 0,
         // Character
         character: char,
+        // Phase 52b — per-player stats for postgame leaderboard.
+        jumps: 0, slides: 0, laneChanges: 0,
+        powerupsGrabbed: 0, nearMisses: 0,
+        survivedDist: 0,
       };
     }
 
@@ -318,6 +322,7 @@ class EscapeFoxGame {
           if (pu.type === 'shield') gd.shield = SHIELD_DURATION;
           else if (pu.type === 'speedBoost') gd.speedBoost = SPEED_BOOST_DURATION;
           else if (pu.type === 'coin') { gd.coins++; gd.score += 10 * Math.max(1, gd.combo); }
+          gd.powerupsGrabbed++;
           this.broadcast({ type: 'powerup_collected', playerId: p.id, powerup: pu.type, gameId: 'escapeFox' });
           this.powerups.splice(i, 1);
           break;
@@ -363,6 +368,7 @@ class EscapeFoxGame {
           this.broadcast({ type: 'stumble', playerId: p.id, gameId: 'escapeFox' });
         } else {
           gd.alive = false;
+          gd.survivedDist = Math.floor(this.worldDist || 0);
           this.broadcast({ type: 'eliminated', playerId: p.id, gameId: 'escapeFox' });
         }
       }
@@ -390,6 +396,7 @@ class EscapeFoxGame {
         if (wasDangerous) {
           gd.nearMissCombo++;
           gd.combo++;
+          gd.nearMisses++;
           gd.score += 5 * gd.combo;
           this.broadcast({ type: 'near_miss', playerId: p.id, combo: gd.combo, gameId: 'escapeFox' });
         }
@@ -431,6 +438,7 @@ class EscapeFoxGame {
         if (gd.jumpsUsed >= gd.maxJumps) return;
         if (gd.sliding) { gd.sliding = false; gd.slideTimer = 0; }
         gd.jumpsUsed++;
+        gd.jumps++;
         gd.vy = JUMP_VY_MIN + gd.jumpBonus;
         break;
 
@@ -438,6 +446,7 @@ class EscapeFoxGame {
         if (gd.jumpsUsed >= gd.maxJumps) return;
         if (gd.sliding) { gd.sliding = false; gd.slideTimer = 0; }
         gd.jumpsUsed++;
+        gd.jumps++;
         gd.vy = JUMP_VY_MIN + gd.jumpBonus;
         gd.jumpHeld = true;
         gd.jumpHoldTicks = 0;
@@ -448,16 +457,17 @@ class EscapeFoxGame {
         break;
 
       case 'slide':
-        if (gd.y > 0 || gd.sliding) return; // only on ground, not already sliding
+        if (gd.y > 0 || gd.sliding) return;
         gd.sliding = true;
+        gd.slides++;
         gd.slideTimer = gd.slideDuration;
         break;
 
       case 'lane': {
         if (gd.laneCooldown > 0) return;
         const dir = msg && msg.direction;
-        if (dir === 'left' && gd.lane > -1) { gd.lane--; gd.laneCooldown = LANE_CD; }
-        if (dir === 'right' && gd.lane < 1) { gd.lane++; gd.laneCooldown = LANE_CD; }
+        if (dir === 'left' && gd.lane > -1) { gd.lane--; gd.laneCooldown = LANE_CD; gd.laneChanges++; }
+        if (dir === 'right' && gd.lane < 1) { gd.lane++; gd.laneCooldown = LANE_CD; gd.laneChanges++; }
         break;
       }
     }
@@ -498,6 +508,18 @@ class EscapeFoxGame {
         combo: gd ? (gd.combo || 0) : 0,
         distOffset: gd ? (gd.distOffset || 0) : 0,
         stumbling: gd ? (gd.stumbleTimer > 0) : false,
+        // Phase 52b — per-player stats for postgame leaderboard.
+        stats: gd ? {
+          jumps: gd.jumps || 0,
+          slides: gd.slides || 0,
+          laneChanges: gd.laneChanges || 0,
+          powerupsGrabbed: gd.powerupsGrabbed || 0,
+          nearMisses: gd.nearMisses || 0,
+          survivedDist: gd.alive
+            ? Math.floor(this.worldDist || 0)
+            : (gd.survivedDist || 0),
+          coins: gd.coins || 0,
+        } : null,
       };
     }
     const foxProximity = Math.max(0, Math.min(1,
