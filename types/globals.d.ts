@@ -233,7 +233,7 @@ interface FranticsErrorReporter {
 
 // ---- CharSprite (client-shared/char-sprite.js, Phase 38c) ----
 
-type FranticsCharPose = 'idle' | 'move' | 'dash' | 'hit' | 'teeter' | 'cheer';
+type FranticsCharPose = 'idle' | 'move' | 'dash' | 'hit' | 'teeter' | 'cheer' | 'windup';
 
 interface FranticsCharSpriteOpts {
   character?: string;
@@ -243,6 +243,8 @@ interface FranticsCharSpriteOpts {
   clock?: number;
   hitFlash?: number;
   idx?: number;
+  facing?: number;
+  charge?: number;
 }
 
 interface FranticsCharSprite {

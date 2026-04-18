@@ -617,6 +617,7 @@ const Render2D = (() => {
             pose: 'dash',
             clock: clock,
             idx: e.data.idx || 0,
+            facing: e.data.facing || 0,
           });
           ctx.restore();
         }
@@ -652,6 +653,7 @@ const Render2D = (() => {
         clock: clock,
         hitFlash: e.data.hitFlash || 0,
         idx: e.data.idx || 0,
+        facing: e.data.facing || 0,
       });
 
       // Phase 39b — painted name plate + score plaque replace the
