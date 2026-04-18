@@ -187,9 +187,25 @@ const Sound = (() => {
       osc.connect(gain).connect(ctx.destination);
       osc.start(t); osc.stop(t + 0.12);
     },
-    bump() {
-      noise(0.12, 0.25, 600);
-      tone(100, 0.1, 'square', 0.15);
+    bump(opts) {
+      // Phase 43 — pitch scales with combo streak. opts.pitch ∈ [1, 2]
+      // shifts both the noise midband and the square thud upward so
+      // subsequent hits in the same combo sound hotter. Undefined
+      // opts falls back to the legacy single-tone bump.
+      const p = (opts && typeof opts.pitch === 'number') ? Math.max(0.7, Math.min(2.2, opts.pitch)) : 1;
+      const vol = (opts && typeof opts.volume === 'number') ? Math.max(0.3, Math.min(1.4, opts.volume)) : 1;
+      noise(0.12, 0.25 * vol, 600 * p);
+      tone(100 * p, 0.1, 'square', 0.15 * vol);
+    },
+    // Phase 43 — combo cheer for big streaks. Short horn pair with
+    // rising interval; opts.level ∈ 1..4 picks the pitch pair.
+    comboCheer(opts) {
+      ensure();
+      const lvl = Math.max(1, Math.min(4, (opts && opts.level) || 1));
+      const base = 330 + lvl * 60;
+      tone(base,       0.22, 'triangle', 0.12);
+      tone(base * 1.33, 0.22, 'triangle', 0.10);
+      setTimeout(() => tone(base * 1.5, 0.18, 'triangle', 0.08), 90);
     },
 
     // Meteor Shower
@@ -407,8 +423,11 @@ const Sound = (() => {
 
   // --- Public API ---
 
-  function play(name) {
-    if (effects[name]) effects[name]();
+  // Phase 43 — optional opts argument forwarded to the effect so
+  // callers can modulate pitch / volume / level. Effects that don't
+  // use opts are unaffected.
+  function play(name, opts) {
+    if (effects[name]) effects[name](opts);
   }
 
   // Phase 25c — global UI click tick via event delegation. Fires on

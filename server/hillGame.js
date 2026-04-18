@@ -377,7 +377,7 @@ class HillGame {
             a.dashing = false;
             a.bumpsDealt++; b.bumpsReceived++;
             a.combo++; if (a.combo > a.maxCombo) a.maxCombo = a.combo;
-            this.broadcast({ type: 'bump', from: alive[i].id, to: alive[j].id, gameId: 'hillKing' });
+            this.broadcast({ type: 'bump', from: alive[i].id, to: alive[j].id, combo: a.combo, gameId: 'hillKing' });
           }
         } else if (b.dashing && !a.dashing) {
           const force = b.superDash ? pushForceB * SUPER_DASH_MULT : pushForceB;
@@ -396,7 +396,7 @@ class HillGame {
             b.dashing = false;
             b.bumpsDealt++; a.bumpsReceived++;
             b.combo++; if (b.combo > b.maxCombo) b.maxCombo = b.combo;
-            this.broadcast({ type: 'bump', from: alive[j].id, to: alive[i].id, gameId: 'hillKing' });
+            this.broadcast({ type: 'bump', from: alive[j].id, to: alive[i].id, combo: b.combo, gameId: 'hillKing' });
           }
         } else if (a.dashing && b.dashing) {
           a.vx -= nx * PUSH_FORCE * 0.5; a.vy -= ny * PUSH_FORCE * 0.5;

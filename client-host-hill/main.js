@@ -259,10 +259,19 @@ HostHarness.on({
   },
 
   bump: (msg) => {
-    Sound.play('bump');
+    // Phase 43 — combo sound layering. Each subsequent hit in the
+    // same combo streak plays a hotter (higher pitch, louder) bump.
+    // Combo ≥ 3 also fires a crowd-cheer horn.
+    const combo = Math.max(1, msg.combo || 1);
+    const pitch = 1 + Math.min(4, combo - 1) * 0.12;
+    const volume = 1 + Math.min(4, combo - 1) * 0.06;
+    Sound.play('bump', { pitch: pitch, volume: volume });
+    if (combo >= 3) {
+      Sound.play('comboCheer', { level: Math.min(4, combo - 2) });
+    }
     if (typeof FX !== 'undefined') FX.screenFlash('#fff', 0.15);
     if (msg.to) Render2D.triggerBump(msg.to, msg.from);
-    showMsg(pname(msg.from) + ' bumped ' + pname(msg.to) + '!', 1200);
+    showMsg(pname(msg.from) + ' bumped ' + pname(msg.to) + (combo > 1 ? (' \u00D7' + combo + '!') : '!'), 1200);
   },
 
   shieldBlock: (msg) => {
