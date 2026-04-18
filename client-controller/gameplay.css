@@ -46,6 +46,10 @@
 
 /* ============================================================
    Score block — primary numeric / string stat
+   Phase 19a: painterly wooden scoreboard plaque sits behind the
+   number via ::before. Plaque stretches to the block bounding
+   box (with a small inset bleed) so the frame ornaments frame
+   the digit. Same asset reused for .gp-countdown-digit below.
    ============================================================ */
 .gameplay-root .gp-score-block {
   position: absolute;
@@ -53,7 +57,20 @@
   text-align: center;
   z-index: 3;
   pointer-events: none;
+  padding: 4px 24px 2px;
+  min-width: 160px;
 }
+.gameplay-root .gp-score-block::before {
+  content: '';
+  position: absolute;
+  inset: -18px -36px -10px -36px;
+  background-image: var(--score-plaque-bg, url('/assets/score-plaque.png'));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: -1;
+  pointer-events: none;
+}
+.gameplay-root .gp-score-block > * { position: relative; z-index: 1; }
 .gameplay-root .gp-score {
   font-family: var(--font-display);
   font-size: 64px;
@@ -199,6 +216,10 @@
 
 /* ============================================================
    Hintbar — action carousel at bottom
+   Phase 19b: painterly theatre stage (proscenium valance +
+   wooden floor) renders behind the action cards via ::before.
+   The flat dark gradient lightens to 0.45 so the painted stage
+   reads through while still fading into the safe-area inset.
    ============================================================ */
 .gameplay-root .gp-hintbar {
   position: absolute; bottom: 0; left: 0; right: 0;
@@ -206,10 +227,21 @@
   padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px));
   display: flex; align-items: center; justify-content: center;
   gap: 10px;
-  background: linear-gradient(0deg, rgba(47, 28, 12, 0.82) 0%, transparent 100%);
+  background: linear-gradient(0deg, rgba(47, 28, 12, 0.45) 0%, transparent 60%);
   z-index: 4;
   pointer-events: none;
 }
+.gameplay-root .gp-hintbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--hintbar-stage-bg, url('/assets/hintbar-stage.png'));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+.gameplay-root .gp-hintbar > * { position: relative; z-index: 1; }
 .gameplay-root .gp-action {
   flex: 0 0 auto;
   width: 72px; height: 72px;
@@ -361,6 +393,21 @@
   line-height: 1;
   z-index: 3;
   animation: gpCountdownStamp var(--dur-short) var(--ease-bounce);
+  padding: 10px 40px;
+}
+/* Phase 19a — countdown digit reuses the score-plaque asset, with a
+   larger inset to accommodate the 180px letterform. The ::before
+   sits behind the text via z-index: -1 within the digit's relative
+   positioning context. */
+.gameplay-root .gp-countdown-digit::before {
+  content: '';
+  position: absolute;
+  inset: -30px -80px -20px -80px;
+  background-image: var(--score-plaque-bg, url('/assets/score-plaque.png'));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: -1;
+  pointer-events: none;
 }
 @keyframes gpCountdownStamp {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(2); }

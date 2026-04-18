@@ -28,23 +28,29 @@ window.Gameplay = (function () {
   var scoreBumpTimer = null;
   var activeDelta = null;
 
-  // Phase 11b — preload the cell-action painterly frame and set
-  // --cell-action-bg CSS custom property. Raw PNG fallback in gameplay.css
-  // shows on first paint; processed transparent version swaps in once
-  // loadPainterly resolves.
+  // Phase 11b / 12b / 19 — preload painterly HUD chrome assets and
+  // set their CSS custom properties. Raw PNG fallbacks in gameplay.css
+  // show on first paint; processed (checker-stripped) versions swap
+  // in once loadPainterly resolves.
+  //   cell-action   (Phase 11b action-card + 12b orb reuse)
+  //   score-plaque  (Phase 19a score block + countdown digit reuse)
+  //   hintbar-stage (Phase 19b theatre stage under action cards)
   setTimeout(function () {
     if (typeof SpriteLoader === 'undefined') return;
-    SpriteLoader.loadPainterly('cell-action', '/assets/cell-action.png')
-      .then(function (canvas) {
-        if (canvas) {
-          document.documentElement.style.setProperty(
-            '--cell-action-bg', 'url(' + canvas.toDataURL('image/png') + ')');
-        }
-      })
-      .catch(function () {});
-    // Phase 12b-fix — orb reuses the cell-action slot-machine face
-    // loaded above; no separate orb-frame asset needed.
-
+    [
+      ['cell-action',   '--cell-action-bg',   '/assets/cell-action.png'],
+      ['score-plaque',  '--score-plaque-bg',  '/assets/score-plaque.png'],
+      ['hintbar-stage', '--hintbar-stage-bg', '/assets/hintbar-stage.png'],
+    ].forEach(function (t) {
+      SpriteLoader.loadPainterly(t[0], t[2])
+        .then(function (canvas) {
+          if (canvas) {
+            document.documentElement.style.setProperty(
+              t[1], 'url(' + canvas.toDataURL('image/png') + ')');
+          }
+        })
+        .catch(function () {});
+    });
   }, 0);
 
   var GAME_NAMES = {
