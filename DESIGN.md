@@ -2163,6 +2163,30 @@ synchronized across screens.
     single log stream — any aggregator (journald, docker logs,
     stackdriver) can slice by `.event` without parser
     heuristics.
+
+34. **Phase 34** (shipped 2026-04-18): shared per-game host
+    harness. Consolidates the WS-boot / state-phase /
+    countdown / lobby / game-over / button-wiring ceremony
+    that was copy-pasted across the 4 per-game `main.js` files
+    into one shared module (`client-shared/host-harness.js`).
+    Per-game main.js shrinks from ~240 LOC boilerplate to
+    ~120 LOC pure configuration: declare `gameId`,
+    `lobbyAsset`, `musicKey`, `introKey`, `countdownFinal`,
+    `lobbyReadyMsg`, pass `onStateRunning` for per-game HUD +
+    `buildPostGameOpts` factory, then register per-game
+    message-type handlers via `HostHarness.on({...})`. The
+    harness runs WebSocket connect → `Protocol.makeHost` →
+    state dispatcher → per-game user handlers → `game_over`
+    PostGame → `gameSelected` redirect → `$btn-start` /
+    `$btn-again` / `$btn-lobby` wiring. Total LOC across the
+    5-file unit drops from 969 to 725 (harness +217,
+    per-game main.js -461). One future change to the WS
+    dispatch / countdown / lobby / game-over pattern touches
+    one file instead of four. `FranticsHostHarness` ambient
+    interface added to `types/globals.d.ts` so the contract is
+    visible to tsc.
+
+After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
 Phase 23 rectangular + pill + dot UI objects gild themselves
@@ -2182,29 +2206,26 @@ motion, audio layer, and micro-interactions.
 bugs at edit time (via JSDoc + ambient globals.d.ts); Vite
 gives HMR + proxy for fast dev iteration.
 
-**Phases 28-33 landed the Rune-grade foundation arc's
-observability leg.** Shared WebSocket protocol schema (Phase 28)
-+ server-side protocol migration (Phase 29) give both ends of
-the wire one source of truth; malformed messages die at the
-boundary before the dispatch switch ever sees them. CI gate
-(Phase 30) + E2E smoke tests (Phase 31) make that invariant a
-merge requirement rather than a local custom. Structured
-logger (Phase 32) replaces ad-hoc `console.warn` branches with
-JSON-per-line stdout filtered by `LOG_LEVEL`. Phase 33 wires
-that logger into every lifecycle boundary — connect, join,
-leave, game start / end, tournament start / round / end — so
-the running server emits a clean event stream any aggregator
-can slice by `.event` without parser heuristics.
+**Phases 28-34 close the Rune-grade foundation arc.** Shared
+WebSocket protocol schema (Phase 28) + server-side protocol
+migration (Phase 29) give both ends of the wire one source of
+truth; malformed messages die at the boundary before the
+dispatch switch ever sees them. CI gate (Phase 30) + E2E smoke
+tests (Phase 31) make that invariant a merge requirement
+rather than a local custom. Structured logger (Phase 32)
+replaces ad-hoc `console.warn` with JSON-per-line stdout
+filtered by `LOG_LEVEL`. Phase 33 wires the logger into every
+server-side lifecycle boundary (connect / join / leave / game
+start+end / tournament start+round+end). Phase 34 consolidates
+the 4 per-game host main.js copies into one shared harness,
+cutting per-game boilerplate in half and making future changes
+to the common ceremony one-site edits.
 
-Remaining arc: Phase 34 shared per-game host harness
-(consolidate the four per-game host entry points that
-currently duplicate boot-spinup code, Sprite preload, and
-WebSocket bootstrap). Pure-reducer game-logic extraction +
-ES-module migration + Vite prod-build pipeline stay open as
-post-arc candidates — reducer extraction is a multi-day
-refactor across four 500-line game classes and currently has
-no load-bearing need (existing game state is stable and
-covered by smoke tests).
+Pure-reducer game-logic extraction + ES-module migration +
+Vite prod-build pipeline stay open as post-arc candidates —
+reducer extraction is a multi-day refactor across four
+500-line game classes with no load-bearing need today
+(existing game state is stable and covered by smoke tests).
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
