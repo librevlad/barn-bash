@@ -47,6 +47,7 @@
     "client-shared/ambient-fx.js",
     "client-shared/protocol.js",
     "client-shared/host-harness.js",
+    "client-shared/error-reporter.js",
     "**/*.test.js"
   ]
 }

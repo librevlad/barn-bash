@@ -225,6 +225,12 @@ interface FranticsVisual {
   [key: string]: any;
 }
 
+// ---- ErrorReporter (client-shared/error-reporter.js, Phase 35) ----
+
+interface FranticsErrorReporter {
+  install(): void;
+}
+
 // ---- HostHarness (client-shared/host-harness.js, Phase 34) ----
 
 interface FranticsHostHarnessConfig {
@@ -306,6 +312,7 @@ declare global {
   var Visual: FranticsVisual;
   var Protocol: FranticsProtocol;
   var HostHarness: FranticsHostHarness;
+  var ErrorReporter: FranticsErrorReporter;
   var Physics2D: any;
   var Camera2D: any;
   var Scene: any;

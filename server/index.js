@@ -143,6 +143,38 @@ function preferWebp(filePath, acceptHeader) {
 
 const server = http.createServer((req, res) => {
   const urlPath = req.url.split('?')[0].split('#')[0];
+
+  // Phase 35 — client error sink. Accepts POST /api/log with a JSON
+  // body from error-reporter.js; forwards to logger.warn under
+  // `client.error`. Cap at 8KB so a runaway client can't fill stdout.
+  if (urlPath === '/api/log' && req.method === 'POST') {
+    const chunks = [];
+    let total = 0;
+    req.on('data', (c) => {
+      total += c.length;
+      if (total > 8192) { req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => {
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        logger.warn('client.error', {
+          source: String(body.source || 'unknown').slice(0, 32),
+          message: String(body.message || '').slice(0, 500),
+          stack: String(body.stack || '').slice(0, 2000),
+          filename: body.filename ? String(body.filename).slice(0, 200) : null,
+          lineno: Number.isFinite(body.lineno) ? body.lineno : null,
+          colno: Number.isFinite(body.colno) ? body.colno : null,
+          url: body.url ? String(body.url).slice(0, 200) : null,
+          userAgent: body.userAgent ? String(body.userAgent).slice(0, 200) : null,
+        });
+      } catch (_) { /* malformed — drop silently */ }
+      res.writeHead(204);
+      res.end();
+    });
+    return;
+  }
+
   if (urlPath === '/test' || urlPath === '/host' || urlPath === '/controller' || urlPath === '/host-escape' || urlPath === '/host-hill' || urlPath === '/host-meteor' || urlPath === '/host-race') {
     res.writeHead(301, { Location: urlPath + '/' });
     res.end();
