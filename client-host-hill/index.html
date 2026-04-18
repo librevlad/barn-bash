@@ -219,31 +219,130 @@
       font-size: 22px;
       filter: drop-shadow(0 0 6px rgba(255, 221, 107, 0.8));
     }
+    /* Phase 40b — painted countdown medallion. Brass outer ring,
+       cream inner disc, bold dark numeral. On the last step ("FIGHT!"),
+       the card flips to a wide red ribbon via the .go class. */
     #countdown {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      position: fixed; top: 50%; left: 50%;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #ffe290 0%, #d5972b 55%, #8a5918 100%);
+      box-shadow:
+        inset 0 0 0 6px #5a3512,
+        inset 0 0 0 10px #ffdd6b,
+        inset 0 8px 0 rgba(255, 255, 255, 0.18),
+        0 0 0 3px rgba(20, 10, 5, 0.85),
+        0 12px 44px rgba(0, 0, 0, 0.6),
+        0 0 60px rgba(255, 220, 120, 0.35);
+      display: none;
+      pointer-events: none;
+      z-index: 25;
+      transition: transform 0.42s var(--ease-out), opacity 0.3s;
+      transform: translate(-50%, -50%) scale(0.7);
+      opacity: 0;
+      color: #2a160a;
       font-family: var(--font-display);
-      font-size: 140px; font-weight: 400;
-      color: var(--accent-gold);
-      text-shadow: 0 4px 0 var(--accent-red-deep),
-                   0 8px 40px rgba(244, 197, 66, 0.6);
-      letter-spacing: 3px;
-      pointer-events: none; display: none; z-index: 25;
-      transition: transform 0.4s var(--ease-out), opacity 0.3s;
+      /* Flex centering kicks in when display is flipped to flex by
+         the harness — but harness uses 'block'. Use line-height +
+         text-align on the inner .cd-num instead. */
     }
+    #countdown::before {
+      /* Cream inner panel — the numeral sits against this. */
+      content: '';
+      position: absolute; inset: 24px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #f5e5b5 0%, #d4ab6a 100%);
+      box-shadow:
+        inset 0 2px 0 rgba(255, 250, 220, 0.65),
+        inset 0 -3px 0 rgba(60, 30, 10, 0.35);
+      z-index: 0;
+    }
+    #countdown::after {
+      /* Eight gold radial studs around the rim for carnival flair. */
+      content: '';
+      position: absolute; inset: -2px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50%   3%, #ffdd6b 0 4px, transparent 5px),
+        radial-gradient(circle at 50%  97%, #ffdd6b 0 4px, transparent 5px),
+        radial-gradient(circle at  3% 50%, #ffdd6b 0 4px, transparent 5px),
+        radial-gradient(circle at 97% 50%, #ffdd6b 0 4px, transparent 5px),
+        radial-gradient(circle at 17% 17%, #ffdd6b 0 3px, transparent 4px),
+        radial-gradient(circle at 83% 17%, #ffdd6b 0 3px, transparent 4px),
+        radial-gradient(circle at 17% 83%, #ffdd6b 0 3px, transparent 4px),
+        radial-gradient(circle at 83% 83%, #ffdd6b 0 3px, transparent 4px);
+      pointer-events: none;
+    }
+    #countdown .cd-num {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 130px;
+      line-height: 1;
+      color: #2a160a;
+      text-shadow:
+        0 2px 0 rgba(255, 248, 220, 0.55),
+        0 6px 14px rgba(0, 0, 0, 0.35);
+      letter-spacing: 0;
+    }
+    /* Final "FIGHT!" step — widen into a painted red banner. */
+    #countdown.go {
+      width: 480px; height: 160px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #d24030 0%, #8a1b14 100%);
+      box-shadow:
+        inset 0 2px 0 rgba(255, 180, 160, 0.55),
+        inset 0 -4px 8px rgba(40, 6, 4, 0.7),
+        0 0 0 3px #5a110c,
+        0 0 0 6px #d5972b,
+        0 0 0 8px rgba(20, 10, 5, 0.9),
+        0 14px 44px rgba(0, 0, 0, 0.65),
+        0 0 80px rgba(255, 100, 60, 0.45);
+    }
+    #countdown.go::before { inset: 12px; border-radius: 8px; background: linear-gradient(180deg, #b73325 0%, #6f1611 100%); }
+    #countdown.go::after { display: none; }
+    #countdown.go .cd-num {
+      font-size: 86px;
+      color: #ffdd6b;
+      letter-spacing: 4px;
+      text-shadow:
+        0 3px 0 #4a0d09,
+        0 0 18px rgba(255, 190, 110, 0.55),
+        0 0 44px rgba(255, 80, 60, 0.35);
+    }
+
+    /* Phase 40b — painted message ribbon. Slides down from above,
+       reads as a carnival announcement card. Replaces the prior
+       plain-text overlay. */
     #message {
-      position: fixed; top: 28%; left: 50%;
-      transform: translate(-50%, -50%);
+      position: fixed; top: 14%; left: 50%;
+      transform: translate(-50%, -18px);
+      min-width: 220px; max-width: 80vw;
+      padding: 10px 36px 12px;
+      background: linear-gradient(180deg, #fff0c2 0%, #e7c576 100%);
+      color: #3b1a0a;
       font-family: var(--font-display);
-      font-size: 32px; font-weight: 400;
-      color: var(--accent-gold-hot);
-      letter-spacing: 2px;
-      text-shadow: 0 2px 0 var(--accent-red-deep),
-                   0 4px 22px rgba(255, 221, 107, 0.45);
+      font-size: 22px;
+      letter-spacing: 1.2px;
+      text-align: center;
+      /* Ribbon chevron ends */
+      clip-path: polygon(
+        14px 0, calc(100% - 14px) 0, 100% 50%,
+        calc(100% - 14px) 100%, 14px 100%, 0 50%
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(255, 250, 220, 0.75),
+        inset 0 -2px 4px rgba(90, 50, 20, 0.4),
+        0 6px 20px rgba(0, 0, 0, 0.45);
       pointer-events: none; opacity: 0;
-      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+      transition: opacity 0.3s ease-out, transform 0.3s var(--ease-out);
       z-index: 5;
+      text-shadow: 0 1px 0 rgba(255, 250, 220, 0.6);
     }
-    #message.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    #message.show { opacity: 1; transform: translate(-50%, 0); }
     #winner-overlay {
       position: fixed; inset: 0;
       background: rgba(47, 28, 12, 0.9);

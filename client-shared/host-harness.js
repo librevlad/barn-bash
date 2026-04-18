@@ -167,10 +167,20 @@
     if (!$countdown) return;
     const steps = ['3', '2', '1', _config.countdownFinal || 'GO!'];
     let i = 0;
+    // Phase 40b — text wrapped in <span.cd-num> so painted-medallion
+    // CSS (e.g. KotH Phase 40b) can layer a cream inner disc via
+    // ::before without fighting the number. `.go` class flagged on
+    // the final step so games can paint that card as a wide banner.
     $countdown.style.display = 'block';
     function next() {
-      if (i >= steps.length) { $countdown.style.display = 'none'; return; }
-      $countdown.textContent = steps[i];
+      if (i >= steps.length) {
+        $countdown.style.display = 'none';
+        $countdown.classList.remove('go');
+        return;
+      }
+      const isLast = (i === steps.length - 1);
+      $countdown.classList.toggle('go', isLast);
+      $countdown.innerHTML = '<span class="cd-num">' + steps[i] + '</span>';
       $countdown.style.transform = 'translate(-50%, -50%) scale(1.6)';
       $countdown.style.opacity = '1';
       Sound.play(i < 3 ? 'countdownTick' : 'countdownGo');
