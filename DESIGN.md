@@ -2520,6 +2520,37 @@ composer can drop in new note arrays.
     'none', and every per-game main.js drops HUD.update so
     only the painted plaques render.
 
+51. **Phase 51** (shipped 2026-04-19): shared lobby slots +
+    shared scoreboard. Two widgets extracted from hill-only
+    to shared modules so every per-game host picks them up.
+
+    * **51a — LobbySlots.render(state)** (client-shared/
+      lobby-slots.js). Painted player-slot cards (122 × 154 px
+      wood panels with colour-rimmed animal avatar + name +
+      brass-gradient slot-index badge + empty-skeleton padding
+      to 4 slots). Previously inline in hill main.js. CSS
+      moved to client-shared/theme.css (#lobby-players,
+      .player-slot, .slot-avatar, .slot-name, .slot-badge,
+      @keyframes slotPop, #lobby-hint). Escape / meteor /
+      race index.html drop their own #lobby-players CSS to
+      a two-line margin tweak, load the new shared script,
+      add a game-specific #lobby-hint ("Swipe up to jump…"
+      / "…hold to sprint…" / "…tap item + drop oil…"), and
+      their onLobby hook now calls LobbySlots.render.
+
+    * **51b — Scoreboard.render(rows, opts)** (client-shared/
+      scoreboard.js). Painted right-edge standings panel.
+      Data-driven: rows = `{ id, color, name, value, leader,
+      dead, warn }` — each per-game main.js owns its value
+      semantics. Hill keeps score with ≥3-threshold leader
+      + teeter warn. Race adopts with 'FIN N' / 'Lap M' value
+      and 1st-place leader. Escape + meteor intentionally
+      skipped for now — their per-player state is thin
+      (shared world distance / wave) and would duplicate the
+      HUD numbers. CSS moved to theme.css alongside lobby
+      slots so anyone who drops the markup in picks up the
+      painted treatment automatically.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
