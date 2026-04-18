@@ -461,8 +461,22 @@ const Tournament = (() => {
     document.head.appendChild(style);
   }
 
-  function show() { createOverlay(); overlay.classList.add('show'); }
-  function hide() { if (overlay) overlay.classList.remove('show'); }
+  function show() {
+    createOverlay();
+    overlay.classList.add('show');
+    // Phase 25a — tournament theme music on overlay activation.
+    if (typeof Sound !== 'undefined' && Sound.startMusic) {
+      try { Sound.startMusic('tournament'); } catch (e) {}
+    }
+  }
+  function hide() {
+    if (overlay) overlay.classList.remove('show');
+    // Phase 25a — stop tournament theme; per-game music (if still
+    // playing) was already stopped when the round ended.
+    if (typeof Sound !== 'undefined' && Sound.stopMusic) {
+      try { Sound.stopMusic(); } catch (e) {}
+    }
+  }
 
   // Animate score counting from 0 to target
   function animateScores() {

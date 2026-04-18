@@ -268,6 +268,12 @@ const PostGame = (() => {
 
     overlay.classList.add('show');
 
+    // Phase 25b — victory fanfare sting for winner reveal. Delayed
+    // 400ms so the overlay fade-in settles before the horn flourish.
+    if (hasWinner && typeof Sound !== 'undefined' && Sound.play) {
+      setTimeout(() => { try { Sound.play('fanfare'); } catch (e) {} }, 400);
+    }
+
     // Button handlers
     document.getElementById('pg-again').onclick = () => {
       hide();

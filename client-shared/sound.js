@@ -243,6 +243,26 @@ const Sound = (() => {
       tone(300, 0.15, 'square', 0.08);
       setTimeout(() => tone(250, 0.15, 'square', 0.06), 100);
     },
+    // Phase 25b — victory fanfare sting. 5-note ascending sawtooth
+    // "trumpet" swell for PostGame winner reveal. Layered on top of
+    // existing narrator quip + particles for the celebration peak.
+    fanfare() {
+      tone(523, 0.15, 'sawtooth', 0.15);  // C5
+      setTimeout(() => tone(659, 0.15, 'sawtooth', 0.15), 120);   // E5
+      setTimeout(() => tone(784, 0.15, 'sawtooth', 0.15), 240);   // G5
+      setTimeout(() => tone(1047, 0.25, 'sawtooth', 0.18), 360);  // C6
+      setTimeout(() => tone(1319, 0.45, 'sawtooth', 0.22, 0.02), 540); // E6 sustain
+    },
+    // Phase 25c — UI click + hover ticks. Short double-tick on click,
+    // single short tick on hover. Low volume so the button feedback
+    // stays subtle even if the user spams clicks.
+    uiClick() {
+      tone(1200, 0.06, 'sine', 0.12, 0.005);
+      setTimeout(() => tone(1800, 0.04, 'sine', 0.08, 0.005), 20);
+    },
+    uiHover() {
+      tone(880, 0.03, 'sine', 0.06, 0.005);
+    },
   };
 
   // --- Background Music (melodic themes with arpeggio + rhythm) ---
@@ -296,6 +316,17 @@ const Sound = (() => {
       arp: [N.C4, N.E4, N.G4, N.C5],
       bassType: 'triangle', melType: 'sine', arpType: 'sine',
       filterFreq: 400,
+    },
+    // Phase 25a — tournament theme. Slow bass-heavy progression with
+    // an ascending gilded arpeggio for the between-round / champion
+    // overlay moments. Volume kept low (0.045) so narrator quips read.
+    tournament: {
+      bpm: 90, vol: 0.045,
+      bass: [N.C3, N.C3, N.G2, N.C3, N.F3, N.F3, N.C3, N.G2],
+      melody: [N.E5, N.G5, N.C6, N.G5, N.E5, N.F5, N.E5, N.C5],
+      arp: [N.C4, N.E4, N.G4, N.C5, N.E5, N.C5, N.G4, N.E4],
+      bassType: 'sawtooth', melType: 'triangle', arpType: 'sine',
+      filterFreq: 700,
     },
   };
 
@@ -379,6 +410,20 @@ const Sound = (() => {
   function play(name) {
     if (effects[name]) effects[name]();
   }
+
+  // Phase 25c — global UI click tick via event delegation. Fires on
+  // pointerdown for recognized button classes, skips disabled. Works
+  // across host + controller surfaces without wiring per-button.
+  const UI_CLICK_SELECTOR =
+    '.ticket-btn, .modal-btn, .sprite-btn, .gp-go-btn, .pg-btn, ' +
+    '#btn-start, .back-link, .waiting-settings, #btn-play, ' +
+    '#btn-customize, #btn-settings';
+  document.addEventListener('pointerdown', (e) => {
+    const t = e.target.closest && e.target.closest(UI_CLICK_SELECTOR);
+    if (!t) return;
+    if (t.disabled || t.getAttribute('aria-disabled') === 'true') return;
+    try { effects.uiClick(); } catch (_) { /* no-op */ }
+  }, { passive: true });
 
   return { play, startMusic, stopMusic, unlock };
 })();
