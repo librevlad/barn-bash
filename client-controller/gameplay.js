@@ -237,6 +237,15 @@ window.Gameplay = (function () {
       action.dataset.action = a.action;
       action.appendChild(el('div', 'gp-action-icon', { text: a.icon }));
       action.appendChild(el('div', 'gp-action-label', { text: a.label }));
+      // Phase 26c — tap ripple on pointerdown. Toggles .tap-ripple
+      // class to fire the CSS keyframe, removes after animation ends.
+      action.addEventListener('pointerdown', function () {
+        action.classList.remove('tap-ripple');
+        // Force reflow so re-adding the class retriggers animation.
+        void action.offsetWidth;
+        action.classList.add('tap-ripple');
+        setTimeout(function () { action.classList.remove('tap-ripple'); }, 450);
+      }, { passive: true });
       els.hintbar.appendChild(action);
     });
     root.appendChild(els.hintbar);

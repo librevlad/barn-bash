@@ -477,6 +477,18 @@
   #t-content .t-round-intro-backdrop,
   #postgame-overlay .pg-backdrop-podium,
   .gameplay-root .gp-spec-backdrop { animation: none; }
+  /* Phase 26 — freeze staggered entries + tap ripple + button depth */
+  #game-modal .modal-btn,
+  .onboarding-root .animal-grid > *,
+  .onboarding-root .color-grid > *,
+  .gameplay-root .gp-action.tap-ripple::after { animation: none !important; }
+  .ticket-btn:active,
+  #game-modal .modal-btn:active,
+  .sprite-btn:active,
+  #postgame-overlay .pg-btn:active,
+  .gameplay-root .gp-go-btn:active {
+    transform: none; filter: none;
+  }
 }
 
 /* ============================================================
@@ -527,6 +539,83 @@
   animation-delay: 14s;
   will-change: filter;
 }
+
+/* ============================================================
+   Phase 26 — Animation polish (closes Hearthstone arc)
+   ============================================================ */
+
+/* 26a — Staggered entry keyframe for grid/list reveals. */
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* 26b — Shared button press depth on tap-down. Overrides existing
+   :active rules where present; other buttons inherit this pattern. */
+.ticket-btn:active,
+#game-modal .modal-btn:active,
+.sprite-btn:active,
+#postgame-overlay .pg-btn:active,
+.gameplay-root .gp-go-btn:active {
+  transform: translateY(4px) scale(0.98);
+  filter: brightness(0.92);
+  transition-duration: 80ms;
+}
+
+/* 26c — Tap ripple on controller action cards. JS toggles
+   .tap-ripple class; removes after 400ms. */
+.gameplay-root .gp-action.tap-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 24px; height: 24px;
+  margin: -12px 0 0 -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 221, 107, 0.5) 0%,
+    rgba(255, 221, 107, 0.2) 40%,
+    transparent 70%);
+  pointer-events: none;
+  animation: tapRipple 400ms ease-out forwards;
+  z-index: 3;
+}
+@keyframes tapRipple {
+  0%   { transform: scale(0.4); opacity: 0.9; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+
+/* Staggered entry on game-select modal tickets. */
+#game-modal .modal-btn {
+  animation: staggerIn 420ms var(--ease-bounce) backwards;
+}
+#game-modal .modal-grid .modal-btn:nth-child(1) { animation-delay: 0ms; }
+#game-modal .modal-grid .modal-btn:nth-child(2) { animation-delay: 80ms; }
+#game-modal .modal-grid .modal-btn:nth-child(3) { animation-delay: 160ms; }
+#game-modal .modal-grid .modal-btn:nth-child(4) { animation-delay: 240ms; }
+#game-modal .modal-bottom .modal-btn:last-child { animation-delay: 320ms; }
+
+/* Staggered entry on onboarding animal + color grids. */
+.onboarding-root .animal-grid > * { animation: staggerIn 380ms var(--ease-bounce) backwards; }
+.onboarding-root .animal-grid > *:nth-child(1) { animation-delay: 0ms; }
+.onboarding-root .animal-grid > *:nth-child(2) { animation-delay: 50ms; }
+.onboarding-root .animal-grid > *:nth-child(3) { animation-delay: 100ms; }
+.onboarding-root .animal-grid > *:nth-child(4) { animation-delay: 150ms; }
+.onboarding-root .animal-grid > *:nth-child(5) { animation-delay: 200ms; }
+.onboarding-root .animal-grid > *:nth-child(6) { animation-delay: 250ms; }
+.onboarding-root .animal-grid > *:nth-child(7) { animation-delay: 300ms; }
+.onboarding-root .animal-grid > *:nth-child(8) { animation-delay: 350ms; }
+
+.onboarding-root .color-grid > * { animation: staggerIn 360ms var(--ease-bounce) backwards; }
+.onboarding-root .color-grid > *:nth-child(1) { animation-delay: 0ms; }
+.onboarding-root .color-grid > *:nth-child(2) { animation-delay: 40ms; }
+.onboarding-root .color-grid > *:nth-child(3) { animation-delay: 80ms; }
+.onboarding-root .color-grid > *:nth-child(4) { animation-delay: 120ms; }
+.onboarding-root .color-grid > *:nth-child(5) { animation-delay: 160ms; }
+.onboarding-root .color-grid > *:nth-child(6) { animation-delay: 200ms; }
+.onboarding-root .color-grid > *:nth-child(7) { animation-delay: 240ms; }
+.onboarding-root .color-grid > *:nth-child(8) { animation-delay: 280ms; }
+.onboarding-root .color-grid > *:nth-child(9) { animation-delay: 320ms; }
+.onboarding-root .color-grid > *:nth-child(10) { animation-delay: 360ms; }
 
 /* ============================================================
    Phase 22 — Typography embellishments
