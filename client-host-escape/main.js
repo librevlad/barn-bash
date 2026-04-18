@@ -7,9 +7,18 @@ Render2D.init();
 const pname = HostCommon.pname;
 const showMsg = (text, ms) => HostHarness.showMsg(text, ms);
 
+// Phase 48b — match-start bell + ambient crowd, same pattern as KotH.
+let _matchStarted = false;
+
 function updateHUD(s) {
   const $ = id => document.getElementById(id);
   const $hudDist = $('hud-distance'), $hudAlive = $('hud-alive'), $hudSpeed = $('hud-speed');
+
+  if (!_matchStarted) {
+    _matchStarted = true;
+    try { Sound.play('matchBell'); } catch (_) {}
+    try { Sound.startCrowd(); } catch (_) {}
+  }
 
   $hudDist.textContent = Math.floor(s.worldDist) + 'm';
   const alive = Object.values(s.players).filter(p => p.connected && p.alive).length;
@@ -38,6 +47,10 @@ HostHarness.boot({
   introKey: 'escapeFox',
   countdownFinal: 'RUN!',
   lobbyReadyMsg: 'Ready to run!',
+  onLobby: () => {
+    _matchStarted = false;
+    try { Sound.stopCrowd(); } catch (_) {}
+  },
   onStateRunning: updateHUD,
   buildPostGameOpts: (state, msg) => {
     const w = msg.winnerId ? state.players[msg.winnerId] : null;
