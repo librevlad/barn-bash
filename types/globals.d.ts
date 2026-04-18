@@ -231,6 +231,25 @@ interface FranticsErrorReporter {
   install(): void;
 }
 
+// ---- CharSprite (client-shared/char-sprite.js, Phase 38c) ----
+
+type FranticsCharPose = 'idle' | 'move' | 'dash' | 'hit' | 'teeter' | 'cheer';
+
+interface FranticsCharSpriteOpts {
+  character?: string;
+  colorRgb?: string;
+  color?: string;
+  pose?: FranticsCharPose;
+  clock?: number;
+  hitFlash?: number;
+  idx?: number;
+}
+
+interface FranticsCharSprite {
+  draw(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opts: FranticsCharSpriteOpts): void;
+  POSES: FranticsCharPose[];
+}
+
 // ---- HostHarness (client-shared/host-harness.js, Phase 34) ----
 
 interface FranticsHostHarnessConfig {
@@ -313,6 +332,8 @@ declare global {
   var Protocol: FranticsProtocol;
   var HostHarness: FranticsHostHarness;
   var ErrorReporter: FranticsErrorReporter;
+  var CharSprite: FranticsCharSprite;
+  var CharDraw: any;
   var Physics2D: any;
   var Camera2D: any;
   var Scene: any;

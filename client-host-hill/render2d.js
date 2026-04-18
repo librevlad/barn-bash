@@ -534,15 +534,33 @@ const Render2D = (() => {
         });
       }
 
-      // Character blob (Phase 38c will replace with painterly sprites)
-      const expr = e.data.dashing ? 'determined' : 'happy';
-      CharDraw.blob(ctx, s.x, s.y, 22, e.color, {
-        idx: e.data.idx || 0,
-        clock,
-        expression: expr,
-        dashing: e.data.dashing,
-        running: false,
+      // Tick down per-entity hit flash (set by triggerHit)
+      if (e.data.hitFlash > 0) {
+        e.data.hitFlash = Math.max(0, e.data.hitFlash - (dt || 0.016) * 3);
+      }
+
+      // Pose selection — server state drives which frame to render.
+      let pose = 'idle';
+      if (e.data.teetering) pose = 'teeter';
+      else if (e.data.dashing) pose = 'dash';
+      else if (e.data.hitFlash > 0.4) pose = 'hit';
+      else {
+        // Moving if rendered position changed perceptibly frame-to-frame.
+        const moving = Math.abs(e.data.rX - (e.data._prevDrawX || 0)) > 0.01
+                    || Math.abs(e.data.rY - (e.data._prevDrawY || 0)) > 0.01;
+        if (moving) pose = 'move';
+      }
+      e.data._prevDrawX = e.data.rX;
+      e.data._prevDrawY = e.data.rY;
+
+      CharSprite.draw(ctx, s.x, s.y, 22, {
         character: e.character,
+        colorRgb: e.data.colorRgb,
+        color: e.color,
+        pose: pose,
+        clock: clock,
+        hitFlash: e.data.hitFlash || 0,
+        idx: e.data.idx || 0,
       });
 
       if (e.data.score > 0) {
@@ -608,6 +626,7 @@ const Render2D = (() => {
       e.data.tY = pd.y || 0;
 
       e.data.dashing = pd.dashing;
+      e.data.teetering = pd.teetering;
       e.data.facing = pd.facing || 0;
       e.data.score = pd.score || 0;
       e.data.name = pd.name || null;
@@ -663,5 +682,13 @@ const Render2D = (() => {
 
   function triggerWin() {}
 
-  return { init, updateState, triggerWin };
+  // Phase 38c — hit-flash API. main.js bump handler calls this with the
+  // player id that took the impact so the sprite plays a 'hit' pose
+  // for ~350 ms.
+  function triggerHit(playerId) {
+    const e = entities.get(playerId);
+    if (e) e.data.hitFlash = 1;
+  }
+
+  return { init, updateState, triggerWin, triggerHit };
 })();

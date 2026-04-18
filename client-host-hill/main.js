@@ -62,6 +62,7 @@ HostHarness.on({
   bump: (msg) => {
     Sound.play('bump');
     if (typeof FX !== 'undefined') { FX.shake(8); FX.screenFlash('#fff', 0.2); FX.burst(640, 360, 15, { color: '#B070FF', speed: 4, life: 0.3, glow: true }); }
+    if (msg.to) Render2D.triggerHit(msg.to);
     showMsg(pname(msg.from) + ' bumped ' + pname(msg.to) + '!', 1200);
   },
 
