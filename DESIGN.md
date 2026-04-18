@@ -2064,6 +2064,21 @@ synchronized across screens.
     hook. Honors prefers-reduced-motion. Spec:
     `docs/superpowers/specs/2026-04-18-animation-polish-design.md`.
 
+27. **Phase 27** (shipped 2026-04-18): DX Tier 1 migration —
+    first tooling phase after the content-feature arc. 27a
+    TypeScript type-checking via JSDoc + `tsconfig.json` with
+    allowJs + checkJs (lax strict). 13 window-globals declared
+    in `types/globals.d.ts` (Sound SFX + music enums, Narrator
+    API, Tournament message types, PostGame opts, HostCommon
+    exports, AmbientFx presets, Gameplay phases, etc.). 27b
+    Vite dev server on port 5173 proxies all runtime routes +
+    WebSocket to the existing Node server on port 3000 — HMR
+    on CSS, full reload on JS. 27c npm scripts (`dev`,
+    `typecheck`, preserved `start` + `test`). Zero runtime
+    changes, zero runtime deps added. DevDeps: vite ^5.4,
+    typescript ^5.5, @types/node ^20.11. Spec:
+    `docs/superpowers/specs/2026-04-18-dx-tier-1-design.md`.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
@@ -2078,9 +2093,14 @@ like pressed cards, action cards ripple on tap.
 **Hearthstone-polish arc (Phases 21-26) is complete.** The
 product reads as Hearthstone-tier across 6 dimensions:
 painted atmosphere, typography, object ornament, backdrop
-motion, audio layer, and micro-interactions. No Phase 27
-scheduled; future polish opens its own spec when demand
-justifies.
+motion, audio layer, and micro-interactions.
+
+**Phase 27 opened the DX tooling track.** TypeScript catches
+bugs at edit time (via JSDoc + ambient globals.d.ts); Vite
+gives HMR + proxy for fast dev iteration. Future DX Tier 2
+would be GSAP for complex animation sequencing + `noImplicitAny`
+ratcheting; Tier 3 would be full ES-module + `.ts` migration if
+the bundler value compounds.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
