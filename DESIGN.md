@@ -2186,7 +2186,27 @@ synchronized across screens.
     interface added to `types/globals.d.ts` so the contract is
     visible to tsc.
 
-After Phase 21 the painted surfaces breathe AND drift AND
+35. **Phase 35** (shipped 2026-04-18): client-side error
+    reporter. Opens the post-arc observability extension:
+    `client-shared/error-reporter.js` (UMD; auto-installs in
+    browsers) registers `window.addEventListener('error',
+    ...)` + `window.addEventListener('unhandledrejection',
+    ...)` and forwards captured frames to the server via
+    `navigator.sendBeacon('/api/log', ...)` (fallback:
+    `fetch(..., { keepalive: true })`). Per-tab throttle caps
+    reports at 10 / minute so a render-loop bug can't flood
+    stdout. Server `server/index.js` grows a `POST /api/log`
+    route that parses the JSON body (8 KB cap) and emits
+    `logger.warn('client.error', { source, message, stack,
+    filename, lineno, colno, url, userAgent })` with per-field
+    length clamps. Loaded as the FIRST `<script>` in all 6 HTML
+    entry points (host, controller, 4 per-game hosts) so it
+    catches subsequent module parse errors. 4 new unit tests
+    on `_build` truncation + `_shouldReport` throttle; total
+    now 35. The logger stream now carries the full
+    client-plus-server error picture — any aggregator can
+    slice `.event === 'client.error'` to surface bugs that
+    previously died in a single player's devtools.
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
 Phase 23 rectangular + pill + dot UI objects gild themselves
