@@ -250,12 +250,8 @@
       margin-bottom: 22px;
       letter-spacing: 0.3px;
     }
-    #lobby-players {
-      font-family: var(--font-accent);
-      font-size: 17px;
-      color: var(--text-cream);
-      margin-bottom: 30px;
-    }
+    /* Phase 51a — #lobby-players styled via shared theme.css. */
+    #lobby-players { margin-bottom: 30px; }
     #lobby button { font-size: 20px; padding: 18px 56px; letter-spacing: 1.5px; }
   </style>
 </head>
@@ -286,6 +282,7 @@
     <h2>METEOR SHOWER</h2>
     <div id="lobby-info">Waiting for players...</div>
     <div id="lobby-players"></div>
+    <div id="lobby-hint">&#x1F579; Swipe to dodge &middot; hold to sprint &middot; reach the safe green zones</div>
     <button id="btn-start" style="display:none">START</button>
   </div>
   <div id="controls">
@@ -298,6 +295,7 @@
   <script src="/shared/characters.js"></script>
   <script src="/shared/char-sprite.js"></script>
   <script src="/shared/host-common.js"></script>
+  <script src="/shared/lobby-slots.js"></script>
   <script src="/shared/narrator.js"></script>
   <script src="/shared/sound.js"></script>
   <script src="/shared/hud.js"></script>

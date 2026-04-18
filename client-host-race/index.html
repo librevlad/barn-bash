@@ -222,11 +222,8 @@
       margin-bottom: 20px;
       letter-spacing: 0.3px;
     }
-    #lobby-players {
-      display: flex; gap: 10px;
-      margin-bottom: 28px; min-height: 30px;
-      flex-wrap: wrap; justify-content: center;
-    }
+    /* Phase 51a — #lobby-players styled via shared theme.css. */
+    #lobby-players { margin-bottom: 28px; min-height: 30px; }
     #btn-start {
       font-family: var(--font-display);
       font-size: 20px; font-weight: 400;
@@ -282,6 +279,7 @@
     <h1>GRAND PRIX</h1>
     <div id="lobby-info">Waiting for players...</div>
     <div id="lobby-players"></div>
+    <div id="lobby-hint">&#x1F3C1; Swipe to steer &middot; tap to use item &middot; swipe down to drop oil</div>
     <button id="btn-start" style="display:none">START</button>
   </div>
   <script src="/shared/error-reporter.js"></script>
@@ -289,6 +287,7 @@
   <script src="/shared/icons.js"></script>
   <script src="/shared/characters.js"></script>
   <script src="/shared/host-common.js"></script>
+  <script src="/shared/lobby-slots.js"></script>
   <script src="/shared/narrator.js"></script>
   <script src="/shared/sound.js"></script>
   <script src="/shared/hud.js"></script>

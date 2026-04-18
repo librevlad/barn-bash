@@ -522,100 +522,9 @@
       margin-bottom: 22px;
       letter-spacing: 0.3px;
     }
-    /* Phase 41a — painted player-slot cards in the lobby. Fixed-width
-       cards arranged in a responsive row; each carries the player's
-       animal avatar, colored rim, and name plaque. Empty slots show a
-       "?" skeleton. */
-    #lobby-players {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      justify-content: center;
-      margin-bottom: 30px;
-      max-width: 720px;
-      font-family: var(--font-accent);
-      font-size: 17px;
-      color: var(--text-cream);
-    }
-    .player-slot {
-      position: relative;
-      width: 122px; height: 154px;
-      border-radius: 14px;
-      padding: 10px 10px 12px;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-start;
-      background:
-        linear-gradient(180deg, rgba(74, 46, 24, 0.95) 0%, rgba(42, 24, 12, 0.95) 100%);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 236, 200, 0.22),
-        inset 0 -2px 4px rgba(0, 0, 0, 0.45),
-        0 0 0 2px rgba(30, 18, 10, 0.9),
-        0 0 0 4px var(--slot-rim, rgba(216, 152, 45, 0.85)),
-        0 6px 16px rgba(0, 0, 0, 0.55);
-      transition: transform 0.25s var(--ease-out), box-shadow 0.25s;
-      animation: slotPop 0.35s var(--ease-out);
-    }
-    .player-slot.empty {
-      --slot-rim: rgba(120, 90, 50, 0.55);
-      opacity: 0.55;
-      animation: none;
-    }
-    @keyframes slotPop {
-      0%   { transform: translateY(12px) scale(0.85); opacity: 0; }
-      100% { transform: translateY(0) scale(1); opacity: 1; }
-    }
-    .player-slot .slot-avatar {
-      width: 78px; height: 78px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.12), rgba(0,0,0,0.3));
-      box-shadow:
-        inset 0 2px 0 rgba(255, 250, 220, 0.2),
-        inset 0 -2px 4px rgba(0, 0, 0, 0.35),
-        0 0 0 2px rgba(20, 10, 5, 0.85),
-        0 0 0 3px var(--slot-rim, rgba(216, 152, 45, 0.85));
-      overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 34px;
-      color: rgba(255, 240, 210, 0.35);
-      margin: 2px 0 8px;
-    }
-    .player-slot .slot-avatar img {
-      width: 100%; height: 100%; object-fit: cover;
-    }
-    .player-slot .slot-name {
-      font-family: var(--font-display);
-      font-size: 13px;
-      letter-spacing: 1px;
-      color: var(--text-cream);
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
-      line-height: 1.1;
-      max-width: 100%;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      padding: 0 4px;
-    }
-    .player-slot .slot-badge {
-      position: absolute;
-      top: -10px; right: -10px;
-      background: linear-gradient(180deg, #ffe290 0%, #d5972b 100%);
-      border-radius: 50%;
-      width: 24px; height: 24px;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-display);
-      font-size: 12px;
-      color: #3b1a0a;
-      box-shadow: 0 0 0 2px rgba(30, 18, 10, 0.9), 0 2px 6px rgba(0, 0, 0, 0.55);
-    }
-    /* Phase 41a — how-to-play hint strip under the player row. */
-    #lobby-hint {
-      font-family: var(--font-accent);
-      font-size: 13px; font-style: italic;
-      color: rgba(255, 231, 170, 0.72);
-      margin: -10px 0 20px;
-      letter-spacing: 0.5px;
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
-      max-width: 520px;
-      text-align: center;
-    }
+    /* Phase 51a — lobby slot + hint CSS moved to client-shared/theme.css
+       so escape / meteor / race inherit the painted cards via the
+       already-included theme stylesheet. */
     #lobby button { font-size: 20px; padding: 18px 56px; letter-spacing: 1.5px; }
   </style>
 </head>
@@ -670,6 +579,7 @@
   <script src="/shared/characters.js"></script>
   <script src="/shared/char-sprite.js"></script>
   <script src="/shared/host-common.js"></script>
+  <script src="/shared/lobby-slots.js"></script>
   <script src="/shared/narrator.js"></script>
   <script src="/shared/sound.js"></script>
   <script src="/shared/hud.js"></script>

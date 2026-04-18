@@ -56,9 +56,10 @@ HostHarness.boot({
   introKey: 'race',
   countdownFinal: 'GO!',
   lobbyReadyMsg: 'Ready to race!',
-  onLobby: () => {
+  onLobby: (state) => {
     _matchStarted = false;
     try { Sound.stopCrowd(); } catch (_) {}
+    LobbySlots.render(state);
   },
   onStateRunning: updateHUD,
   buildPostGameOpts: (state, msg) => {

@@ -33,9 +33,10 @@ HostHarness.boot({
   introKey: 'meteor',
   countdownFinal: 'DODGE!',
   lobbyReadyMsg: 'Ready to dodge!',
-  onLobby: () => {
+  onLobby: (state) => {
     _matchStarted = false;
     try { Sound.stopCrowd(); } catch (_) {}
+    LobbySlots.render(state);
   },
   onStateRunning: updateHUD,
   buildPostGameOpts: (state, msg) => {

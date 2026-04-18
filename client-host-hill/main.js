@@ -212,75 +212,10 @@ function updateScoreboard(state, conn, aliveCount) {
   }
 }
 
-// Phase 41a — painted lobby-slot renderer. Fires on every `state`
-// message while phase === 'lobby'. Replaces the default inline-pill
-// list (set by HostHarness._showLobby) with fixed-width painted
-// cards carrying the player's avatar + colour rim + name.
-function renderLobbyCards(state) {
-  const host = document.getElementById('lobby-players');
-  if (!host) return;
-
-  const MAX_SLOTS = 8;
-  const conn = Object.entries(state.players || {}).filter(([, p]) => p.connected);
-  const filled = conn.length;
-
-  const nodes = [];
-  conn.forEach(([id, p], idx) => {
-    const slot = document.createElement('div');
-    slot.className = 'player-slot';
-    slot.style.setProperty('--slot-rim', p.color || 'rgba(216,152,45,0.85)');
-
-    const avatar = document.createElement('div');
-    avatar.className = 'slot-avatar';
-    avatar.style.setProperty('--slot-rim', p.color || 'rgba(216,152,45,0.85)');
-
-    if (p.character && HostCommon.charAvatars[p.character]) {
-      const img = document.createElement('img');
-      img.src = HostCommon.charAvatars[p.character];
-      img.alt = p.character;
-      img.setAttribute('data-char', p.character);
-      img.onerror = function () { this.remove(); };
-      avatar.appendChild(img);
-    } else {
-      avatar.textContent = '?';
-    }
-    slot.appendChild(avatar);
-
-    const name = document.createElement('div');
-    name.className = 'slot-name';
-    name.textContent = p.name || ('Player ' + id);
-    name.style.color = p.color || 'var(--text-cream)';
-    slot.appendChild(name);
-
-    const badge = document.createElement('div');
-    badge.className = 'slot-badge';
-    badge.textContent = String(idx + 1);
-    slot.appendChild(badge);
-
-    nodes.push(slot);
-  });
-
-  // Empty skeleton slots up to 4 minimum (so the row doesn't look
-  // lonely with 1-2 players).
-  const empties = Math.max(0, Math.min(MAX_SLOTS, Math.max(4, filled + 1)) - filled);
-  for (let i = 0; i < empties; i++) {
-    const slot = document.createElement('div');
-    slot.className = 'player-slot empty';
-    const avatar = document.createElement('div');
-    avatar.className = 'slot-avatar';
-    avatar.textContent = '?';
-    slot.appendChild(avatar);
-    const name = document.createElement('div');
-    name.className = 'slot-name';
-    name.textContent = 'Open slot';
-    slot.appendChild(name);
-    nodes.push(slot);
-  }
-
-  // Bulk replace to minimise DOM churn.
-  host.innerHTML = '';
-  nodes.forEach(n => host.appendChild(n));
-}
+// Phase 51a — painted lobby-slot renderer moved to
+// client-shared/lobby-slots.js. Thin wrapper delegates so
+// onLobby config stays tidy.
+const renderLobbyCards = (state) => LobbySlots.render(state);
 
 HostHarness.boot({
   gameId: 'hillKing',

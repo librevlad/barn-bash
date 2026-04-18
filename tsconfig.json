@@ -49,6 +49,7 @@
     "client-shared/host-harness.js",
     "client-shared/error-reporter.js",
     "client-shared/char-sprite.js",
+    "client-shared/lobby-slots.js",
     "**/*.test.js"
   ]
 }

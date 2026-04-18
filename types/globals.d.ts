@@ -339,6 +339,7 @@ declare global {
   var CharDraw: any;
   var HillJoystick: any;
   var HillDashButton: any;
+  var LobbySlots: { render(state: any): void; MAX_SLOTS: number };
   var Physics2D: any;
   var Camera2D: any;
   var Scene: any;
