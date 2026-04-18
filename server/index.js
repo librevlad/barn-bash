@@ -317,27 +317,29 @@ function advanceTournament() {
 
 function handleTournamentGameEnd(msg) {
   if (!tournament) return;
-  // Clear safety timeout
   if (tournament._gameTimeout) { clearTimeout(tournament._gameTimeout); tournament._gameTimeout = null; }
-
-  // Prevent double-invocation
   if (tournament.phase !== 'playing') return;
 
-  // Award points: winner gets 3, everyone else alive gets 1
+  // Phase 53 — snapshot pre-round scores so the standings broadcast
+  // can include per-player roundDelta (pts earned in this round).
+  const before = { ...tournament.scores };
+
   if (msg.winnerId) {
     tournament.scores[msg.winnerId] = (tournament.scores[msg.winnerId] || 0) + 3;
   }
-  // Survivors get 1 point each
   for (const p of players.connected()) {
     if (p.gameData && p.gameData.alive && p.id !== msg.winnerId) {
       tournament.scores[p.id] = (tournament.scores[p.id] || 0) + 1;
     }
   }
 
-  // Show standings
+  const roundDelta = {};
+  for (const id of Object.keys(tournament.scores)) {
+    roundDelta[id] = (tournament.scores[id] || 0) - (before[id] || 0);
+  }
+
   tournament.phase = 'standings';
   setTimeout(() => {
-    // Include player names for the overlay display
     const playerNames = {};
     for (const p of players.connected()) {
       playerNames[p.id] = p.name || 'Player ' + p.id;
@@ -347,13 +349,15 @@ function handleTournamentGameEnd(msg) {
       round: tournament.round,
       totalRounds: tournament.totalRounds,
       scores: tournament.scores,
+      roundDelta: roundDelta,
+      winnerId: msg.winnerId || null,
+      gameId: msg.gameId || null,
       playerNames,
       nextGameId: tournament.round < tournament.totalRounds
         ? tournament.sequence[tournament.round % tournament.sequence.length]
         : null
     });
 
-    // Advance after standings display
     setTimeout(() => advanceTournament(), 6000);
   }, 2000);
 }

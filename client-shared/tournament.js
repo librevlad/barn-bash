@@ -273,6 +273,39 @@ const Tournament = (() => {
       }
       #t-content .t-player-pos-change.up   { color: var(--success-green, #7bc950); }
       #t-content .t-player-pos-change.down { color: var(--danger-red, #d9534f); }
+      /* Phase 53 — per-round pts-delta chip. Small rounded pill.
+         Winner of the round gets the gold fill; survivors get a
+         neutral brass outline; eliminated gets a dim dash. */
+      #t-content .t-player-delta {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(216, 152, 45, 0.5);
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 12px;
+        color: var(--accent-gold, #f4c542);
+        letter-spacing: 0.6px;
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+        animation: tDeltaPop 0.45s ease-out 0.6s both;
+      }
+      #t-content .t-player-delta.win {
+        background: linear-gradient(180deg, #ffe290 0%, #d5972b 100%);
+        color: #2a160a;
+        border-color: #5a3512;
+        text-shadow: 0 1px 0 rgba(255, 246, 200, 0.5);
+        box-shadow: 0 0 12px rgba(255, 210, 120, 0.55);
+      }
+      #t-content .t-player-delta.zero {
+        opacity: 0.4;
+        border-color: rgba(120, 90, 50, 0.45);
+      }
+      @keyframes tDeltaPop {
+        0%   { transform: scale(0.5); opacity: 0; }
+        60%  { transform: scale(1.15); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
       #t-content .t-next {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
         font-size: 15px; font-style: italic;
@@ -559,11 +592,23 @@ const Tournament = (() => {
       var crown = isLeader ? '<div style="font-size:18px;margin-bottom:2px;">\uD83D\uDC51</div>' : '';
       var displayName = getPlayerDisplayName(id, data);
 
+      // Phase 53 — per-round pts-delta chip (+3 win / +1 survive /
+      // 0 eliminated). Highlights round winner with a gold tint.
+      var delta = (data.roundDelta && data.roundDelta[id]) || 0;
+      var isRoundWinner = data.winnerId && String(data.winnerId) === String(id);
+      var deltaChip = '';
+      if (delta > 0) {
+        deltaChip = '<div class="t-player-delta' + (isRoundWinner ? ' win' : '') + '">+' + delta + '</div>';
+      } else {
+        deltaChip = '<div class="t-player-delta zero">&mdash;</div>';
+      }
+
       html += '<div class="t-player slide-in ' + (isLeader ? 'leader' : '') + '" style="animation-delay:' + delay + 'ms;">';
       html += crown;
       html += '<div class="t-player-dot" style="background:' + (p.color || '#666') + '"></div>';
       html += '<div class="t-player-name">' + displayName + '</div>';
       html += '<div class="t-player-pts" data-target="' + pts + '">0</div>';
+      html += deltaChip;
       html += posChange;
       html += '</div>';
     }
