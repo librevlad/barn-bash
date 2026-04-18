@@ -17,44 +17,97 @@
       color: var(--text-cream);
     }
     canvas { display: block; }
+    /* Phase 50 — painted 3-plaque HUD same vocabulary as
+       Phase 48c (escape) / 49 (meteor). */
     #hud {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: none;
-      padding: 10px 20px;
-      justify-content: space-between;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: start;
+      gap: 20px;
+      padding: 14px 24px 0;
       pointer-events: none;
-      background: linear-gradient(180deg, rgba(61, 40, 23, 0.72) 0%, transparent 100%);
+      background: linear-gradient(180deg, rgba(20, 12, 7, 0.55) 0%, transparent 100%);
     }
-    .hud-left { display: flex; flex-direction: column; gap: 2px; }
-    .hud-right { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
-    .hud-title {
+    .hud-plaque {
+      position: relative;
+      min-width: 130px;
+      padding: 8px 16px 10px;
+      border-radius: 10px;
+      background:
+        linear-gradient(180deg, #ffe290 0%, #d5972b 50%, #8d5a18 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 246, 200, 0.75),
+        inset 0 -2px 3px rgba(40, 22, 10, 0.45),
+        0 3px 10px rgba(0, 0, 0, 0.55),
+        0 0 0 2px rgba(50, 28, 10, 0.85);
+      text-align: center;
+    }
+    .hud-plaque::before {
+      content: '';
+      position: absolute; top: 3px; left: 10%; right: 10%; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.85), transparent);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .hud-plaque .hud-title {
+      display: block;
       font-family: var(--font-accent);
       font-size: 10px;
-      letter-spacing: var(--tracking-wider);
-      color: var(--text-dim);
+      letter-spacing: 4px;
+      color: rgba(60, 30, 8, 0.85);
       text-transform: uppercase;
     }
-    /* In-lobby eyebrow sits on the painted arch; needs strong contrast. */
+    .hud-plaque .hud-value {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: #2a160a;
+      text-shadow: 0 1px 0 rgba(255, 246, 200, 0.45);
+      letter-spacing: 1.5px;
+      line-height: 1.1;
+    }
+    .hud-banner {
+      justify-self: center;
+      position: relative;
+      padding: 9px 36px 11px;
+      margin-top: 2px;
+      background: linear-gradient(180deg, #c73a2d 0%, #8b1d16 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 180, 160, 0.45),
+        inset 0 -2px 4px rgba(40, 8, 4, 0.6),
+        0 0 0 2px #6d1712,
+        0 0 0 4px #d4952d,
+        0 3px 14px rgba(0, 0, 0, 0.55);
+      text-align: center;
+      clip-path: polygon(
+        10px 0, calc(100% - 10px) 0, 100% 50%,
+        calc(100% - 10px) 100%, 10px 100%, 0 50%
+      );
+    }
+    .hud-banner-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      color: #ffe290;
+      letter-spacing: 4px;
+      text-shadow: 0 2px 0 #4a0d09, 0 0 10px rgba(255, 190, 110, 0.45);
+    }
+    .hud-banner-sub {
+      font-family: var(--font-accent);
+      font-size: 11px;
+      color: rgba(255, 230, 200, 0.85);
+      margin-top: 1px;
+      letter-spacing: 2px;
+    }
+    .hud-lap, .hud-pos, .hud-alive { display: inline; }
+    .hud-pos { font-size: 11px; letter-spacing: 1px; color: rgba(255, 230, 200, 0.85); }
+
     #lobby .hud-title {
       font-size: 12px;
       letter-spacing: 6px;
       color: var(--accent-gold);
       text-shadow: 0 1px 0 var(--accent-red-deep),
                    0 0 14px rgba(0, 0, 0, 0.8);
-    }
-    .hud-lap {
-      font-family: var(--font-display);
-      font-size: 26px; font-weight: 400;
-      color: var(--accent-gold);
-      text-shadow: 0 2px 0 var(--accent-red-deep),
-                   0 0 14px rgba(244, 197, 66, 0.4);
-      letter-spacing: 0.5px;
-    }
-    .hud-pos {
-      font-family: var(--font-display);
-      font-size: 18px; font-weight: 400;
-      color: var(--accent-gold-hot);
-      letter-spacing: 1px;
-      text-shadow: 0 1px 0 var(--accent-red-deep);
     }
     #countdown {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -200,14 +253,19 @@
 </head>
 <body>
   <canvas id="game-canvas"></canvas>
+  <!-- Phase 50 — painted 3-plaque HUD. -->
   <div id="hud" style="display:none">
-    <div class="hud-left">
-      <div class="hud-title">GRAND PRIX</div>
-      <div class="hud-lap" id="hud-lap">Lap 1/3</div>
+    <div class="hud-plaque">
+      <span class="hud-title">Lap</span>
+      <span class="hud-value hud-lap" id="hud-lap">1/3</span>
     </div>
-    <div class="hud-right">
-      <div class="hud-pos" id="hud-pos"></div>
-      <div class="hud-title" id="hud-alive">0/0</div>
+    <div class="hud-banner">
+      <div class="hud-banner-title">&#x1F3C1; Grand Prix</div>
+      <div class="hud-banner-sub hud-pos" id="hud-pos">&#x2014;</div>
+    </div>
+    <div class="hud-plaque">
+      <span class="hud-title">Finished</span>
+      <span class="hud-value hud-alive" id="hud-alive">0/0</span>
     </div>
   </div>
   <div id="countdown"></div>

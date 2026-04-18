@@ -105,14 +105,8 @@ function updateHUD(s) {
       : 'Push to the centre';
   }
 
-  if (typeof HUD !== 'undefined') {
-    HUD.update(s.players, {
-      gameName: 'KING OF THE HILL',
-      primary: pct < 100 ? 'Arena ' + pct + '%' : '',
-      secondary: pct < 50 ? '\u26A0 SHRINKING!' : '',
-      secondaryColor: '#ff4422',
-    });
-  }
+  // Phase 40a — painted #hud replaces the legacy shared HUD bar;
+  // skip HUD.update to avoid two HUDs stacking.
 
   updateScoreboard(s, conn, alive);
 }

@@ -117,8 +117,10 @@
           const $controls = $('controls');
           const $winOverlay = $('winner-overlay');
           if ($lobby) $lobby.classList.add('hidden');
-          if (typeof HUD !== 'undefined') HUD.init();
-          if ($hud) $hud.style.display = 'none';
+          // Phase 40a/48c/49/50 — per-game hosts now own the painted
+          // HUD markup directly (#hud has its own styled plaques).
+          // The legacy shared HUD.init() bar is no longer rendered.
+          if ($hud) $hud.style.display = '';
           if ($controls) $controls.style.display = 'none';
           if ($winOverlay) $winOverlay.classList.remove('show');
           if (_config.musicKey) Sound.startMusic(_config.musicKey);

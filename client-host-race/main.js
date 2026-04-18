@@ -7,6 +7,9 @@ Render2D.init();
 const pname = HostCommon.pname;
 const showMsg = (text, ms) => HostHarness.showMsg(text, ms);
 
+// Phase 50 — match-start bell + ambient crowd.
+let _matchStarted = false;
+
 function ordinal(n) {
   const s = ['th', 'st', 'nd', 'rd'];
   const v = n % 100;
@@ -17,16 +20,22 @@ function updateHUD(s) {
   const $ = id => document.getElementById(id);
   const $hudLap = $('hud-lap'), $hudPos = $('hud-pos'), $hudAlive = $('hud-alive');
 
+  if (!_matchStarted) {
+    _matchStarted = true;
+    try { Sound.play('matchBell'); } catch (_) {}
+    try { Sound.startCrowd(); } catch (_) {}
+  }
+
   const conn = Object.entries(s.players).filter(([, p]) => p.connected);
   if (conn.length > 0) {
     let maxLap = 1;
     conn.forEach(([, p]) => { if (p.lap > maxLap) maxLap = p.lap; });
-    $hudLap.textContent = 'Lap ' + Math.min(maxLap, s.totalLaps) + '/' + s.totalLaps;
+    $hudLap.textContent = Math.min(maxLap, s.totalLaps) + '/' + s.totalLaps;
   }
 
   const finished = Object.values(s.players).filter(p => p.connected && p.finished).length;
   const total = Object.values(s.players).filter(p => p.connected === true).length;
-  $hudAlive.textContent = finished + '/' + total + ' finished';
+  $hudAlive.textContent = finished + '/' + total;
 
   const sorted = conn.sort((a, b) => {
     const ga = a[1], gb = b[1];
@@ -35,16 +44,9 @@ function updateHUD(s) {
     return (gb.waypoint || 0) - (ga.waypoint || 0);
   });
   const posTexts = sorted.slice(0, 3).map(([id, p], i) => ordinal(i + 1) + ' ' + (p.name || 'P' + id));
-  $hudPos.textContent = posTexts.join('  ');
+  $hudPos.textContent = posTexts[0] || '\u2014';
 
-  if (typeof HUD !== 'undefined') {
-    HUD.update(s.players, {
-      gameName: 'GRAND PRIX',
-      primary: 'Lap ' + Math.min(s.finishOrder ? s.finishOrder.length + 1 : 1, s.totalLaps) + '/' + s.totalLaps,
-      secondary: posTexts[0] || '',
-      secondaryColor: '#ffcc00',
-    });
-  }
+  // Phase 50 — painted #hud replaces the legacy shared HUD bar.
 }
 
 HostHarness.boot({
@@ -54,6 +56,10 @@ HostHarness.boot({
   introKey: 'race',
   countdownFinal: 'GO!',
   lobbyReadyMsg: 'Ready to race!',
+  onLobby: () => {
+    _matchStarted = false;
+    try { Sound.stopCrowd(); } catch (_) {}
+  },
   onStateRunning: updateHUD,
   buildPostGameOpts: (state, msg) => {
     const w = msg.winnerId ? state.players[msg.winnerId] : null;

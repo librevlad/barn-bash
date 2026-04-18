@@ -39,15 +39,7 @@ function updateHUD(s) {
     $hudSpeed.style.color = '';
   }
 
-  if (typeof HUD !== 'undefined') {
-    const foxWarn = prox > 0.7 ? '🦊 FOX IS CATCHING UP!' : (prox > 0.4 ? '🦊 Fox getting close...' : '');
-    HUD.update(s.players, {
-      gameName: 'ESCAPE THE FOX',
-      primary: Math.floor(s.worldDist) + 'm',
-      secondary: foxWarn,
-      secondaryColor: prox > 0.7 ? '#FF4422' : '#FFAA44',
-    });
-  }
+  // Phase 48c — painted #hud replaces the legacy shared HUD bar.
 }
 
 HostHarness.boot({

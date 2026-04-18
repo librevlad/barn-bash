@@ -23,15 +23,7 @@ function updateHUD(s) {
   $hudAlive.textContent = alive + '/' + total;
   $hudWarn.textContent = s.subPhase === 'warning' ? 'METEORS INCOMING' : 'Stay sharp';
 
-  if (typeof HUD !== 'undefined') {
-    const warn = s.subPhase === 'warning' ? '⚠ METEORS INCOMING' : '';
-    HUD.update(s.players, {
-      gameName: 'METEOR SHOWER',
-      primary: 'Wave ' + (s.wave || 1),
-      secondary: warn,
-      secondaryColor: '#ff4422',
-    });
-  }
+  // Phase 49 — painted #hud replaces the legacy shared HUD bar.
 }
 
 HostHarness.boot({
