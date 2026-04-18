@@ -2148,7 +2148,21 @@ synchronized across screens.
     lifecycle, game state transitions, tournament mode
     switches) without each emit site re-inventing shape.
 
-After Phase 21 the painted surfaces breathe AND drift AND
+33. **Phase 33** (shipped 2026-04-18): lifecycle telemetry
+    instrumentation. Wires Phase 32's logger into every
+    state-transition boundary in `server/index.js`: connection
+    open / close / error (ws.on), player join / leave,
+    game selected / started / ended, tournament started /
+    round-advanced / ended, server.listening at boot. Every
+    emit shares the Phase 32 structured-JSON line shape
+    (`{ ts, level, event, ...data }`). Default `LOG_LEVEL=info`
+    surfaces the meaningful transitions (join / left / started
+    / ended / tournament milestones) while silencing per-tick
+    debug (connection lifecycle, game selected, protocol
+    dropped). Makes the server observable end-to-end via a
+    single log stream — any aggregator (journald, docker logs,
+    stackdriver) can slice by `.event` without parser
+    heuristics.
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
 Phase 23 rectangular + pill + dot UI objects gild themselves
@@ -2168,27 +2182,29 @@ motion, audio layer, and micro-interactions.
 bugs at edit time (via JSDoc + ambient globals.d.ts); Vite
 gives HMR + proxy for fast dev iteration.
 
-**Phases 28-32 landed the first leg of the Rune-grade
-foundation arc.** Shared WebSocket protocol schema (Phase 28)
+**Phases 28-33 landed the Rune-grade foundation arc's
+observability leg.** Shared WebSocket protocol schema (Phase 28)
 + server-side protocol migration (Phase 29) give both ends of
 the wire one source of truth; malformed messages die at the
 boundary before the dispatch switch ever sees them. CI gate
 (Phase 30) + E2E smoke tests (Phase 31) make that invariant a
 merge requirement rather than a local custom. Structured
 logger (Phase 32) replaces ad-hoc `console.warn` branches with
-JSON-per-line stdout filtered by `LOG_LEVEL`, giving future
-telemetry (connection lifecycle, game transitions, tournament
-mode switches) one canonical emit shape.
+JSON-per-line stdout filtered by `LOG_LEVEL`. Phase 33 wires
+that logger into every lifecycle boundary — connect, join,
+leave, game start / end, tournament start / round / end — so
+the running server emits a clean event stream any aggregator
+can slice by `.event` without parser heuristics.
 
-Remaining arc: Phase 33 pure reducer game logic (extract the
-state-transition core from mutable game classes so it can be
-round-tripped through a test harness without a live WS loop);
-Phase 34 shared per-game host harness (consolidate the four
-per-game host entry points that currently duplicate
-boot-spinup code). ES-module migration + Vite prod build
-pipeline stay open as post-arc candidates — `npm run dev`
-via the Phase 27 Vite proxy already unlocks HMR without
-requiring the module migration.
+Remaining arc: Phase 34 shared per-game host harness
+(consolidate the four per-game host entry points that
+currently duplicate boot-spinup code, Sprite preload, and
+WebSocket bootstrap). Pure-reducer game-logic extraction +
+ES-module migration + Vite prod-build pipeline stay open as
+post-arc candidates — reducer extraction is a multi-day
+refactor across four 500-line game classes and currently has
+no load-bearing need (existing game state is stable and
+covered by smoke tests).
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
