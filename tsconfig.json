@@ -43,6 +43,9 @@
     "client-shared/effects.js",
     "client-shared/characters.js",
     "client-shared/colors.js",
-    "client-shared/pretext-hooks.js"
+    "client-shared/pretext-hooks.js",
+    "client-shared/ambient-fx.js",
+    "client-shared/protocol.js",
+    "**/*.test.js"
   ]
 }

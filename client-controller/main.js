@@ -80,12 +80,11 @@ function connectWS() {
       // will restore HUD content.
       Gameplay.setPhase(phase === 'running' ? 'running' : 'idle');
     }
-    ws.send(JSON.stringify({
-      type: 'join',
-      name: myName,
-      character: selectedChar,
-      carColor: selectedColor,
-    }));
+    // Phase 28 — protocol-typed message. carColor stays an extra
+    // field (not in the canonical Join shape, additive).
+    const joinMsg = Protocol.makeJoin({ name: myName, character: selectedChar });
+    joinMsg.carColor = selectedColor;
+    Protocol.send(ws, joinMsg);
   };
   ws.onmessage = onMessage;
   ws.onclose = () => {

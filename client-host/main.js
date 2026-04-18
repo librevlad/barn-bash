@@ -30,7 +30,7 @@ $connectUrl.dataset.url = connectUrl;
 
 let playerCount = 0;
 
-ws.onopen = () => ws.send(JSON.stringify({ type: 'host' }));
+ws.onopen = () => Protocol.send(ws, Protocol.makeHost());
 
 // ============================================================
 // IDLE NARRATOR
@@ -246,7 +246,7 @@ document.querySelectorAll('.modal-btn[data-game]').forEach(btn => {
     Sound.play('countdownGo');
     stopIdleNarrator();
     $gameModal.classList.remove('show');
-    ws.send(JSON.stringify({ type: 'selectGame', gameId: btn.dataset.game }));
+    Protocol.send(ws, Protocol.makeSelectGame(btn.dataset.game));
   });
 });
 
@@ -256,7 +256,7 @@ document.getElementById('mh-tournament').addEventListener('click', () => {
   Sound.play('winner');
   stopIdleNarrator();
   $gameModal.classList.remove('show');
-  ws.send(JSON.stringify({ type: 'startTournament' }));
+  Protocol.send(ws, Protocol.makeStartTournament());
 });
 
 // Back

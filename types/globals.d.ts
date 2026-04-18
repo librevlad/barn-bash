@@ -225,6 +225,36 @@ interface FranticsVisual {
   [key: string]: any;
 }
 
+// ---- Protocol (client-shared/protocol.js, Phase 28) ----
+
+interface FranticsProtocolMessage { type: string; [key: string]: unknown }
+
+interface FranticsProtocol {
+  CLIENT_TYPES: string[];
+  SERVER_TYPES: string[];
+  // predicates
+  isHost(msg: unknown): boolean;
+  isJoin(msg: unknown): boolean;
+  isStart(msg: unknown): boolean;
+  isRestart(msg: unknown): boolean;
+  isSelectGame(msg: unknown): boolean;
+  isInput(msg: unknown): boolean;
+  isPing(msg: unknown): boolean;
+  isLeave(msg: unknown): boolean;
+  validate(msg: unknown): string | null;
+  // constructors
+  makeHost(): FranticsProtocolMessage;
+  makeJoin(opts?: { name?: string; character?: string; color?: string }): FranticsProtocolMessage;
+  makeStart(): FranticsProtocolMessage;
+  makeRestart(): FranticsProtocolMessage;
+  makeSelectGame(gameId: string): FranticsProtocolMessage;
+  makeStartTournament(): FranticsProtocolMessage;
+  makeInput(action: string, extras?: Record<string, unknown>): FranticsProtocolMessage;
+  makePing(t?: number): FranticsProtocolMessage;
+  makeLeave(): FranticsProtocolMessage;
+  send(ws: { send(data: string): void; readyState?: number }, msg: FranticsProtocolMessage): void;
+}
+
 // ---- Globals on window ----
 
 declare global {
@@ -244,6 +274,7 @@ declare global {
   var SpriteLoader: FranticsSpriteLoader;
   var InputManager: FranticsInputManager;
   var Visual: FranticsVisual;
+  var Protocol: FranticsProtocol;
   var Physics2D: any;
   var Camera2D: any;
   var Scene: any;
@@ -273,6 +304,7 @@ declare global {
     SpriteLoader?: FranticsSpriteLoader;
     InputManager?: FranticsInputManager;
     Visual?: FranticsVisual;
+    Protocol?: FranticsProtocol;
     _lastPlayers?: Record<string, { name?: string; color?: string; character?: string }>;
   }
 }

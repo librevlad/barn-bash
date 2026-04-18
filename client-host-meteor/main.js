@@ -25,7 +25,7 @@ setTimeout(() => {
     .catch(() => {});
 }, 0);
 
-ws.onopen = () => ws.send(JSON.stringify({ type: 'host' }));
+ws.onopen = () => Protocol.send(ws, Protocol.makeHost());
 
 ws.onmessage = (e) => {
   const msg = JSON.parse(e.data);
@@ -127,8 +127,8 @@ ws.onmessage = (e) => {
           // Phase 20a — reuse Phase 18 universal gameover-hall
           backdrop: '/assets/gameover-hall.png',
           backdropMode: 'hall',
-          onPlayAgain: () => ws.send(JSON.stringify({ type: 'restart' })),
-          onLobby: () => { ws.send(JSON.stringify({ type: 'restart' })); setTimeout(() => window.location.href = '/host/', 200); },
+          onPlayAgain: () => Protocol.send(ws, Protocol.makeRestart()),
+          onLobby: () => { Protocol.send(ws, Protocol.makeRestart()); setTimeout(() => window.location.href = '/host/', 200); },
         });
       } else { showWinner(msg.winnerId); }
       break;
@@ -222,9 +222,9 @@ function showWinner(winnerId) {
   $winOverlay.classList.add('show');
 }
 
-$btnStart.onclick = () => ws.send(JSON.stringify({ type: 'start' }));
-$('btn-again').onclick = () => ws.send(JSON.stringify({ type: 'restart' }));
+$btnStart.onclick = () => Protocol.send(ws, Protocol.makeStart());
+$('btn-again').onclick = () => Protocol.send(ws, Protocol.makeRestart());
 $('btn-lobby').onclick = () => {
-  ws.send(JSON.stringify({ type: 'restart' }));
+  Protocol.send(ws, Protocol.makeRestart());
   setTimeout(() => { window.location.href = '/host/'; }, 200);
 };

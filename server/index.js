@@ -8,6 +8,9 @@ const EscapeFoxGame = require('./escapeFoxGame');
 const HillGame = require('./hillGame');
 const MeteorGame = require('./meteorGame');
 const RaceGame = require('./raceGame');
+// Phase 28 — shared protocol schema. Single source of truth for every
+// message shape. Rejects unknown / malformed messages at the WS boundary.
+const Protocol = require('../client-shared/protocol');
 
 const PORT = 3000;
 const GAMES = { escapeFox: EscapeFoxGame, hillKing: HillGame, meteor: MeteorGame, race: RaceGame };
@@ -360,6 +363,17 @@ wss.on('connection', (ws) => {
   ws.on('message', (raw) => {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
+
+    // Phase 28 — validate at protocol boundary. Drops malformed /
+    // unknown messages early so the switch below never sees garbage.
+    const reason = Protocol.validate(msg);
+    if (reason) {
+      // Log and drop. Still alive for the next message.
+      if (process.env.DEBUG_PROTOCOL) {
+        console.warn('[protocol] dropped:', reason, JSON.stringify(msg).slice(0, 120));
+      }
+      return;
+    }
 
     switch (msg.type) {
       case 'join':
