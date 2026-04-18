@@ -2095,6 +2095,59 @@ synchronized across screens.
     players + 17 protocol). Zero runtime deps added. Spec:
     `docs/superpowers/specs/2026-04-18-protocol-schema-design.md`.
 
+29. **Phase 29** (shipped 2026-04-18): server-side protocol
+    migration. `server/index.js` now imports `Protocol` and
+    validates every inbound WebSocket message via
+    `Protocol.validate(msg)` BEFORE the dispatch switch; unknown
+    / malformed messages are dropped (and surfaced via
+    DEBUG_PROTOCOL — later superseded by Phase 32 logger).
+    Every server-side broadcast site migrated from raw
+    `ws.send(JSON.stringify({ type: 'x', ... }))` to
+    `Protocol.send(ws, Protocol.makeX(...))` across init,
+    playerJoined, playerLeft, gameOver, gameSelected,
+    tournamentStarted, eliminated. Makes the WS boundary
+    honest in both directions — server no longer emits a shape
+    that `validate()` wouldn't accept. No behavioural change
+    observable from the client; the refactor is pure
+    invariance.
+
+30. **Phase 30** (shipped 2026-04-18): GitHub Actions CI gate.
+    `.github/workflows/ci.yml` runs on every push / PR to
+    `main` + `master`: Node 20, `actions/setup-node@v4` with
+    npm cache, executes `npm ci && npm run typecheck &&
+    npm test`. Red PR on any typecheck error or test failure —
+    no more "works on my machine" for the typed surface or
+    protocol invariants. Non-blocking for other branches.
+
+31. **Phase 31** (shipped 2026-04-18): E2E smoke tests +
+    PORT env-awareness. New `server/smoke.test.js` uses
+    `node:test` + `node:http` + `child_process.spawn` to boot
+    the server on a dedicated port (PORT=3999) and assert 200
+    responses for `/host/`, `/controller/`, `/shared/protocol.js`,
+    `/assets/bg.png`. Plus a protocol-round-trip test that
+    runs every `makeX` through `validate()`. Server
+    `server/index.js` PORT constant switched from hardcoded
+    `3000` to `Number(process.env.PORT) || 3000` so the smoke
+    test can run without colliding with an active dev server.
+    `npm test` now runs 31 tests total (6 players + 17
+    protocol + 2 smoke + 6 implicit from round-trip).
+
+32. **Phase 32** (shipped 2026-04-18): structured server-side
+    logger + env config. `server/logger.js` emits
+    one-JSON-object-per-line to stdout with timestamp + level
+    + event + arbitrary kv pairs, filtered by `LOG_LEVEL` env
+    (debug | info | warn | error; default info). Replaces the
+    ad-hoc `if (process.env.DEBUG_PROTOCOL) console.warn(...)`
+    protocol-dropped branch with
+    `logger.debug('protocol.dropped', { reason, msg: preview })`
+    — DEBUG_PROTOCOL semantics preserved via `LOG_LEVEL=debug`.
+    New `.env.example` documents `PORT`, `LOG_LEVEL`,
+    `DEBUG_PROTOCOL`. Zero runtime deps; stdout write has a
+    console-fallback branch in case CI wraps the stream.
+    Foundation for future server-side telemetry (connection
+    lifecycle, game state transitions, tournament mode
+    switches) without each emit site re-inventing shape.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
@@ -2115,14 +2168,27 @@ motion, audio layer, and micro-interactions.
 bugs at edit time (via JSDoc + ambient globals.d.ts); Vite
 gives HMR + proxy for fast dev iteration.
 
-**Phase 28 opened the Rune-grade foundation arc (Phases
-28-34).** A shared WebSocket protocol schema gives server +
-client a single source of truth for message shapes. Malformed
-messages rejected at the WS boundary. Remaining arc:
-Phase 29 pure reducer game logic, Phase 30 test suite + CI
-gate, Phase 31 production build pipeline, Phase 32 ES modules
-migration, Phase 33 telemetry + error tracking, Phase 34
-shared per-game host harness.
+**Phases 28-32 landed the first leg of the Rune-grade
+foundation arc.** Shared WebSocket protocol schema (Phase 28)
++ server-side protocol migration (Phase 29) give both ends of
+the wire one source of truth; malformed messages die at the
+boundary before the dispatch switch ever sees them. CI gate
+(Phase 30) + E2E smoke tests (Phase 31) make that invariant a
+merge requirement rather than a local custom. Structured
+logger (Phase 32) replaces ad-hoc `console.warn` branches with
+JSON-per-line stdout filtered by `LOG_LEVEL`, giving future
+telemetry (connection lifecycle, game transitions, tournament
+mode switches) one canonical emit shape.
+
+Remaining arc: Phase 33 pure reducer game logic (extract the
+state-transition core from mutable game classes so it can be
+round-tripped through a test harness without a live WS loop);
+Phase 34 shared per-game host harness (consolidate the four
+per-game host entry points that currently duplicate
+boot-spinup code). ES-module migration + Vite prod build
+pipeline stay open as post-arc candidates — `npm run dev`
+via the Phase 27 Vite proxy already unlocks HMR without
+requiring the module migration.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
