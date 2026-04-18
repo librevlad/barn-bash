@@ -629,10 +629,10 @@ const Tournament = (() => {
     html += '<div class="t-trophy-anim">\uD83C\uDFC6</div>';
 
     if (champDisplayName) {
-      html += '<div class="t-champion-label">CHAMPION!</div>';
+      html += '<div class="t-champion-label hero-flourish">CHAMPION!</div>';
       html += '<div class="t-champion-name">' + champDisplayName + '</div>';
     } else {
-      html += '<div class="t-champion-label">NO CHAMPION!</div>';
+      html += '<div class="t-champion-label hero-flourish">NO CHAMPION!</div>';
     }
 
     html += '<div class="t-final-scores-label">FINAL SCORES</div>';
@@ -720,7 +720,7 @@ const Tournament = (() => {
     // swaps src to the processed data URL once ready.
     var html = '<img class="t-round-intro-backdrop" src="/assets/tournament-round-intro.png" onerror="this.remove()">';
     html += '<div class="t-bar" style="opacity:0;animation:tFadeSlideUp 0.4s ease-out forwards;">TOURNAMENT</div>';
-    html += '<div class="t-round-intro-number">ROUND ' + (data.round || '?') + '</div>';
+    html += '<div class="t-round-intro-number hero-flourish">ROUND ' + (data.round || '?') + '</div>';
     html += '<div class="t-round-intro-game">' + gameName + '</div>';
     html += '<div class="t-round-intro-ready">GET READY</div>';
 

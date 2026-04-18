@@ -252,10 +252,10 @@ const PostGame = (() => {
     overlay.innerHTML = backdropHTML + `
       <div class="pg-winner-icon" style="${hasWinner ? 'filter:drop-shadow(0 0 20px ' + opts.winnerColor + ')' : ''}">${icon}</div>
       ${hasWinner ? `
-        <div class="pg-winner-name" style="color:${opts.winnerColor};text-shadow:0 2px 0 var(--accent-red-deep,#6b1818), 0 0 25px ${opts.winnerColor}">${opts.winnerName}</div>
+        <div class="pg-winner-name hero-flourish" style="color:${opts.winnerColor};text-shadow:0 2px 0 var(--accent-red-deep,#6b1818), 0 0 25px ${opts.winnerColor}">${opts.winnerName}</div>
         <div class="pg-winner-label">${opts.winLabel || 'WINS!'}</div>
       ` : `
-        <div class="pg-winner-name" style="color:var(--danger-red,#d9534f)">${opts.loseText || 'NOBODY SURVIVED!'}</div>
+        <div class="pg-winner-name hero-flourish" style="color:var(--danger-red,#d9534f)">${opts.loseText || 'NOBODY SURVIVED!'}</div>
       `}
       ${narratorHTML}
       ${statsHTML}
