@@ -259,6 +259,7 @@ interface FranticsHostHarnessConfig {
   introKey: string;
   countdownFinal: string;
   lobbyReadyMsg: string;
+  onLobby?: (state: any) => void;
   onStateRunning?: (state: any) => void;
   buildPostGameOpts?: (state: any, msg: any) => FranticsPostGameOpts;
 }

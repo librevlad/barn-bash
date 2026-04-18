@@ -108,6 +108,7 @@
       if (_state.phase === 'lobby') {
         _gameStarted = false;
         _showLobby(_state);
+        if (_config.onLobby) _config.onLobby(_state);
       } else if (_state.phase === 'running') {
         if (!_gameStarted) {
           _gameStarted = true;
