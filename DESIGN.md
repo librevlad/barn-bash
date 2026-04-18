@@ -2207,6 +2207,24 @@ synchronized across screens.
     client-plus-server error picture — any aggregator can
     slice `.event === 'client.error'` to surface bugs that
     previously died in a single player's devtools.
+
+36. **Phase 36** (shipped 2026-04-18): game-class integration
+    tests. Closes the test-coverage gap — before Phase 36,
+    `npm test` exercised Protocol schema, Players, HTTP routes,
+    and (from Phase 35) the error-reporter helpers; the
+    server-side gameplay state machines (EscapeFoxGame,
+    HillGame, MeteorGame, RaceGame) were not tested.
+    `server/games.test.js` adds 6 lifecycle tests × 4 games =
+    24 tests: constructor → phase=lobby, `broadcastState`
+    emits `{ type: 'state', gameId, gameState }`, `start()`
+    with <2 players stays in lobby, `start()` with ≥2 players
+    advances to running and `restart()` returns to lobby (and
+    clears the tick `setInterval`), `handleInput` on lobby
+    phase is a no-op with no throws, `getGameId()` returns the
+    stable id when exposed. Harness avoids WebSocket
+    machinery: mock `broadcast` pushes emissions into an array
+    and tests assert against that. Total test count now 59
+    (up from 35).
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
 Phase 23 rectangular + pill + dot UI objects gild themselves
