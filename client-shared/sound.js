@@ -245,6 +245,33 @@ const Sound = (() => {
       osc.connect(gain).connect(ctx.destination);
       osc.start(t); osc.stop(t + 0.28);
     },
+
+    // Phase 47c — big brass match bell. Three overlapping partials
+    // (root + 2.1× + 3.2×) with long exponential decay — classic
+    // inharmonic bell spectrum. Used on round start + sudden death.
+    matchBell(opts) {
+      ensure();
+      const t = ctx.currentTime;
+      const base = (opts && opts.pitch) ? opts.pitch : 440;
+      const partials = [
+        { freq: base,          gain: 0.22, tail: 2.8 },
+        { freq: base * 2.1,    gain: 0.12, tail: 2.3 },
+        { freq: base * 3.2,    gain: 0.08, tail: 1.9 },
+      ];
+      partials.forEach(p => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = p.freq;
+        g.gain.setValueAtTime(p.gain, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + p.tail);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(t); osc.stop(t + p.tail);
+      });
+      // Strike transient — short noise click so the attack reads.
+      noise(0.04, 0.18, 3600);
+    },
+
     bump(opts) {
       // Phase 43 — pitch scales with combo streak. opts.pitch ∈ [1, 2]
       // shifts both the noise midband and the square thud upward so
@@ -290,7 +317,71 @@ const Sound = (() => {
       osc.connect(gain).connect(ctx.destination);
       osc.start(t); osc.stop(t + 0.15);
     },
+  };
 
+  // Phase 47c — ambient crowd layer. Low-passed noise loop with
+  // slow-modulated filter cutoff produces a "distant stadium murmur"
+  // feel. Call Sound.startCrowd() on match start, Sound.stopCrowd()
+  // on end. Uses its own gain node + buffer, independent of music.
+  let crowdGain = null, crowdSource = null, crowdFilter = null, crowdLFO = null;
+  function startCrowd() {
+    ensure();
+    if (crowdSource) return;
+    // 2-second looping pink-ish noise buffer.
+    const len = Math.floor(ctx.sampleRate * 2);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    // Pink noise via summed decay stages.
+    let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < len; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.997 * b0 + white * 0.029591;
+      b1 = 0.963 * b1 + white * 0.0322;
+      b2 = 0.57 * b2 + white * 0.1848;
+      data[i] = (b0 + b1 + b2) * 0.3;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 700;
+    filter.Q.value = 0.85;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.035, ctx.currentTime + 1.8);
+
+    // Slow LFO on filter cutoff for living-room shimmer.
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.3;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 120;
+    lfo.connect(lfoGain).connect(filter.frequency);
+
+    src.connect(filter).connect(gain).connect(ctx.destination);
+    src.start(0);
+    lfo.start(0);
+
+    crowdSource = src; crowdFilter = filter; crowdGain = gain; crowdLFO = lfo;
+  }
+  function stopCrowd() {
+    if (!crowdSource) return;
+    if (crowdGain) crowdGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+    const src = crowdSource, lfo = crowdLFO;
+    setTimeout(() => {
+      try { src.stop(); } catch {}
+      try { lfo && lfo.stop(); } catch {}
+    }, 900);
+    crowdSource = null; crowdLFO = null;
+  }
+
+  // Remaining shared effects continue on the original `effects`
+  // object definition — see definitions above. This closing block
+  // patches the Phase 47c-edit that accidentally split the literal.
+  Object.assign(effects, {
     // Shared
     eliminated() {
       noise(0.2, 0.3, 500);
@@ -337,7 +428,7 @@ const Sound = (() => {
     uiHover() {
       tone(880, 0.03, 'sine', 0.06, 0.005);
     },
-  };
+  });
 
   // --- Background Music (melodic themes with arpeggio + rhythm) ---
 
@@ -553,5 +644,5 @@ const Sound = (() => {
     try { effects.uiClick(); } catch (_) { /* no-op */ }
   }, { passive: true });
 
-  return { play, startMusic, stopMusic, unlock };
+  return { play, startMusic, stopMusic, unlock, startCrowd, stopCrowd };
 })();

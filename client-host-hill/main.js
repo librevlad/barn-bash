@@ -62,7 +62,11 @@ function fillTaunt(tmpl, vars) {
 // transitions into running.
 let _firstBloodDone = false;
 let _lastLeaderId = null;
-let _teeterSince = {}; // id → tick of teeter start
+let _teeterSince = {};
+// Phase 47c — track whether we've announced match start so the bell
+// + crowd only fire once per round.
+let _matchStarted = false;
+let _suddenDeathDone = false;
 
 // Phase 40a — painted HUD + live scoreboard update. updateHUD now
 // writes to three painted plaques (ALIVE / BANNER / ARENA) and the
@@ -71,6 +75,19 @@ function updateHUD(s) {
   const $ = id => document.getElementById(id);
   const $hudAlive = $('hud-alive'), $hudPlat = $('hud-plat');
   const $hudSub = $('hud-subbanner');
+
+  // Phase 47c — match-start bell + ambient crowd. Fires once on the
+  // first running-state tick after the countdown.
+  if (!_matchStarted) {
+    _matchStarted = true;
+    try { Sound.play('matchBell'); } catch (_) {}
+    try { Sound.startCrowd(); } catch (_) {}
+  }
+  // Phase 47c — sudden-death accent bell (lower pitch).
+  if (s.suddenDeath && !_suddenDeathDone) {
+    _suddenDeathDone = true;
+    try { Sound.play('matchBell', { pitch: 300 }); } catch (_) {}
+  }
 
   // Entries so each row carries its playerId for leader / crown hooks.
   const entries = Object.entries(s.players).map(([id, p]) => Object.assign({ id: id }, p));
@@ -279,11 +296,14 @@ HostHarness.boot({
   countdownFinal: 'FIGHT!',
   lobbyReadyMsg: 'Ready to fight!',
   onLobby: (state) => {
-    // Reset narrator state when returning to lobby so the next match
-    // can have its own first-blood and leader drama.
+    // Reset per-round state so the next match gets its own
+    // first-blood / leader / bell drama.
     _firstBloodDone = false;
     _lastLeaderId = null;
     _teeterSince = {};
+    _matchStarted = false;
+    _suddenDeathDone = false;
+    try { Sound.stopCrowd(); } catch (_) {}
     renderLobbyCards(state);
   },
   onStateRunning: updateHUD,
