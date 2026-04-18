@@ -1609,6 +1609,54 @@ follow-up audit against live-game conditions would exercise the
 new painted overlays. Spec:
 `docs/superpowers/specs/2026-04-18-controller-hud-polish-design.md`.
 
+Twentieth realization: in-game HUD chrome paint — Phase 19,
+shipped 2026-04-18 across 3 commits. Paints the two biggest
+controller gameplay HUD surfaces (the score / countdown numbers
+and the bottom hintbar) to finish the painted-HUD arc started in
+Phase 11b (action cards) and 12b (avatar orb).
+
+- **19a — `score-plaque.png`** (1536×1024). Ornate painted carnival
+  scoreboard — gold-leaf corner ornaments, cream inner panel, red
+  accent ribbons, warm brown wood frame. CSS `::before` with
+  `background-image: var(--score-plaque-bg, url(...))` stretches
+  behind `.gp-score-block` (small inset bleed so the frame
+  ornaments frame the 64px score) AND `.gp-countdown-digit`
+  (bigger inset to accommodate the 180px countdown letterform).
+  One asset, two surfaces — same Phase 12b reuse discipline that
+  took cell-action to both the action cards and the avatar orb.
+- **19b — `hintbar-stage.png`** (1536×1024). Red-gold proscenium
+  valance running across the top + wooden theatre-floor planks
+  receding in slight perspective. `background-image: var(--hintbar-
+  stage-bg, url(...))` covers the full 96px hintbar strip. The
+  previous dark `linear-gradient` scrim drops from 0.82 to 0.45
+  so the painted stage reads while still fading into the safe-area
+  inset. The four per-game action cards (Phase 11b painted slot-
+  machine frames) now sit on the stage like carnival attractions
+  on a fair row — "attraction on a stage" becomes the live-play
+  mental model.
+- **19c — WebP siblings** via the Phase 17c pipeline.
+  `score-plaque.webp` 326KB (-88% of 2.69MB PNG),
+  `hintbar-stage.webp` 831KB (-76% of 3.49MB PNG). Modern clients
+  pay ~1.15MB instead of ~6.18MB for the painted chrome.
+
+JS side: the module-init `setTimeout` that drives Phase 11b + 12b
+`cell-action` preload collapses into a forEach loop over three
+`[key, customProp, url]` tuples (`cell-action`, `score-plaque`,
+`hintbar-stage`). Raw PNG CSS fallback renders from first paint;
+processed (checker-stripped) data URLs swap into the custom
+properties once `SpriteLoader.loadPainterly` resolves. One
+loader, three assets, zero new CSS custom-property patterns.
+
+Phase 19 closes the controller HUD painting arc. The only in-game
+surfaces still on pure CSS chrome are intentionally scoped out:
+`.gp-topbar` eyebrow (thin 44px strip), `.gp-item-pill` (race-only
+small medallion), `.gp-meteor-warn-*` (ephemeral alarm beat),
+`.gp-lost-toast` (functional error state). Each rationale
+documented in the Phase 19 spec. Audit grade stays at A+ (3.84) —
+this is internal visual-depth polish, not a new scored dimension.
+Spec:
+`docs/superpowers/specs/2026-04-18-ingame-hud-chrome-design.md`.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1786,6 +1834,30 @@ score plaque, hintbar stage, item-pill medallion) remains
 CSS-only — candidate for a potential Phase 19 if demand
 accumulates.
 
+19. **Phase 19** (shipped 2026-04-18): in-game HUD chrome
+    paint — 19a `score-plaque.png` painted carnival
+    scoreboard behind `.gp-score-block` AND
+    `.gp-countdown-digit` (one asset, two surfaces, Phase 12b
+    reuse discipline); 19b `hintbar-stage.png` red-gold
+    proscenium + wooden theatre floor covering `.gp-hintbar`
+    so the four action cards sit on a painted stage; 19c
+    WebP siblings via Phase 17c pipeline (-88% and -76%).
+    Scrim on the hintbar lightens 0.82 -> 0.45 to let the
+    painted stage read. JS-side module-init setTimeout
+    collapses into a forEach over three preload tuples.
+    Spec:
+    `docs/superpowers/specs/2026-04-18-ingame-hud-chrome-design.md`.
+
+After Phase 19 the controller HUD paints end-to-end: Phase
+5a avatar portrait inside Phase 12b orb frame, Phase 11b
+action cards on Phase 19b stage, Phase 19a plaque behind the
+score and countdown numbers, Phase 18 overlays on
+end-of-game beats. The only un-painted in-game surfaces
+(`.gp-topbar`, `.gp-item-pill`, `.gp-meteor-warn-*`,
+`.gp-lost-toast`) are intentionally scoped out — low-impact,
+ephemeral, or functional states with rationale in the
+Phase 19 spec.
+
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
 first, and this document is updated to reflect the addition.
@@ -1890,3 +1962,8 @@ first, and this document is updated to reflect the addition.
 | 2026-04-18 | Gameover + elim dark scrim lifted from 0.92 to 0.55 | The original solid dark-blur scrim was paired with a flat dark overlay — no painted atmosphere to compete with, so max opacity was fine. With painted backdrops under the content, 0.92 buries the painting. 0.55 preserves the blur-separation from live gameplay while letting the painted spotlight and curtain atmospheres read. Text over the spotlight uses existing `text-shadow` (gold hero, red letterpress elim) which stays legible |
 | 2026-04-18 | Spectate leader gold-glow replaces `· LEADER` text tag | The painted cream slot strips in standings-scroll can't fit "42 · LEADER" at 220px list width without horizontal overflow. Tournament's own standings already relies on visual emphasis (scale + glow on `.leader`) rather than an inline "LEADER" tag. Controller spectate adopts the same: `.gp-spec-pill.leader .gp-spec-pill-name` gains a gold text-shadow, `.gp-spec-pill-meta` flips to `--accent-gold-hot` with a red letterpress. Meta stripped to just the score string |
 | 2026-04-18 | Three backdrop loadPainterly swaps batched into one setTimeout array loop | Phase 12b had one swap (orb `cell-action`). Phase 18 adds three more (spec standings-scroll, gameover hall, elim shadow). Rather than four separate setTimeouts, the Phase 18 change collapses into a single loop over a `swaps` array inside the existing setTimeout. Fewer task-queue tasks, easier to extend when a future overlay gets a backdrop too |
+| 2026-04-18 | Phase 19 score plaque reused for score block AND countdown digit | Same Phase 12b discipline — the score plaque frame fits both the persistent 64px score and the ephemeral 180px countdown. One commission, two surfaces, two `::before` rules with different insets. Would have been ~50% more art budget to commission a dedicated countdown-stamp PNG when the score plaque's corner ornaments already frame a big centered letterform correctly |
+| 2026-04-18 | Phase 19 HUD chrome uses CSS `::before` + custom property, not `<img>` elements | The score plaque and hintbar stage are DECORATIVE backdrops behind existing text / flex children. `<img>` would require threading DOM changes into three sites (score block, countdown digit, hintbar) and breaking their existing layout. `::before` with `background-image: var(--*-bg, url(raw))` stays in CSS, adds no DOM, and falls back gracefully to the raw PNG on first paint. Phase 18 used `<img>` for its three full-screen overlay backdrops where the backdrop IS the content layer — here the backdrops are chrome, not content |
+| 2026-04-18 | Hintbar scrim lightens 0.82 -> 0.45 to let the painted stage read | Original 0.82 solid dark gradient was paired with a transparent flat background; now with a painted theatre stage underneath, 0.82 would bury the proscenium + wooden floor. 0.45 retains the bottom-fade that blends into the safe-area inset, keeps tonal separation from live gameplay behind the overlay, but lets the painted stage dominate the 96px strip's atmosphere |
+| 2026-04-18 | Countdown digit plaque uses a bigger `::before` inset than the score block | The 180px countdown letterform is ~2.8x the 64px score. Using the same inset for both would either crowd the score (too much plaque) or shrink around the countdown (plaque ornaments clipping the letterform). Separate per-surface inset rules pair each letterform size with a proportional plaque frame: score block `-18/-36/-10/-36`, countdown digit `-30/-80/-20/-80` |
+| 2026-04-18 | `.gp-topbar` intentionally stays CSS-only in Phase 19 | Top-bar is a thin 44px strip holding a small eyebrow (game name small-caps) and a phase icon. Painting it would add a busy top band competing with the score plaque rendered just below, and eyebrow text already reads comfortably against the existing subtle gradient. In-game vertical hierarchy benefits from ONE painted anchor per zone — score plaque is that anchor for the top half, hintbar stage for the bottom half |
