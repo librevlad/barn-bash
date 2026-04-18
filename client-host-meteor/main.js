@@ -41,6 +41,38 @@ HostHarness.boot({
   onStateRunning: updateHUD,
   buildPostGameOpts: (state, msg) => {
     const w = msg.winnerId ? state.players[msg.winnerId] : null;
+
+    // Phase 52c — per-player leaderboard. Sort by (alive desc →
+    // wavesSurvived desc → dodges desc). Value column shows the
+    // highest wave each player reached.
+    const entries = Object.entries(state.players || {}).map(([id, p]) => ({
+      id: id,
+      name: p.name || ('Player ' + id),
+      color: p.color || '#fff',
+      character: p.character,
+      alive: p.alive,
+      stats: p.stats || {},
+    }));
+    entries.sort((a, b) => {
+      if (a.alive && !b.alive) return -1;
+      if (!a.alive && b.alive) return 1;
+      if ((b.stats.wavesSurvived || 0) !== (a.stats.wavesSurvived || 0))
+        return (b.stats.wavesSurvived || 0) - (a.stats.wavesSurvived || 0);
+      return (b.stats.dodges || 0) - (a.stats.dodges || 0);
+    });
+    const leaderboard = entries.map(e => ({
+      id: e.id,
+      name: e.name,
+      color: e.color,
+      character: e.character,
+      score: 'W' + (e.stats.wavesSurvived || 0),
+      chips: [
+        { label: 'Dodges', value: e.stats.dodges || 0 },
+        { label: 'Sprints', value: e.stats.sprints || 0 },
+        { label: 'Pickups', value: e.stats.powerupsGrabbed || 0 },
+      ],
+    }));
+
     return {
       winnerId: msg.winnerId,
       winnerName: w ? (w.name || 'Player ' + msg.winnerId) : null,
@@ -49,9 +81,8 @@ HostHarness.boot({
       winLabel: 'DODGED THEM ALL!',
       loseIcon: '☄️', loseText: 'EVERYONE GOT BURNED!',
       loseQuote: 'Total annihilation. Beautiful.',
-      stats: [
-        { label: 'Waves', value: state.wave || 1 },
-      ],
+      stats: [],
+      leaderboard: leaderboard,
       // Phase 20a — reuse Phase 18 universal gameover-hall
       backdrop: '/assets/gameover-hall.png',
       backdropMode: 'hall',

@@ -114,7 +114,7 @@ class MeteorGame {
         cd: 0, safe: false,
         // New mechanics
         sprinting: false, sprintTimer: 0, sprintCd: 0,
-        singed: false, // survived one impact outside zone
+        singed: false,
         shield: 0,
         sprintBoost: 0,
         radar: false,
@@ -123,6 +123,13 @@ class MeteorGame {
         moveSpeed: MOVE_SPEED + trait.speedBonus,
         dodgeBonus: trait.dodgeBonus,
         pushBonus: trait.pushBonus,
+        // Phase 52c — per-player stats for postgame leaderboard.
+        wavesSurvived: 0,
+        dodges: 0,
+        sprints: 0,
+        powerupsGrabbed: 0,
+        nearMisses: 0,
+        shieldsTaken: 0,
       };
     });
 
@@ -218,13 +225,13 @@ class MeteorGame {
       this.powerups.push({ x: Math.cos(angle) * dist, z: Math.sin(angle) * dist, type });
     }
 
-    // Reset safe flags + gentle scatter
+    // Reset safe flags + gentle scatter + track waves survived.
     for (const p of this.players.connected()) {
       if (p.gameData) {
+        if (p.gameData.alive) p.gameData.wavesSurvived = this.wave;
         p.gameData.safe = false;
         p.gameData.x += (Math.random() - 0.5) * 0.4;
         p.gameData.z += (Math.random() - 0.5) * 0.4;
-        // Grace period: reset singed for waves 1-2 (everyone gets a free pass early)
         if (this.wave <= 2) p.gameData.singed = false;
         if (p.gameData.radar) {
           p.gameData.radar = false;
@@ -279,6 +286,7 @@ class MeteorGame {
       // Outside safe zone
       if (g.shield > 0) {
         g.shield--;
+        g.shieldsTaken++;
         this.broadcast({ type: 'shield_break', playerId: p.id, gameId: 'meteor' });
         continue;
       }
@@ -377,6 +385,7 @@ class MeteorGame {
       g.sprinting = true;
       g.sprintTimer = SPRINT_TICKS;
       g.sprintCd = SPRINT_CD;
+      g.sprints++;
       return;
     }
 
@@ -397,6 +406,7 @@ class MeteorGame {
         if (this.iceActive) { g._lastDx = dx; g._lastDz = dz; }
       }
     } else if (action === 'dodge') {
+      g.dodges++;
       const dodgeSpeed = speed + g.dodgeBonus;
       const allZones = this.clusterMode ? this.clusterZones : [this.safeZone];
       // Find closest safe zone
@@ -437,6 +447,7 @@ class MeteorGame {
         if (pu.type === 'shield') g.shield = SHIELD_WAVES;
         else if (pu.type === 'sprintBoost') g.sprintBoost = SPRINT_BOOST_DURATION;
         else if (pu.type === 'radar') g.radar = true;
+        g.powerupsGrabbed++;
         this.broadcast({ type: 'powerup_collected', playerId: p.id, powerup: pu.type, gameId: 'meteor' });
         this.powerups.splice(i, 1);
       }
@@ -497,6 +508,14 @@ class MeteorGame {
         score: g ? g.score || 0 : 0,
         combo: g ? g.combo || 0 : 0,
         radar: g ? !!g.radar : false,
+        // Phase 52c — per-player stats for postgame leaderboard.
+        stats: g ? {
+          wavesSurvived: g.alive ? this.wave : (g.wavesSurvived || 0),
+          dodges: g.dodges || 0,
+          sprints: g.sprints || 0,
+          powerupsGrabbed: g.powerupsGrabbed || 0,
+          shieldsTaken: g.shieldsTaken || 0,
+        } : null,
       };
     }
     // Reveal next safe zone if any alive player has radar
