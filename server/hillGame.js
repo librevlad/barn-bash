@@ -140,6 +140,12 @@ class HillGame {
         moveAccel: MOVE_ACCEL + trait.moveBonus,
         pushBonus: trait.pushBonus,
         gpoundBonus: trait.gpoundBonus,
+        // Phase 41b — stats recorded across the round.
+        bumpsDealt: 0,
+        bumpsReceived: 0,
+        kingTicks: 0,
+        powerupsGrabbed: 0,
+        maxCombo: 0,
       };
     });
 
@@ -232,6 +238,7 @@ class HillGame {
       const rFromCenter = dist(g.x, g.y, 0, 0);
       if (rFromCenter < KING_ZONE_R && !g.teetering) {
         g.score += KING_SCORE_PER_TICK;
+        g.kingTicks++;
       }
 
       // Power-up collection
@@ -368,6 +375,8 @@ class HillGame {
             b.vx += nx * force; b.vy += ny * force;
             b.combo = 0;
             a.dashing = false;
+            a.bumpsDealt++; b.bumpsReceived++;
+            a.combo++; if (a.combo > a.maxCombo) a.maxCombo = a.combo;
             this.broadcast({ type: 'bump', from: alive[i].id, to: alive[j].id, gameId: 'hillKing' });
           }
         } else if (b.dashing && !a.dashing) {
@@ -385,6 +394,8 @@ class HillGame {
             a.vx -= nx * force; a.vy -= ny * force;
             a.combo = 0;
             b.dashing = false;
+            b.bumpsDealt++; a.bumpsReceived++;
+            b.combo++; if (b.combo > b.maxCombo) b.maxCombo = b.combo;
             this.broadcast({ type: 'bump', from: alive[j].id, to: alive[i].id, gameId: 'hillKing' });
           }
         } else if (a.dashing && b.dashing) {
@@ -448,6 +459,7 @@ class HillGame {
 
   _collectPowerup(player, pu, idx) {
     const g = player.gameData;
+    g.powerupsGrabbed++;
     if (pu.type === 'anchor') g.anchor = ANCHOR_DURATION;
     else if (pu.type === 'superDash') g.superDash = true;
     else if (pu.type === 'gravityBomb') {
@@ -590,6 +602,15 @@ class HillGame {
         cd: g ? g.cd || 0 : 0,
         score: g ? g.score || 0 : 0,
         combo: g ? g.combo || 0 : 0,
+        // Phase 41b — per-player round stats, visible on the
+        // post-game scorecard.
+        stats: g ? {
+          bumpsDealt: g.bumpsDealt || 0,
+          bumpsReceived: g.bumpsReceived || 0,
+          kingTicks: g.kingTicks || 0,
+          powerupsGrabbed: g.powerupsGrabbed || 0,
+          maxCombo: g.maxCombo || 0,
+        } : null,
       };
     }
     return {

@@ -149,6 +149,108 @@ const PostGame = (() => {
         letter-spacing: 1px;
         margin-bottom: 18px;
       }
+      /* Phase 41b — painted post-game leaderboard. Rows per player,
+         winner row highlighted, per-row stat chips. */
+      #postgame-overlay .pg-leaderboard {
+        width: min(620px, 92vw);
+        margin: 10px 0 18px;
+        padding: 12px 14px 14px;
+        background:
+          linear-gradient(180deg, rgba(74, 46, 24, 0.95) 0%, rgba(42, 24, 12, 0.95) 100%);
+        border-radius: 12px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 236, 200, 0.22),
+          inset 0 -2px 4px rgba(0, 0, 0, 0.45),
+          0 0 0 2px rgba(30, 18, 10, 0.9),
+          0 0 0 4px rgba(216, 152, 45, 0.85),
+          0 6px 18px rgba(0, 0, 0, 0.55);
+      }
+      #postgame-overlay .pg-lb-head {
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 11px;
+        letter-spacing: 5px;
+        color: var(--accent-gold, #f4c542);
+        text-align: center;
+        padding: 4px 0 10px;
+        border-bottom: 1px solid rgba(216, 152, 45, 0.35);
+        text-transform: uppercase;
+      }
+      #postgame-overlay .pg-lb-list {
+        list-style: none; padding: 0; margin: 10px 0 0;
+        display: flex; flex-direction: column; gap: 6px;
+      }
+      #postgame-overlay .pg-lb-row {
+        display: grid;
+        grid-template-columns: 22px 34px 1fr auto auto;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: rgba(20, 12, 6, 0.55);
+        border-left: 3px solid var(--lb-rim, rgba(216, 152, 45, 0.85));
+        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
+        font-size: 13px;
+        color: var(--text-cream, #f5ead4);
+      }
+      #postgame-overlay .pg-lb-row.winner {
+        background: linear-gradient(90deg, rgba(216, 152, 45, 0.3), rgba(216, 152, 45, 0.08));
+        box-shadow: inset 0 0 0 1px rgba(255, 221, 107, 0.55);
+      }
+      #postgame-overlay .pg-lb-rank {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 16px;
+        color: var(--accent-gold, #f4c542);
+        text-align: center;
+      }
+      #postgame-overlay .pg-lb-av {
+        width: 34px; height: 34px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0, 0, 0, 0.35);
+        box-shadow: inset 0 0 0 2px var(--lb-rim, rgba(216, 152, 45, 0.85));
+        overflow: hidden;
+      }
+      #postgame-overlay .pg-lb-glyph { width: 100%; height: 100%; object-fit: cover; }
+      #postgame-overlay .pg-lb-name {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+      }
+      #postgame-overlay .pg-lb-chips {
+        display: flex; gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      #postgame-overlay .pg-chip {
+        padding: 3px 8px;
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(216, 152, 45, 0.4);
+        border-radius: 6px;
+        font-size: 11px;
+        color: rgba(255, 231, 170, 0.85);
+        letter-spacing: 0.4px;
+      }
+      #postgame-overlay .pg-chip b {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        color: var(--accent-gold-hot, #ffdd6b);
+        font-weight: 400;
+      }
+      #postgame-overlay .pg-lb-score {
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 18px;
+        color: var(--accent-gold-hot, #ffdd6b);
+        text-shadow: 0 1px 0 var(--accent-red-deep, #6b1818);
+        min-width: 40px; text-align: right;
+        letter-spacing: 1px;
+      }
+      @media (max-width: 640px) {
+        #postgame-overlay .pg-lb-row {
+          grid-template-columns: 22px 30px 1fr auto;
+        }
+        #postgame-overlay .pg-lb-chips { display: none; }
+      }
       #postgame-overlay .pg-buttons { display: flex; gap: 14px; }
       #postgame-overlay .pg-btn {
         font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
@@ -230,6 +332,33 @@ const PostGame = (() => {
         '</div>';
     }
 
+    // Phase 41b — optional per-player leaderboard. Each row shows the
+    // animal glyph, name, score, and up to 3 stat chips (bumps / king
+    // time / max combo). Winner row highlighted with gold wash.
+    let leaderboardHTML = '';
+    if (opts.leaderboard && opts.leaderboard.length > 0) {
+      const rows = opts.leaderboard.map((p, i) => {
+        const isWinner = (p.id && String(p.id) === String(opts.winnerId));
+        const chips = (p.chips || []).map(c => `<span class="pg-chip">${c.label}: <b>${c.value}</b></span>`).join('');
+        const glyph = p.character ? `<img class="pg-lb-glyph" data-char="${p.character}" src="${(typeof HostCommon !== 'undefined' && HostCommon.charAvatars && HostCommon.charAvatars[p.character]) || ''}" onerror="this.remove()">` : '';
+        return `
+          <li class="pg-lb-row ${isWinner ? 'winner' : ''}" style="--lb-rim:${p.color || '#d5972b'}">
+            <span class="pg-lb-rank">${i + 1}</span>
+            <span class="pg-lb-av">${glyph}</span>
+            <span class="pg-lb-name" style="color:${p.color || 'var(--text-cream)'}">${p.name || ('Player ' + p.id)}</span>
+            <span class="pg-lb-chips">${chips}</span>
+            <span class="pg-lb-score">${p.score || 0}</span>
+          </li>
+        `;
+      }).join('');
+      leaderboardHTML = `
+        <div class="pg-leaderboard">
+          <div class="pg-lb-head">FINAL STANDINGS</div>
+          <ol class="pg-lb-list">${rows}</ol>
+        </div>
+      `;
+    }
+
     // Narrator quote
     let narratorHTML = '';
     if (hasWinner) {
@@ -259,6 +388,7 @@ const PostGame = (() => {
       `}
       ${narratorHTML}
       ${statsHTML}
+      ${leaderboardHTML}
       <div class="pg-countdown" id="pg-countdown">Returning to lobby in ${remaining}s...</div>
       <div class="pg-buttons">
         <div class="pg-btn" id="pg-again">PLAY AGAIN</div>
