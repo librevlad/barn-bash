@@ -11,6 +11,8 @@ const RaceGame = require('./raceGame');
 // Phase 28 — shared protocol schema. Single source of truth for every
 // message shape. Rejects unknown / malformed messages at the WS boundary.
 const Protocol = require('../client-shared/protocol');
+// Phase 32 — structured server-side logger.
+const logger = require('./logger');
 
 const PORT = Number(process.env.PORT) || 3000;
 const GAMES = { escapeFox: EscapeFoxGame, hillKing: HillGame, meteor: MeteorGame, race: RaceGame };
@@ -368,10 +370,10 @@ wss.on('connection', (ws) => {
     // unknown messages early so the switch below never sees garbage.
     const reason = Protocol.validate(msg);
     if (reason) {
-      // Log and drop. Still alive for the next message.
-      if (process.env.DEBUG_PROTOCOL) {
-        console.warn('[protocol] dropped:', reason, JSON.stringify(msg).slice(0, 120));
-      }
+      logger.debug('protocol.dropped', {
+        reason: reason,
+        msg: JSON.stringify(msg).slice(0, 120),
+      });
       return;
     }
 
