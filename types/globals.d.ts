@@ -225,6 +225,28 @@ interface FranticsVisual {
   [key: string]: any;
 }
 
+// ---- HostHarness (client-shared/host-harness.js, Phase 34) ----
+
+interface FranticsHostHarnessConfig {
+  gameId: string;
+  lobbyAsset: string;
+  musicKey: string;
+  introKey: string;
+  countdownFinal: string;
+  lobbyReadyMsg: string;
+  onStateRunning?: (state: any) => void;
+  buildPostGameOpts?: (state: any, msg: any) => FranticsPostGameOpts;
+}
+
+interface FranticsHostHarness {
+  boot(cfg: FranticsHostHarnessConfig): void;
+  on(handlers: Record<string, (msg: any) => void>): void;
+  getState(): any;
+  getWs(): WebSocket;
+  send(msg: FranticsProtocolMessage): void;
+  showMsg(text: string, ms?: number): void;
+}
+
 // ---- Protocol (client-shared/protocol.js, Phase 28) ----
 
 interface FranticsProtocolMessage { type: string; [key: string]: unknown }
@@ -283,6 +305,7 @@ declare global {
   var InputManager: FranticsInputManager;
   var Visual: FranticsVisual;
   var Protocol: FranticsProtocol;
+  var HostHarness: FranticsHostHarness;
   var Physics2D: any;
   var Camera2D: any;
   var Scene: any;
@@ -313,6 +336,7 @@ declare global {
     InputManager?: FranticsInputManager;
     Visual?: FranticsVisual;
     Protocol?: FranticsProtocol;
+    HostHarness?: FranticsHostHarness;
     _lastPlayers?: Record<string, { name?: string; color?: string; character?: string }>;
   }
 }

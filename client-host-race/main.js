@@ -1,179 +1,24 @@
-const ws = new WebSocket('ws://' + location.host);
-let state = { players: {}, phase: 'lobby' };
-let gameStarted = false;
-
-const $ = id => document.getElementById(id);
-const $lobby = $('lobby'), $lobbyInfo = $('lobby-info'), $lobbyPlayers = $('lobby-players');
-const $btnStart = $('btn-start');
-const $hud = $('hud'), $hudLap = $('hud-lap'), $hudPos = $('hud-pos'), $hudAlive = $('hud-alive');
-const $countdown = $('countdown'), $message = $('message');
-const $winOverlay = $('winner-overlay'), $controls = $('controls');
+// Phase 34 — thin per-game configurator over HostHarness. Boot, state,
+// countdown, lobby, game-over, and button wiring live in the harness
+// (client-shared/host-harness.js). Race-specific message handlers +
+// HUD updates are wired in here.
 
 Render2D.init();
 const pname = HostCommon.pname;
-
-// Phase 10a — async-strip the lobby-race painterly backdrop and swap
-// the <img> src to the processed data URL. Raw PNG (with baked white
-// background) shows for the first ~100ms; once processed the cream
-// center panel sits transparently against the wood-plank gradient.
-setTimeout(() => {
-  if (typeof SpriteLoader === 'undefined') return;
-  SpriteLoader.loadPainterly('lobby-race', '/assets/lobby-race.png')
-    .then((canvas) => {
-      const img = document.querySelector('#lobby .lobby-backdrop');
-      if (img && canvas) img.src = canvas.toDataURL('image/png');
-    })
-    .catch(() => {});
-}, 0);
-
-ws.onopen = () => Protocol.send(ws, Protocol.makeHost());
-
-ws.onmessage = (e) => {
-  const msg = JSON.parse(e.data);
-  if (typeof Tournament !== 'undefined' && Tournament.handleMessage(msg)) return;
-
-  switch (msg.type) {
-    case 'state':
-      window._lastPlayers = msg.gameState ? msg.gameState.players : {};
-      if (HostCommon.redirectIfWrongGame('race', msg.gameId)) return;
-      state = msg.gameState;
-      if (state.phase === 'lobby') { gameStarted = false; showLobby(state); }
-      else if (state.phase === 'running') {
-        if (!gameStarted) {
-          gameStarted = true;
-          $lobby.classList.add('hidden');
-          $controls.style.display = 'none';
-          $winOverlay.classList.remove('show');
-          if (typeof HUD !== 'undefined') { HUD.init(); $hud.style.display = 'none'; }
-          Sound.startMusic('escapeFox'); // reuse escape music for now
-          Narrator.gameIntro('race');
-          runCountdown();
-        }
-        Render2D.updateState(state);
-        updateHUD(state);
-      } else if (state.phase === 'result') {
-        Render2D.updateState(state);
-      }
-      break;
-
-    case 'lap_complete':
-      Sound.play('coinPickup');
-      Render2D.triggerLap(msg.lap, state.totalLaps);
-      showMsg(pname(msg.playerId) + ' — Lap ' + msg.lap + '!', 1500);
-      break;
-
-    case 'race_finish':
-      Sound.play('winner');
-      if (typeof FX !== 'undefined') FX.screenFlash('#fff', 0.3);
-      showMsg(pname(msg.playerId) + ' finishes ' + ordinal(msg.position) + '!', 2000);
-      break;
-
-    case 'item_pickup':
-      Sound.play('coinPickup');
-      break;
-
-    case 'item_used':
-      if (msg.item === 'boost') Sound.play('speedPickup');
-      else if (msg.item === 'oil') Sound.play('slide');
-      else if (msg.item === 'missile') Sound.play('foxSprint');
-      break;
-
-    case 'drift_boost':
-      Sound.play('nearMiss');
-      if (typeof FX !== 'undefined') FX.textPopup(640, 340, 'DRIFT BOOST!', '#44ff44');
-      break;
-
-    case 'player_stunned': {
-      Sound.play('stumble');
-      Render2D.triggerElim();
-      if (typeof FX !== 'undefined') { FX.shake(8); FX.screenFlash('#ff4400', 0.2); }
-      const reason = msg.reason === 'oil' ? 'slipped on oil!' : msg.reason === 'missile' ? 'got hit by a missile!' : 'crashed!';
-      showMsg(pname(msg.playerId) + ' ' + reason, 1500);
-      break;
-    }
-
-    case 'bump':
-      Sound.play('bump');
-      if (typeof FX !== 'undefined') FX.shake(4);
-      break;
-
-    case 'game_over':
-      Sound.stopMusic();
-      Sound.play(msg.winnerId ? 'winner' : 'eliminated');
-      if (typeof FX !== 'undefined') { FX.screenFlash('#fff', 0.4); FX.triggerSlowMo(0.3, 1.5); }
-      if (typeof Visual !== 'undefined') Visual.triggerWinner();
-      if (msg.winnerId) Narrator.winner(pname(msg.winnerId));
-      else Narrator.noWinner();
-      if (typeof Tournament !== 'undefined' && Tournament.isActive()) break;
-      if (typeof PostGame !== 'undefined') {
-        const w = msg.winnerId ? state.players[msg.winnerId] : null;
-        PostGame.show({
-          winnerId: msg.winnerId,
-          winnerName: w ? (w.name || 'Player ' + msg.winnerId) : null,
-          winnerColor: w ? w.color : '#fff',
-          winnerCharacter: w ? w.character : null,
-          winLabel: 'WINS THE RACE!',
-          loseIcon: '🏁', loseText: 'RACE OVER!',
-          loseQuote: 'Nobody crossed the line...',
-          // Phase 8c — painterly three-tier podium as overlay backdrop
-          backdrop: '/assets/race-podium.png',
-          stats: [
-            { label: 'Finished', value: (state.finishOrder ? state.finishOrder.length : 0) + '/' + Object.keys(state.players).length },
-          ],
-          onPlayAgain: () => Protocol.send(ws, Protocol.makeRestart()),
-          onLobby: () => { Protocol.send(ws, Protocol.makeRestart()); setTimeout(() => window.location.href = '/host/', 200); },
-        });
-      } else { showWinner(msg.winnerId); }
-      break;
-
-    case 'gameSelected':
-      if (msg.gameId !== 'race') {
-        window.location.href = HostCommon.gameUrls[msg.gameId] || '/host/';
-      }
-      break;
-  }
-};
+const showMsg = (text, ms) => HostHarness.showMsg(text, ms);
 
 function ordinal(n) {
-  const s = ['th','st','nd','rd'];
+  const s = ['th', 'st', 'nd', 'rd'];
   const v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-function runCountdown() {
-  $hud.style.display = 'none';
-  const steps = ['3', '2', '1', 'GO!'];
-  let i = 0;
-  $countdown.style.display = 'block';
-  function next() {
-    if (i >= steps.length) { $countdown.style.display = 'none'; return; }
-    $countdown.textContent = steps[i];
-    $countdown.style.transform = 'translate(-50%, -50%) scale(1.6)';
-    $countdown.style.opacity = '1';
-    Sound.play(i < 3 ? 'countdownTick' : 'countdownGo');
-    setTimeout(() => { $countdown.style.transform = 'translate(-50%, -50%) scale(0.7)'; $countdown.style.opacity = '0'; }, 500);
-    i++; setTimeout(next, 750);
-  }
-  next();
-}
-
-function showLobby(s) {
-  $lobby.classList.remove('hidden');
-  $hud.style.display = 'none';
-  $controls.style.display = 'none';
-  $winOverlay.classList.remove('show');
-  $countdown.style.display = 'none';
-  const { connected } = HostCommon.countPlayers(s.players);
-  $lobbyInfo.textContent = connected >= 2 ? 'Ready to race!' : 'Waiting for players...';
-  $btnStart.style.display = connected >= 2 ? '' : 'none';
-  $lobbyPlayers.innerHTML = HostCommon.lobbyPlayersHTML(s.players);
-}
-
 function updateHUD(s) {
-  // Find "my" player (first connected) for lap display
+  const $ = id => document.getElementById(id);
+  const $hudLap = $('hud-lap'), $hudPos = $('hud-pos'), $hudAlive = $('hud-alive');
+
   const conn = Object.entries(s.players).filter(([, p]) => p.connected);
   if (conn.length > 0) {
-    // Show leader's lap
     let maxLap = 1;
     conn.forEach(([, p]) => { if (p.lap > maxLap) maxLap = p.lap; });
     $hudLap.textContent = 'Lap ' + Math.min(maxLap, s.totalLaps) + '/' + s.totalLaps;
@@ -183,16 +28,13 @@ function updateHUD(s) {
   const total = Object.values(s.players).filter(p => p.connected === true).length;
   $hudAlive.textContent = finished + '/' + total + ' finished';
 
-  // Position ranking
   const sorted = conn.sort((a, b) => {
     const ga = a[1], gb = b[1];
     if (ga.finished && !gb.finished) return -1;
     if (!ga.finished && gb.finished) return 1;
     return (gb.waypoint || 0) - (ga.waypoint || 0);
   });
-  const posTexts = sorted.slice(0, 3).map(([id, p], i) => {
-    return ordinal(i + 1) + ' ' + (p.name || 'P' + id);
-  });
+  const posTexts = sorted.slice(0, 3).map(([id, p], i) => ordinal(i + 1) + ' ' + (p.name || 'P' + id));
   $hudPos.textContent = posTexts.join('  ');
 
   if (typeof HUD !== 'undefined') {
@@ -205,42 +47,73 @@ function updateHUD(s) {
   }
 }
 
-function showMsg(text, ms) { HostCommon.showMsg($message, text, ms);
-}
+HostHarness.boot({
+  gameId: 'race',
+  lobbyAsset: 'lobby-race',
+  musicKey: 'escapeFox', // reuse escape music for now
+  introKey: 'race',
+  countdownFinal: 'GO!',
+  lobbyReadyMsg: 'Ready to race!',
+  onStateRunning: updateHUD,
+  buildPostGameOpts: (state, msg) => {
+    const w = msg.winnerId ? state.players[msg.winnerId] : null;
+    return {
+      winnerId: msg.winnerId,
+      winnerName: w ? (w.name || 'Player ' + msg.winnerId) : null,
+      winnerColor: w ? w.color : '#fff',
+      winnerCharacter: w ? w.character : null,
+      winLabel: 'WINS THE RACE!',
+      loseIcon: '🏁', loseText: 'RACE OVER!',
+      loseQuote: 'Nobody crossed the line...',
+      // Phase 8c — painterly three-tier podium as overlay backdrop
+      backdrop: '/assets/race-podium.png',
+      stats: [
+        { label: 'Finished', value: (state.finishOrder ? state.finishOrder.length : 0) + '/' + Object.keys(state.players).length },
+      ],
+      onPlayAgain: () => HostHarness.send(Protocol.makeRestart()),
+      onLobby: () => { HostHarness.send(Protocol.makeRestart()); setTimeout(() => window.location.href = '/host/', 200); },
+    };
+  },
+});
 
-function showWinner(winnerId) {
-  if (typeof HUD !== 'undefined') HUD.hide();
-  $hud.style.display = 'none';
-  $message.classList.remove('show');
-  const charIcons = { cat: '🐱', frog: '🐸', wolf: '🐺', bear: '🐻', bunny: '🐰', pig: '🐷', chicken: '🐔', raccoon: '🦝' };
-  const p = winnerId ? state.players[winnerId] : null;
-  if (p) {
-    const icon = charIcons[p.character] || '';
-    $winOverlay.innerHTML = `
-      <div style="font-size:50px;margin-bottom:4px">🏁</div>
-      <div style="font-size:60px;filter:drop-shadow(0 0 20px ${p.color})">${icon}</div>
-      <div class="w-text" style="color:${p.color};text-shadow:0 0 30px ${p.color}">${pname(winnerId)}</div>
-      <div style="font-family:var(--font-display);font-size:22px;color:var(--accent-gold);margin-top:6px;letter-spacing:3px;text-shadow:0 2px 0 var(--accent-red-deep)">WINS THE RACE!</div>
-      <div class="w-sub" style="margin-top:12px">${state.finishOrder ? state.finishOrder.length : 0} racers finished</div>
-      <div id="controls" style="display:flex;justify-content:center;gap:12px;margin-top:24px">
-        <button onclick="ws.send(JSON.stringify({type:'restart'}))">PLAY AGAIN</button>
-        <button onclick="window.location.href='/host/'">LOBBY</button>
-      </div>`;
-  } else {
-    $winOverlay.innerHTML = `
-      <div class="w-text" style="color:var(--accent-gold)">RACE OVER!</div>
-      <div class="w-sub">Nobody crossed the line...</div>
-      <div id="controls" style="display:flex;justify-content:center;gap:12px;margin-top:24px">
-        <button onclick="ws.send(JSON.stringify({type:'restart'}))">PLAY AGAIN</button>
-        <button onclick="window.location.href='/host/'">LOBBY</button>
-      </div>`;
-  }
-  $winOverlay.classList.add('show');
-}
+HostHarness.on({
+  lap_complete: (msg) => {
+    Sound.play('coinPickup');
+    Render2D.triggerLap(msg.lap, HostHarness.getState().totalLaps);
+    showMsg(pname(msg.playerId) + ' — Lap ' + msg.lap + '!', 1500);
+  },
 
-$btnStart.onclick = () => Protocol.send(ws, Protocol.makeStart());
-$('btn-again').onclick = () => Protocol.send(ws, Protocol.makeRestart());
-$('btn-lobby').onclick = () => {
-  Protocol.send(ws, Protocol.makeRestart());
-  setTimeout(() => { window.location.href = '/host/'; }, 200);
-};
+  race_finish: (msg) => {
+    Sound.play('winner');
+    if (typeof FX !== 'undefined') FX.screenFlash('#fff', 0.3);
+    showMsg(pname(msg.playerId) + ' finishes ' + ordinal(msg.position) + '!', 2000);
+  },
+
+  item_pickup: () => { Sound.play('coinPickup'); },
+
+  item_used: (msg) => {
+    if (msg.item === 'boost') Sound.play('speedPickup');
+    else if (msg.item === 'oil') Sound.play('slide');
+    else if (msg.item === 'missile') Sound.play('foxSprint');
+  },
+
+  drift_boost: () => {
+    Sound.play('nearMiss');
+    if (typeof FX !== 'undefined') FX.textPopup(640, 340, 'DRIFT BOOST!', '#44ff44');
+  },
+
+  player_stunned: (msg) => {
+    Sound.play('stumble');
+    Render2D.triggerElim();
+    if (typeof FX !== 'undefined') { FX.shake(8); FX.screenFlash('#ff4400', 0.2); }
+    const reason = msg.reason === 'oil' ? 'slipped on oil!'
+      : msg.reason === 'missile' ? 'got hit by a missile!'
+      : 'crashed!';
+    showMsg(pname(msg.playerId) + ' ' + reason, 1500);
+  },
+
+  bump: () => {
+    Sound.play('bump');
+    if (typeof FX !== 'undefined') FX.shake(4);
+  },
+});

@@ -46,6 +46,7 @@
     "client-shared/pretext-hooks.js",
     "client-shared/ambient-fx.js",
     "client-shared/protocol.js",
+    "client-shared/host-harness.js",
     "**/*.test.js"
   ]
 }
