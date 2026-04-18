@@ -46,6 +46,23 @@ function updateHUD(s) {
   const posTexts = sorted.slice(0, 3).map(([id, p], i) => ordinal(i + 1) + ' ' + (p.name || 'P' + id));
   $hudPos.textContent = posTexts[0] || '\u2014';
 
+  // Phase 51b — painted standings panel. Row value = 'FIN' for
+  // finished racers or 'Lap N' for the others. Leader = 1st place
+  // (finished first OR currently furthest along).
+  const leaderId = sorted[0] ? sorted[0][0] : null;
+  const rows = sorted.map(([id, p]) => ({
+    id: id,
+    color: p.color,
+    name: p.name || ('Player ' + id),
+    value: p.finished
+      ? ('FIN ' + (s.finishOrder ? s.finishOrder.indexOf(Number(id)) + 1 : '?'))
+      : ('Lap ' + Math.min(p.lap || 1, s.totalLaps || 3)),
+    leader: String(id) === String(leaderId),
+    dead: false,
+    warn: false,
+  }));
+  Scoreboard.render(rows, { title: 'Standings' });
+
   // Phase 50 — painted #hud replaces the legacy shared HUD bar.
 }
 

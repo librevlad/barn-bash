@@ -135,27 +135,19 @@ function startSuddenDeathTimer(seconds) {
 }
 
 function updateScoreboard(state, conn, aliveCount) {
-  const board = document.getElementById('scoreboard');
-  const list = document.getElementById('sb-list');
-  if (!board || !list) return;
+  // Sort: highest-score first, tie-break by name.
+  const sorted = conn.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
 
-  // Show board once the game starts rendering; hide on lobby.
-  if (aliveCount > 0 || state.phase === 'running' || state.phase === 'result') {
-    board.classList.add('show');
-  } else {
-    board.classList.remove('show');
-  }
-
-  const rows = conn.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  // Leader pick: highest score ≥ 3, else first alive.
   let leaderId = null;
-  for (const p of rows) {
+  for (const p of sorted) {
     if (p.alive && (p.score || 0) >= 3) { leaderId = p.id; break; }
   }
-  if (!leaderId && rows.length > 0) leaderId = (rows.find(p => p.alive) || {}).id || null;
+  if (!leaderId && sorted.length > 0) leaderId = (sorted.find(p => p.alive) || {}).id || null;
 
-  // Phase 44/45 — narrator taunt + crown-shift chime on leader change.
+  // Phase 44/45 — leader-change narrator taunt + crown-shift chime.
   if (leaderId && _lastLeaderId && leaderId !== _lastLeaderId) {
-    const newLeader = rows.find(p => p.id === leaderId);
+    const newLeader = sorted.find(p => p.id === leaderId);
     if (newLeader && newLeader.name) {
       Narrator.custom(fillTaunt(pickTaunt(TAUNTS.newLeader), { name: newLeader.name }));
     }
@@ -163,9 +155,8 @@ function updateScoreboard(state, conn, aliveCount) {
   }
   _lastLeaderId = leaderId;
 
-  // Phase 44 — teeter-recovery taunt. If a player WAS teetering but
-  // isn't any more (and is still alive), they clawed back.
-  for (const p of rows) {
+  // Phase 44 — teeter-recovery taunt + SFX.
+  for (const p of sorted) {
     if (_teeterSince[p.id] && !p.teetering && p.alive) {
       delete _teeterSince[p.id];
       Sound.play('teeterSave');
@@ -173,43 +164,21 @@ function updateScoreboard(state, conn, aliveCount) {
         Narrator.custom(fillTaunt(pickTaunt(TAUNTS.teeterRecover), { name: p.name }));
       }
     } else if (_teeterSince[p.id] && !p.alive) {
-      delete _teeterSince[p.id]; // they fell; elimination handler already spoke
+      delete _teeterSince[p.id];
     }
   }
 
-  list.innerHTML = '';
-  for (const p of rows) {
-    const li = document.createElement('li');
-    li.className = 'sb-row'
-      + (!p.alive ? ' dead' : '')
-      + (p.id === leaderId && p.alive ? ' leader' : '')
-      + (p.teetering ? ' teetering' : '');
-
-    const dot = document.createElement('span');
-    dot.className = 'sb-dot';
-    dot.style.color = p.color || '#fff';
-    li.appendChild(dot);
-
-    const name = document.createElement('span');
-    name.className = 'sb-name';
-    name.textContent = p.name || ('Player ' + p.id);
-    li.appendChild(name);
-
-    const score = document.createElement('span');
-    score.className = 'sb-score';
-    score.textContent = (p.score || 0);
-    li.appendChild(score);
-
-    if (p.id === leaderId && p.alive) {
-      const crown = document.createElement('span');
-      crown.className = 'sb-crown';
-      crown.textContent = '\uD83D\uDC51';
-      li.style.position = 'relative';
-      li.appendChild(crown);
-    }
-
-    list.appendChild(li);
-  }
+  // Phase 51b — painted rows via shared Scoreboard.
+  const rows = sorted.map(p => ({
+    id: p.id,
+    color: p.color,
+    name: p.name,
+    value: p.score || 0,
+    leader: p.id === leaderId && p.alive,
+    dead: !p.alive,
+    warn: p.teetering,
+  }));
+  Scoreboard.render(rows, { title: 'Standings' });
 }
 
 // Phase 51a — painted lobby-slot renderer moved to

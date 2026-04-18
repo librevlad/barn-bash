@@ -134,91 +134,7 @@
        the right edge, listing every player with color dot + name +
        score + crown on the leader. Appears only during running/result
        phases (toggled by main.js). */
-    #scoreboard {
-      position: fixed; top: 88px; right: 20px; z-index: 4;
-      width: 220px; padding: 10px 12px 14px;
-      background:
-        linear-gradient(180deg, rgba(74, 46, 24, 0.96) 0%, rgba(42, 24, 12, 0.96) 100%);
-      border-radius: 12px;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 236, 200, 0.18),
-        inset 0 -2px 4px rgba(0, 0, 0, 0.45),
-        0 0 0 2px rgba(60, 30, 10, 0.9),
-        0 0 0 4px rgba(216, 152, 45, 0.85),
-        0 4px 16px rgba(0, 0, 0, 0.55);
-      pointer-events: none;
-      opacity: 0;
-      transform: translateX(18px);
-      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-    }
-    #scoreboard.show { opacity: 1; transform: translateX(0); }
-    #scoreboard .sb-head {
-      font-family: var(--font-accent);
-      font-size: 10px;
-      letter-spacing: 4px;
-      color: var(--accent-gold);
-      text-align: center;
-      padding: 2px 0 8px;
-      border-bottom: 1px solid rgba(216, 152, 45, 0.35);
-      text-transform: uppercase;
-    }
-    #scoreboard .sb-list {
-      list-style: none;
-      padding: 0; margin: 8px 0 0;
-      display: flex; flex-direction: column;
-      gap: 4px;
-    }
-    #scoreboard .sb-row {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 6px;
-      border-radius: 6px;
-      background: rgba(20, 12, 6, 0.55);
-      font-family: var(--font-accent);
-      font-size: 12px;
-      color: var(--text-cream);
-      transition: background 0.2s;
-    }
-    #scoreboard .sb-row.leader {
-      background: linear-gradient(90deg, rgba(216, 152, 45, 0.22), rgba(216, 152, 45, 0.08));
-      box-shadow: inset 0 0 0 1px rgba(255, 221, 107, 0.45);
-    }
-    #scoreboard .sb-row.dead { opacity: 0.35; filter: grayscale(0.8); }
-    #scoreboard .sb-row.teetering {
-      background: linear-gradient(90deg, rgba(217, 83, 79, 0.45), rgba(217, 83, 79, 0.15));
-      animation: sbTeeterBlink 320ms ease-in-out infinite;
-    }
-    @keyframes sbTeeterBlink {
-      0%, 100% { box-shadow: inset 0 0 0 1px rgba(217, 83, 79, 0.8); }
-      50%      { box-shadow: inset 0 0 0 2px rgba(255, 130, 120, 1); }
-    }
-    #scoreboard .sb-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 6px currentColor;
-      background: currentColor;
-    }
-    #scoreboard .sb-name {
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      letter-spacing: 0.3px;
-    }
-    #scoreboard .sb-score {
-      font-family: var(--font-display);
-      font-size: 15px;
-      color: var(--accent-gold);
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
-      letter-spacing: 1px;
-      font-variant-numeric: tabular-nums;
-      min-width: 28px; text-align: right;
-    }
-    #scoreboard .sb-crown {
-      position: absolute;
-      right: -6px; top: -14px;
-      font-size: 22px;
-      filter: drop-shadow(0 0 6px rgba(255, 221, 107, 0.8));
-    }
+    /* Phase 51b — #scoreboard CSS moved to shared theme.css. */
 
     /* Phase 40c — shrink-warning banner. Diagonal-stripe red-and-gold
        full-width caution strip that slides in from above when the
@@ -580,6 +496,7 @@
   <script src="/shared/char-sprite.js"></script>
   <script src="/shared/host-common.js"></script>
   <script src="/shared/lobby-slots.js"></script>
+  <script src="/shared/scoreboard.js"></script>
   <script src="/shared/narrator.js"></script>
   <script src="/shared/sound.js"></script>
   <script src="/shared/hud.js"></script>

@@ -340,6 +340,10 @@ declare global {
   var HillJoystick: any;
   var HillDashButton: any;
   var LobbySlots: { render(state: any): void; MAX_SLOTS: number };
+  var Scoreboard: {
+    render(rows: Array<{ id?: any; color?: string; name?: string; value?: any; leader?: boolean; dead?: boolean; warn?: boolean }>, opts?: { title?: string }): void;
+    hide(): void;
+  };
   var Physics2D: any;
   var Camera2D: any;
   var Scene: any;

@@ -50,6 +50,7 @@
     "client-shared/error-reporter.js",
     "client-shared/char-sprite.js",
     "client-shared/lobby-slots.js",
+    "client-shared/scoreboard.js",
     "**/*.test.js"
   ]
 }
