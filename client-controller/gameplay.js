@@ -262,6 +262,7 @@ window.Gameplay = (function () {
     els.spectate.appendChild(els.specList);
     els.spectate.appendChild(specAwait);
     root.appendChild(els.spectate);
+    if (typeof AmbientFx !== 'undefined') AmbientFx.attach(els.spectate, 'dustmotes');
 
     // Phase 18 — async-swap overlay backdrops to loadPainterly-
     // processed data URLs so baked checker-preview fills don't peek
@@ -306,6 +307,7 @@ window.Gameplay = (function () {
     els.elim.appendChild(elimNarrator);
     els.elim.appendChild(els.elimQuip);
     root.appendChild(els.elim);
+    if (typeof AmbientFx !== 'undefined') AmbientFx.attach(els.elim, 'embers');
 
     // Game over overlay — Phase 18a: painterly hall-of-fame backdrop
     // (cover-fit) replaces the old flat dark-blur scrim. Winner
@@ -333,6 +335,7 @@ window.Gameplay = (function () {
     els.go.appendChild(els.goQuip);
     els.go.appendChild(els.goBtn);
     root.appendChild(els.go);
+    if (typeof AmbientFx !== 'undefined') AmbientFx.attach(els.go, 'sparkles');
 
     // Connection lost
     els.lostToast = el('div', 'gp-lost-toast');

@@ -23,13 +23,21 @@ const PostGame = (() => {
       font-family: var(--font-ui, -apple-system, 'Segoe UI', sans-serif);
       color: var(--text-cream, #f5ead4);
       opacity: 0; pointer-events: none;
-      transition: opacity 0.6s ease-out;
+      /* Phase 21c — spring overshoot on entry. */
+      transition: opacity 0.7s var(--ease-bounce, cubic-bezier(0.34, 1.56, 0.64, 1));
     `;
     document.body.appendChild(overlay);
 
     // Phase 15b — gold filigree corner flourishes.
     if (typeof HostCommon !== 'undefined' && HostCommon.addCornerOrnaments) {
       HostCommon.addCornerOrnaments(overlay);
+    }
+
+    // Phase 21a — ambient sparkles layer. Gold specks drift over the
+    // painted hall / podium / wood-plank so the celebration beat feels
+    // alive rather than photographed.
+    if (typeof AmbientFx !== 'undefined') {
+      AmbientFx.attach(overlay, 'sparkles');
     }
 
     const style = document.createElement('style');

@@ -40,7 +40,8 @@ const Tournament = (() => {
       backdrop-filter: blur(8px);
       display:flex; align-items:center; justify-content:center;
       opacity:0; pointer-events:none;
-      transition: opacity 0.6s ease-in-out;
+      /* Phase 21c — spring overshoot on overlay entry (var(--ease-bounce)). */
+      transition: opacity 0.7s var(--ease-bounce, cubic-bezier(0.34, 1.56, 0.64, 1));
       font-family: var(--font-ui, -apple-system, 'Segoe UI', sans-serif);
       color: var(--text-cream, #f5ead4);
     `;
@@ -50,6 +51,14 @@ const Tournament = (() => {
     // once per overlay lifetime; CSS handles positioning + mirroring.
     if (typeof HostCommon !== 'undefined' && HostCommon.addCornerOrnaments) {
       HostCommon.addCornerOrnaments(overlay);
+    }
+
+    // Phase 21a — ambient sparkles layer behind tournament modes.
+    // Small gold/white specks drift upward across the painted hall,
+    // pushing the static scroll/poster/throne toward Hearthstone-level
+    // ambient depth.
+    if (typeof AmbientFx !== 'undefined') {
+      AmbientFx.attach(overlay, 'sparkles');
     }
 
     // Phase 20+E2E — async-swap the hall backdrop to the loadPainterly-

@@ -324,10 +324,39 @@
    applying animation only on the BASE class's filter property. */
 .ornament-corner {
   animation: cornerShimmer 6s ease-in-out infinite;
+  overflow: hidden;
 }
 @keyframes cornerShimmer {
   0%, 100% { filter: brightness(0.95); }
   50%      { filter: brightness(1.05); }
+}
+/* Phase 21b — diagonal glint sweep that traverses each corner every
+   6s (staggered via per-position delays). The streak is a linear-
+   gradient pseudo-element sliding across the gold; screen blend
+   mode makes it read as "light catching the filigree" without
+   washing out the painted hue. */
+.ornament-corner::after {
+  content: '';
+  position: absolute;
+  inset: -30% -30%;
+  background: linear-gradient(105deg,
+    transparent 42%,
+    rgba(255, 255, 210, 0.55) 50%,
+    transparent 58%);
+  mix-blend-mode: screen;
+  transform: translateX(-110%);
+  animation: cornerGlint 6s ease-in-out infinite;
+  pointer-events: none;
+}
+.ornament-corner.tl::after { animation-delay: 0s; }
+.ornament-corner.tr::after { animation-delay: 1.5s; }
+.ornament-corner.bl::after { animation-delay: 3s; }
+.ornament-corner.br::after { animation-delay: 4.5s; }
+@keyframes cornerGlint {
+  0%, 82%, 100% { transform: translateX(-110%); opacity: 0; }
+  85%  { opacity: 1; }
+  92%  { transform: translateX(110%); opacity: 0.9; }
+  95%, 100% { opacity: 0; }
 }
 
 /* ============================================================

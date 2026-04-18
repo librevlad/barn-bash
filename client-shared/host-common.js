@@ -140,6 +140,13 @@ const HostCommon = (() => {
     // Inject corners into the already-in-DOM #lobby element
     const lobbyEl = document.getElementById('lobby');
     if (lobbyEl) _addCornersTo(lobbyEl);
+
+    // Phase 21a — ambient dustmotes layer on the lobby (main + per-game).
+    // Keeps painted scene alive with drifting cream specks; honors
+    // prefers-reduced-motion internally.
+    if (lobbyEl && typeof AmbientFx !== 'undefined') {
+      AmbientFx.attach(lobbyEl, 'dustmotes');
+    }
   }
   function _addCornersTo(overlayEl) {
     if (!overlayEl) return;
