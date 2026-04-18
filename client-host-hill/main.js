@@ -4,23 +4,95 @@ Render2D.init();
 const pname = HostCommon.pname;
 const showMsg = (text, ms) => HostHarness.showMsg(text, ms);
 
+// Phase 40a — painted HUD + live scoreboard update. updateHUD now
+// writes to three painted plaques (ALIVE / BANNER / ARENA) and the
+// scoreboard panel, instead of the legacy flat text strip.
 function updateHUD(s) {
   const $ = id => document.getElementById(id);
   const $hudAlive = $('hud-alive'), $hudPlat = $('hud-plat');
+  const $hudSub = $('hud-subbanner');
 
-  const alive = Object.values(s.players).filter(p => p.connected && p.alive).length;
-  const total = Object.values(s.players).filter(p => p.connected === true).length;
-  $hudAlive.textContent = alive + '/' + total + ' alive';
-  const pct = Math.round((s.platR / 5) * 100);
-  $hudPlat.textContent = pct < 100 ? 'Arena: ' + pct + '%' : '';
+  // Entries so each row carries its playerId for leader / crown hooks.
+  const entries = Object.entries(s.players).map(([id, p]) => Object.assign({ id: id }, p));
+  const conn = entries.filter(p => p.connected);
+  const alive = conn.filter(p => p.alive).length;
+  const total = conn.length;
+
+  if ($hudAlive) $hudAlive.textContent = alive + '/' + total;
+  const pct = Math.max(0, Math.round((s.platR / 5) * 100));
+  if ($hudPlat) $hudPlat.textContent = pct + '%';
+  if ($hudSub) {
+    $hudSub.textContent = s.suddenDeath
+      ? 'SUDDEN DEATH'
+      : pct < 50 ? 'Arena shrinking'
+      : 'Push to the centre';
+  }
 
   if (typeof HUD !== 'undefined') {
     HUD.update(s.players, {
       gameName: 'KING OF THE HILL',
       primary: pct < 100 ? 'Arena ' + pct + '%' : '',
-      secondary: pct < 50 ? '⚠ SHRINKING!' : '',
+      secondary: pct < 50 ? '\u26A0 SHRINKING!' : '',
       secondaryColor: '#ff4422',
     });
+  }
+
+  updateScoreboard(s, conn, alive);
+}
+
+function updateScoreboard(state, conn, aliveCount) {
+  const board = document.getElementById('scoreboard');
+  const list = document.getElementById('sb-list');
+  if (!board || !list) return;
+
+  // Show board once the game starts rendering; hide on lobby.
+  if (aliveCount > 0 || state.phase === 'running' || state.phase === 'result') {
+    board.classList.add('show');
+  } else {
+    board.classList.remove('show');
+  }
+
+  const rows = conn.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  let leaderId = null;
+  for (const p of rows) {
+    if (p.alive && (p.score || 0) >= 3) { leaderId = p.id; break; }
+  }
+  // Ensure leader computed by walking the sorted array above; fall back
+  // to first-alive when nobody has ≥ 3 yet.
+  if (!leaderId && rows.length > 0) leaderId = (rows.find(p => p.alive) || {}).id || null;
+
+  list.innerHTML = '';
+  for (const p of rows) {
+    const li = document.createElement('li');
+    li.className = 'sb-row'
+      + (!p.alive ? ' dead' : '')
+      + (p.id === leaderId && p.alive ? ' leader' : '')
+      + (p.teetering ? ' teetering' : '');
+
+    const dot = document.createElement('span');
+    dot.className = 'sb-dot';
+    dot.style.color = p.color || '#fff';
+    li.appendChild(dot);
+
+    const name = document.createElement('span');
+    name.className = 'sb-name';
+    name.textContent = p.name || ('Player ' + p.id);
+    li.appendChild(name);
+
+    const score = document.createElement('span');
+    score.className = 'sb-score';
+    score.textContent = (p.score || 0);
+    li.appendChild(score);
+
+    if (p.id === leaderId && p.alive) {
+      const crown = document.createElement('span');
+      crown.className = 'sb-crown';
+      crown.textContent = '\uD83D\uDC51';
+      li.style.position = 'relative';
+      li.appendChild(crown);
+    }
+
+    list.appendChild(li);
   }
 }
 

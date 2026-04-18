@@ -21,20 +21,106 @@
       position: fixed; inset: 0; pointer-events: none; z-index: 1;
       background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.55) 100%);
     }
+    /* Phase 40a — painted HUD. Top strip is split into three painted
+       plaques: ALIVE plaque (left), game-title ribbon (center),
+       ARENA plaque (right). No more flat gradient band. */
     #hud {
       position: fixed; top: 0; left: 0; right: 0; z-index: 5;
-      display: flex; justify-content: space-between;
-      padding: 16px 32px; pointer-events: none;
-      background: linear-gradient(180deg, rgba(61, 40, 23, 0.72) 0%, transparent 100%);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: start;
+      gap: 20px;
+      padding: 14px 24px 0;
+      pointer-events: none;
+      /* Subtle fade from dark-wood to transparent so plaques read
+         against painted arena below. */
+      background: linear-gradient(180deg, rgba(20, 12, 7, 0.55) 0%, transparent 100%);
     }
-    .hud-title {
+    /* Generic painted plaque used for ALIVE and ARENA sides. */
+    .hud-plaque {
+      position: relative;
+      min-width: 130px;
+      padding: 8px 16px 10px;
+      border-radius: 10px;
+      /* Brass vertical gradient + dark rim + inner rim highlight */
+      background:
+        linear-gradient(180deg, #ffe290 0%, #d5972b 50%, #8d5a18 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 246, 200, 0.75),
+        inset 0 -2px 3px rgba(40, 22, 10, 0.45),
+        0 3px 10px rgba(0, 0, 0, 0.55),
+        0 0 0 2px rgba(50, 28, 10, 0.85);
+      text-align: center;
+    }
+    .hud-plaque::before {
+      /* Top-edge highlight specular — painted brass feel. */
+      content: '';
+      position: absolute; top: 3px; left: 10%; right: 10%; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.85), transparent);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .hud-plaque .hud-title {
+      display: block;
       font-family: var(--font-accent);
       font-size: 10px;
-      letter-spacing: var(--tracking-widest);
-      color: var(--accent-gold);
-      opacity: 0.9;
+      letter-spacing: 4px;
+      color: rgba(60, 30, 8, 0.85);
       text-transform: uppercase;
+      opacity: 0.95;
     }
+    .hud-plaque .hud-value {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: #2a160a;
+      text-shadow: 0 1px 0 rgba(255, 246, 200, 0.45);
+      letter-spacing: 1.5px;
+      line-height: 1.1;
+    }
+    /* Center ribbon title. Painted red banner with gold trim. */
+    .hud-banner {
+      justify-self: center;
+      position: relative;
+      padding: 9px 36px 11px;
+      margin-top: 2px;
+      background:
+        linear-gradient(180deg, #c73a2d 0%, #8b1d16 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 180, 160, 0.45),
+        inset 0 -2px 4px rgba(40, 8, 4, 0.6),
+        0 0 0 2px #6d1712,
+        0 0 0 4px #d4952d,
+        0 3px 14px rgba(0, 0, 0, 0.55);
+      text-align: center;
+      /* Trim both ends into ribbon chevrons via clip-path */
+      clip-path: polygon(
+        10px 0, calc(100% - 10px) 0, 100% 50%,
+        calc(100% - 10px) 100%, 10px 100%, 0 50%
+      );
+    }
+    .hud-banner-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      color: #ffe290;
+      letter-spacing: 4px;
+      text-shadow: 0 2px 0 #4a0d09, 0 0 10px rgba(255, 190, 110, 0.45);
+    }
+    .hud-banner-sub {
+      font-family: var(--font-accent);
+      font-size: 11px;
+      color: rgba(255, 230, 200, 0.85);
+      margin-top: 1px;
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Legacy hooks kept so existing main.js HUD.update() still works.
+       The painted plaque text lives in .hud-value; .hud-alive + .hud-plat
+       are aliased below for backward compatibility. */
+    .hud-alive { display: inline; }
+    .hud-plat  { display: inline; }
+
     /* In-lobby eyebrow sits on the painted arch; needs strong contrast. */
     #lobby .hud-title {
       font-size: 12px;
@@ -43,20 +129,95 @@
       text-shadow: 0 1px 0 var(--accent-red-deep),
                    0 0 14px rgba(0, 0, 0, 0.8);
     }
-    .hud-alive {
-      font-family: var(--font-display);
-      font-size: 30px; font-weight: 400;
-      color: var(--accent-gold);
-      text-shadow: 0 2px 0 var(--accent-red-deep),
-                   0 0 18px rgba(244, 197, 66, 0.4);
-      letter-spacing: 1px;
+
+    /* Phase 40a — live scoreboard. Painted wooden scroll pinned to
+       the right edge, listing every player with color dot + name +
+       score + crown on the leader. Appears only during running/result
+       phases (toggled by main.js). */
+    #scoreboard {
+      position: fixed; top: 88px; right: 20px; z-index: 4;
+      width: 220px; padding: 10px 12px 14px;
+      background:
+        linear-gradient(180deg, rgba(74, 46, 24, 0.96) 0%, rgba(42, 24, 12, 0.96) 100%);
+      border-radius: 12px;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 236, 200, 0.18),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.45),
+        0 0 0 2px rgba(60, 30, 10, 0.9),
+        0 0 0 4px rgba(216, 152, 45, 0.85),
+        0 4px 16px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateX(18px);
+      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
     }
-    .hud-plat {
+    #scoreboard.show { opacity: 1; transform: translateX(0); }
+    #scoreboard .sb-head {
       font-family: var(--font-accent);
-      font-size: 13px; font-style: italic;
-      color: var(--text-dim);
-      margin-top: 2px;
-      letter-spacing: 0.5px;
+      font-size: 10px;
+      letter-spacing: 4px;
+      color: var(--accent-gold);
+      text-align: center;
+      padding: 2px 0 8px;
+      border-bottom: 1px solid rgba(216, 152, 45, 0.35);
+      text-transform: uppercase;
+    }
+    #scoreboard .sb-list {
+      list-style: none;
+      padding: 0; margin: 8px 0 0;
+      display: flex; flex-direction: column;
+      gap: 4px;
+    }
+    #scoreboard .sb-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      background: rgba(20, 12, 6, 0.55);
+      font-family: var(--font-accent);
+      font-size: 12px;
+      color: var(--text-cream);
+      transition: background 0.2s;
+    }
+    #scoreboard .sb-row.leader {
+      background: linear-gradient(90deg, rgba(216, 152, 45, 0.22), rgba(216, 152, 45, 0.08));
+      box-shadow: inset 0 0 0 1px rgba(255, 221, 107, 0.45);
+    }
+    #scoreboard .sb-row.dead { opacity: 0.35; filter: grayscale(0.8); }
+    #scoreboard .sb-row.teetering {
+      background: linear-gradient(90deg, rgba(217, 83, 79, 0.45), rgba(217, 83, 79, 0.15));
+      animation: sbTeeterBlink 320ms ease-in-out infinite;
+    }
+    @keyframes sbTeeterBlink {
+      0%, 100% { box-shadow: inset 0 0 0 1px rgba(217, 83, 79, 0.8); }
+      50%      { box-shadow: inset 0 0 0 2px rgba(255, 130, 120, 1); }
+    }
+    #scoreboard .sb-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 6px currentColor;
+      background: currentColor;
+    }
+    #scoreboard .sb-name {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      letter-spacing: 0.3px;
+    }
+    #scoreboard .sb-score {
+      font-family: var(--font-display);
+      font-size: 15px;
+      color: var(--accent-gold);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+      letter-spacing: 1px;
+      font-variant-numeric: tabular-nums;
+      min-width: 28px; text-align: right;
+    }
+    #scoreboard .sb-crown {
+      position: absolute;
+      right: -6px; top: -14px;
+      font-size: 22px;
+      filter: drop-shadow(0 0 6px rgba(255, 221, 107, 0.8));
     }
     #countdown {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -192,12 +353,27 @@
 <body>
   <canvas id="game-canvas"></canvas>
   <div id="vignette"></div>
+  <!-- Phase 40a — painted HUD. Three-column layout (ALIVE plaque /
+       banner title / ARENA plaque). Legacy ids kept so main.js
+       HUD update code continues to work. -->
   <div id="hud" style="display:none">
-    <div>
-      <div class="hud-title">KING OF THE HILL</div>
-      <div class="hud-alive" id="hud-alive">2/2 alive</div>
+    <div class="hud-plaque">
+      <span class="hud-title">Alive</span>
+      <span class="hud-value hud-alive" id="hud-alive">2/2</span>
     </div>
-    <div class="hud-plat" id="hud-plat"></div>
+    <div class="hud-banner">
+      <div class="hud-banner-title"><span class="sb-crown-icon">&#x1F451;</span> King of the Hill</div>
+      <div class="hud-banner-sub" id="hud-subbanner">&#x2014;</div>
+    </div>
+    <div class="hud-plaque">
+      <span class="hud-title">Arena</span>
+      <span class="hud-value hud-plat" id="hud-plat">100%</span>
+    </div>
+  </div>
+  <!-- Phase 40a — live scoreboard pinned right-edge, toggled by main.js. -->
+  <div id="scoreboard">
+    <div class="sb-head">Standings</div>
+    <ul class="sb-list" id="sb-list"></ul>
   </div>
   <div id="countdown"></div>
   <div id="message"></div>
