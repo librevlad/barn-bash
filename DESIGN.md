@@ -2051,6 +2051,19 @@ synchronized across screens.
     audio files; all procedural. Spec:
     `docs/superpowers/specs/2026-04-18-sound-design-design.md`.
 
+26. **Phase 26** (shipped 2026-04-18): animation polish —
+    CLOSES the Hearthstone-polish arc. 26a staggerIn keyframe
+    applied with nth-child cascading delays to game-select
+    modal (4 game cards + tournament), animal-grid (8 cells),
+    color-grid (10 cells); 26b shared button press depth on
+    .ticket-btn / .modal-btn / .sprite-btn / .pg-btn / .gp-go-
+    btn (translateY(4px) + scale(0.98) + brightness(0.92) + 80ms);
+    26c tap ripple on controller .gp-action — gold radial
+    expands scale 0.4→3.2 on pointerdown via JS class toggle +
+    offsetWidth reflow. CSS-only except the gp-action pointer
+    hook. Honors prefers-reduced-motion. Spec:
+    `docs/superpowers/specs/2026-04-18-animation-polish-design.md`.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
@@ -2059,7 +2072,15 @@ with carved-brass treatments. After Phase 24 the painted
 backdrops themselves gently drift (camera-float) and flicker
 (torchlight). After Phase 25 every button ticks, every winner
 earns a fanfare, every tournament moment is scored with music.
-Remaining Hearthstone-polish arc: Phase 26 animation polish.
+After Phase 26 grids cascade in with stagger, buttons depress
+like pressed cards, action cards ripple on tap.
+
+**Hearthstone-polish arc (Phases 21-26) is complete.** The
+product reads as Hearthstone-tier across 6 dimensions:
+painted atmosphere, typography, object ornament, backdrop
+motion, audio layer, and micro-interactions. No Phase 27
+scheduled; future polish opens its own spec when demand
+justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
