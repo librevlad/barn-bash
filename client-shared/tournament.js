@@ -266,8 +266,10 @@ const Tournament = (() => {
       #t-content .t-player-pos-change.down { color: var(--danger-red, #d9534f); }
       #t-content .t-next {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
-        font-size: 14px; font-style: italic;
-        color: var(--text-dim, rgba(245, 234, 212, 0.55));
+        font-size: 15px; font-style: italic;
+        color: var(--text-cream, #f5ead4);
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
+                     0 0 10px rgba(0, 0, 0, 0.6);
         margin-top: 18px;
       }
       #t-content .t-next-game {
@@ -333,14 +335,22 @@ const Tournament = (() => {
       }
       /* Phase 20b — move TOURNAMENT above the poster and GET READY
          below via absolute anchors. Values tuned to sit just outside
-         the 380px poster extent so they land on the dark overlay scrim,
-         not on the painted top/bottom ribbons. */
+         the 380px poster extent so they land on the painted hall
+         (proscenium sky above, wooden floor below), not on the
+         painted top/bottom ribbons of the poster. */
       #t-content.mode-round-intro .t-bar {
         position: absolute;
-        top: calc(50% - 230px);
+        top: calc(50% - 220px);
         left: 50%;
         transform: translateX(-50%);
         margin: 0;
+        font-size: 14px;
+        letter-spacing: 6px;
+        padding: 6px 18px;
+        background: rgba(47, 28, 12, 0.55);
+        border-radius: 4px;
+        text-shadow: 0 1px 0 var(--accent-red-deep, #6b1818),
+                     0 0 14px rgba(0, 0, 0, 0.8);
       }
       #t-content.mode-round-intro .t-round-intro-ready {
         position: absolute;
@@ -348,6 +358,10 @@ const Tournament = (() => {
         left: 50%;
         transform: translateX(-50%);
         margin: 0;
+        font-size: 20px;
+        padding: 8px 22px;
+        background: rgba(47, 28, 12, 0.55);
+        border-radius: 6px;
       }
       /* Phase 20b — game name flips to dark-on-cream per Phase 12a
          precedent (painted cream panel demands dark text). ROUND X
@@ -417,9 +431,11 @@ const Tournament = (() => {
       }
       #t-content .t-final-scores-label {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
-        font-size: 11px; letter-spacing: 3px;
-        color: var(--text-dim, rgba(245, 234, 212, 0.55));
+        font-size: 12px; letter-spacing: 4px;
+        color: var(--accent-gold, #f4c542);
         text-transform: uppercase;
+        text-shadow: 0 1px 0 var(--accent-red-deep, #6b1818),
+                     0 0 12px rgba(0, 0, 0, 0.8);
         margin-bottom: 12px;
         opacity: 0; animation: tFadeSlideUp 0.4s ease-out 1s forwards;
       }
@@ -427,6 +443,8 @@ const Tournament = (() => {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
         font-size: 15px; font-style: italic;
         color: var(--text-cream, #f5ead4);
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75),
+                     0 0 10px rgba(0, 0, 0, 0.6);
         opacity: 0; margin-top: 16px; line-height: 1.5;
         animation: tFadeSlideUp 0.5s ease-out 1.5s forwards;
       }
