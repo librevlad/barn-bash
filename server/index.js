@@ -187,8 +187,13 @@ function broadcast(msg) {
   broadcastRaw(msg);
 
   // Tournament: intercept game_over
-  if (tournament && msg.type === 'game_over') {
-    handleTournamentGameEnd(msg);
+  if (msg.type === 'game_over') {
+    logger.info('game.ended', {
+      gameId: msg.gameId || currentGameId,
+      winnerId: msg.winnerId || null,
+      inTournament: Boolean(tournament),
+    });
+    if (tournament) handleTournamentGameEnd(msg);
   }
 }
 
@@ -212,6 +217,11 @@ function startTournament() {
     tournament.scores[p.id] = 0;
   }
   broadcastRaw(Protocol.makeTournamentStarted(tournament.totalRounds, shuffled.map(id => id)));
+  logger.info('tournament.started', {
+    totalRounds: tournament.totalRounds,
+    sequence: shuffled,
+    playerCount: players.connectedCount(),
+  });
   advanceTournament();
 }
 
@@ -235,6 +245,11 @@ function advanceTournament() {
     totalRounds: tournament.totalRounds,
     gameId,
     scores: tournament.scores
+  });
+  logger.info('tournament.round.advanced', {
+    round: tournament.round,
+    totalRounds: tournament.totalRounds,
+    gameId: gameId,
   });
   currentGame.broadcastState();
 
@@ -336,6 +351,11 @@ function endTournament() {
     playerNames,
     scores: tournament.scores
   });
+  logger.info('tournament.ended', {
+    champId: champId,
+    champName: champName,
+    scores: tournament.scores,
+  });
 
   // Reset to lobby after delay
   setTimeout(() => {
@@ -359,8 +379,11 @@ function getTournamentInfo() {
 
 // --- Connections ---
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   let playerId = null;
+  logger.debug('connection.opened', {
+    remoteAddress: req && req.socket ? req.socket.remoteAddress : null,
+  });
 
   ws.on('message', (raw) => {
     let msg;
@@ -388,6 +411,12 @@ wss.on('connection', (ws) => {
         // Broadcast player join event so host can react
         broadcast(Protocol.makePlayerJoined(playerId, p));
         currentGame.broadcastState();
+        logger.info('player.joined', {
+          playerId: playerId,
+          name: p.name,
+          character: p.character,
+          totalConnected: players.connectedCount(),
+        });
         break;
 
       case 'selectCharacter':
@@ -424,7 +453,13 @@ wss.on('connection', (ws) => {
         break;
 
       case 'start':
-        if (!tournament) currentGame.start();
+        if (!tournament) {
+          currentGame.start();
+          logger.info('game.started', {
+            gameId: currentGameId,
+            playerCount: players.connectedCount(),
+          });
+        }
         break;
 
       case 'restart':
@@ -440,6 +475,7 @@ wss.on('connection', (ws) => {
         currentGame = new GAMES[msg.gameId](players, broadcast);
         broadcastRaw(Protocol.makeGameSelected(currentGameId));
         currentGame.broadcastState();
+        logger.debug('game.selected', { gameId: currentGameId });
         break;
 
       case 'startTournament':
@@ -454,11 +490,24 @@ wss.on('connection', (ws) => {
     if (playerId) {
       players.remove(playerId);
       currentGame.broadcastState();
+      logger.info('player.left', {
+        playerId: playerId,
+        remainingConnected: players.connectedCount(),
+      });
       // Safety: if all players left during a running game, reset to lobby
       if (players.connectedCount() === 0 && currentGame.phase === 'running') {
         currentGame.restart();
       }
+    } else {
+      logger.debug('connection.closed', { playerId: null });
     }
+  });
+
+  ws.on('error', (err) => {
+    logger.warn('connection.error', {
+      playerId: playerId,
+      message: err && err.message ? err.message : String(err),
+    });
   });
 });
 
@@ -475,6 +524,9 @@ function getLocalIP() {
 
 server.listen(PORT, () => {
   const ip = getLocalIP();
+  logger.info('server.listening', { port: PORT, ip: ip });
+  // Pretty banner stays console-printed for human developer feedback;
+  // logger.info above carries the telemetry line for aggregators.
   console.log(`\n  Frantics server on port ${PORT}\n`);
   console.log(`  Host:       http://${ip}:${PORT}/host`);
   console.log(`  Controller: http://${ip}:${PORT}/controller\n`);
