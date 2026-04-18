@@ -74,7 +74,7 @@
   font-size: 14px; color: var(--text-dim);
   max-width: 260px;
 }
-@media (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
   .onboarding-root #ob-rotate-gate { display: flex; }
 }
 
