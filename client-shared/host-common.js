@@ -96,9 +96,38 @@ const HostCommon = (() => {
     // variants). addCornerOrnaments helper injects the four <div>s into
     // any overlay, called for #lobby here and by tournament.js +
     // postgame.js at overlay-create time.
-    SpriteLoader.loadPainterly('ornament-corner', '/assets/ornament-corner.png')
+    // Phase E2E fix — corner PNG has interior checker pockets inside
+    // the curlicue filigree that loadPainterly's edge-seeded BFS
+    // can't reach (dark ink outlines bound them). After the standard
+    // edge pass, run a GLOBAL strict sweep that clears any remaining
+    // neutral-bright pixels (chroma < 12, brightness > 135). This is
+    // the "strict-everywhere" pass deprecated in Phase 7c — safe to
+    // re-enable just for the corner asset because the painted
+    // flourish is saturated-gold (high chroma) and survives the
+    // strict criteria. Bunting uses custom thresholds without the
+    // strict post-pass; corner needs both.
+    SpriteLoader.loadPainterly('ornament-corner', '/assets/ornament-corner.png',
+      { seedBright: 135, expandBright: 120, expandChroma: 25 })
       .then((canvas) => {
         if (!canvas) return;
+        // Post-process: global strict sweep for interior pockets.
+        // Chroma threshold widened to 40 to catch warm-tinted grey
+        // (image-gen's checker bakes with warm cast alongside pure
+        // grey). The painted gold flourish (chroma 75+) + dark ink
+        // outlines (brightness < 100) both survive.
+        const cx = canvas.getContext('2d');
+        const data = cx.getImageData(0, 0, canvas.width, canvas.height);
+        const px = data.data;
+        for (let i = 0; i < px.length; i += 4) {
+          if (px[i + 3] === 0) continue; // already transparent
+          const r = px[i], g = px[i + 1], b = px[i + 2];
+          const minC = Math.min(r, g, b);
+          const maxC = Math.max(r, g, b);
+          if ((maxC - minC) < 40 && minC > 135) {
+            px[i + 3] = 0;
+          }
+        }
+        cx.putImageData(data, 0, 0);
         const styleEl = document.createElement('style');
         styleEl.id = 'phase15b-corner-override';
         styleEl.textContent =

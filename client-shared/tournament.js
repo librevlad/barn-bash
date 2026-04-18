@@ -26,10 +26,17 @@ const Tournament = (() => {
     if (overlay) return;
     overlay = document.createElement('div');
     overlay.id = 'tournament-overlay';
-    overlay.innerHTML = '<div id="t-content"></div>';
+    // Phase 20+E2E — full-cover painted hall backdrop reuses Phase 18
+    // gameover-hall.png. Behind it sits a dark scrim (dropped from 0.94
+    // to 0.62 so the painted hall reads through while keeping live
+    // gameplay separated). Mode-specific backdrops (standings-scroll,
+    // round-intro poster, champion throne) sit on top of the hall.
+    overlay.innerHTML =
+      '<img id="t-hall-backdrop" src="/assets/gameover-hall.png" alt="" onerror="this.remove()">' +
+      '<div id="t-content"></div>';
     overlay.style.cssText = `
       position:fixed; inset:0; z-index:100;
-      background: rgba(47, 28, 12, 0.94);
+      background: rgba(47, 28, 12, 0.62);
       backdrop-filter: blur(8px);
       display:flex; align-items:center; justify-content:center;
       opacity:0; pointer-events:none;
@@ -45,9 +52,40 @@ const Tournament = (() => {
       HostCommon.addCornerOrnaments(overlay);
     }
 
+    // Phase 20+E2E — async-swap the hall backdrop to the loadPainterly-
+    // processed data URL. Reuses the Phase 18 gameover-hall asset so
+    // host + controller + tournament all share one painted atmosphere.
+    if (typeof SpriteLoader !== 'undefined') {
+      var applyHall = function () {
+        var sprite = SpriteLoader.get('gameover-hall');
+        var img = overlay.querySelector('#t-hall-backdrop');
+        if (sprite && img) img.src = sprite.toDataURL('image/png');
+      };
+      var cached = SpriteLoader.get('gameover-hall');
+      if (cached) applyHall();
+      else SpriteLoader.loadPainterly('gameover-hall',
+        '/assets/gameover-hall.png').then(applyHall).catch(function () {});
+    }
+
     const style = document.createElement('style');
     style.textContent = `
       #tournament-overlay.show { opacity:1 !important; pointer-events:auto !important; }
+      /* Phase 20+E2E — full-cover hall backdrop sits behind everything
+         (scroll + poster + throne + content). Async-swapped to the
+         loadPainterly-processed data URL on resolve. */
+      #tournament-overlay #t-hall-backdrop {
+        position: absolute;
+        inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover; object-position: center;
+        opacity: 0.85;
+        z-index: 0;
+        pointer-events: none;
+      }
+      #tournament-overlay > :not(#t-hall-backdrop) {
+        position: relative;
+        z-index: 1;
+      }
       #t-content { text-align:center; max-width:600px; width:90%; position:relative; }
       #t-content .t-backdrop {
         position:absolute;
@@ -242,10 +280,32 @@ const Tournament = (() => {
       #t-content .t-crown { font-size: 56px; margin-bottom: 12px; }
       #t-content .t-bar {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
-        font-size: 10px; letter-spacing: 3px;
-        color: var(--text-dim, rgba(245, 234, 212, 0.55));
+        font-size: 11px; letter-spacing: 4px;
+        color: var(--accent-gold, #f4c542);
         text-transform: uppercase;
+        text-shadow: 0 1px 0 var(--accent-red-deep, #6b1818),
+                     0 0 14px rgba(0, 0, 0, 0.7);
         margin-bottom: 16px;
+      }
+      /* Phase E2E fix — standings TOURNAMENT + ROUND anchored ABOVE
+         the painted scroll so the scroll's painted top-medallion
+         ornament doesn't fight the header text. Mirrors the Phase 20b
+         round-intro anchoring pattern. */
+      #t-content.mode-standings .t-bar {
+        position: absolute;
+        top: -54px; left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+        white-space: nowrap;
+      }
+      #t-content.mode-standings .t-round {
+        position: absolute;
+        top: -34px; left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+        white-space: nowrap;
+        text-shadow: 0 1px 0 var(--accent-red-deep, #6b1818),
+                     0 0 14px rgba(0, 0, 0, 0.7);
       }
 
       /* Phase 20b — painted attraction-announce poster behind the
