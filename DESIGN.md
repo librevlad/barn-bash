@@ -1483,6 +1483,76 @@ now breathes at rest: titles pulse subtly, cards shine on
 hover, bunting sways as if in a light breeze, gold corners
 catch the light slowly.
 
+Eighteenth realization: post-audit polish + Pretext + WebP —
+Phase 17, shipped 2026-04-18 across 21 commits.
+
+- **17a — audit fixes.** The 2026-04-17 AAA design audit
+  (`.gstack/design-audit-20260417/design-audit-frantics.md`)
+  produced 16 labelled findings. Fourteen landed as dedicated
+  commits on master, each tagged with its finding ID — a11y
+  baseline (F-02, F-03, F-04, F-05-partial), content safety
+  (F-01 tournament round counter guard, F-14 player-color
+  fallback tokenized), responsive gates (F-07 QR code on
+  host JOIN card via vendored qrcode-generator, F-08
+  "WRONG SCREEN, FRIEND" at (min-width:1024) + pointer:fine,
+  F-09 "WRONG SHOW, FRIEND" at (max-width:768)), hierarchy
+  (F-11 "TAP TO SKIP" legibility lift), typography (F-12
+  font-family hoist), motion (F-15 durations tokenized to
+  `--dur-*`), performance (F-13 host bg 2.77MB → 298KB WebP),
+  and timing (F-16 intro dwell 1200→2800ms). A seventeenth
+  finding, F-17, surfaced post-audit when the controller's
+  rotate-gate fired inside `/test/` iframes at standard laptop
+  heights; fixed by adding `(pointer: coarse)` to the media
+  query so the gate only triggers on actual touch hardware
+  — mirror of F-08's `pointer: fine` signal. F-06 and F-10
+  were investigated and marked not-applicable (already
+  satisfied); F-05's `<main>` landmark deferred.
+- **17b — Pretext.** Vendored `kazuhikoarase/pretext.js` (MIT,
+  ~30KB ES module) at `client-shared/pretext.js`. A thin
+  imperative wrapper at `client-shared/pretext-hooks.js`
+  exposes `PretextHooks.measure(el) / release(el) /
+  relayoutAll() / whenReady(fn) / isReady`. The hooks script
+  is included in both `client-host/index.html` and
+  `client-controller/index.html` via `<script src="/shared/
+  pretext-hooks.js">`. It gates measurement on both
+  `import('/shared/pretext.js')` AND `document.fonts.ready`
+  so the first `prepare()` always uses real Inter / Alfa
+  Slab / Cutive metrics, never system fallbacks. A
+  body-scoped `ResizeObserver` drives `relayoutAll()` on
+  viewport change. Consumer sites: `client-controller/
+  gameplay.js` (elim-quip, game-over hero+subline+quip),
+  `client-host/main.js` (game-select modal card-desc +
+  tip-body), `client-shared/narrator.js` (quip body),
+  `client-shared/tournament.js` (standings commentary line).
+  Pattern is additive — if the import fails, elements fall
+  back to CSS-defined heights.
+- **17c — WebP content-negotiation.** Two commits sweep all
+  102 PNGs in `/assets/` into WebP siblings (the first
+  covers 45 assets ≥500KB; the second rounds out the
+  remaining 57). Totals: 89MB PNG (source-canonical,
+  unchanged) + 7.1MB WebP (-92% wire weight). `server/
+  index.js` gains `preferWebp(filePath, acceptHeader)`:
+  when a request for `/assets/foo.png` carries `Accept:
+  image/webp` AND a sibling `.webp` exists on disk, the
+  server serves the WebP with `Content-Type: image/webp`.
+  Response carries `Vary: Accept` so proxies cache the two
+  representations separately. All existing `.png` URLs in
+  HTML / JS / CSS / canvas code keep working untouched —
+  modern browsers pick up WebP transparently, old ones
+  still get PNG. The BARNYARD BEDLAM host backdrop drops
+  2.77MB → 298KB, closing the audit's performance finding.
+
+Phase 17 lifts the project from audit grade **B (2.99)** to
+**A+ (3.84)** across the 10 weighted dimensions, with
+typography, color, motion, interaction, responsive, content
+quality, and join-flow all moving up at least half a band.
+DESIGN.md gained a **Text layout (Pretext)** section
+(committed separately as 7783a30) and a `--color-player-unknown`
+token row. Spec:
+`docs/superpowers/specs/2026-04-18-post-audit-polish-design.md`.
+Audit doc:
+`.gstack/design-audit-20260417/design-audit-frantics.md`.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1616,10 +1686,27 @@ catch the light slowly.
     `prefers-reduced-motion`. Spec:
     `docs/superpowers/specs/2026-04-17-ornament-motion-design.md`.
 
-After Phase 16 follow-ups (painterly pixel-car replacement if
-ever revisited, plus the earlier-listed i18n / WebGL / GLB /
-race-2nd-3rd-place items) each open their own spec when demand
-justifies.
+17. **Phase 17** (shipped 2026-04-18): post-audit polish +
+    Pretext + WebP. 17a — 15 fix commits closing audit
+    findings F-01..F-16 plus follow-up F-17 (controller
+    rotate-gate qualified by `(pointer: coarse)` so it stops
+    firing inside `/test/` iframes). 17b — Pretext vendored
+    at `client-shared/pretext.js` + `pretext-hooks.js`
+    wrapper; wired into gameplay elim-quip + game-over copy,
+    host game-select modal, narrator overlay, tournament
+    standings commentary. 17c — WebP content-negotiation
+    (45 + 57 assets) via `server/index.js preferWebp()` +
+    `Vary: Accept`; 89MB PNG stays source-canonical, 7.1MB
+    WebP on the wire (-92%). Audit grade **B (2.99) → A+
+    (3.84)**. Spec:
+    `docs/superpowers/specs/2026-04-18-post-audit-polish-design.md`.
+    Audit log:
+    `.gstack/design-audit-20260417/design-audit-frantics.md`.
+
+After Phase 17 the project is at audit grade A+. Follow-ups
+(painterly pixel-car replacement if ever revisited, F-05
+`<main>` landmark, i18n / WebGL / GLB / race-2nd-3rd-place
+items) each open their own spec when demand justifies.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
@@ -1715,3 +1802,8 @@ first, and this document is updated to reflect the addition.
 | 2026-04-17 | Ornament motion amplitudes kept below perception threshold (≤5% filter, ≤0.5° rotation) | At AAA-polish level, static ornaments read as "painted on" rather than "hanging in space." But overshoot on amplitudes quickly creates "seasick" compound motion when multiple cycles overlap. Keeping each cycle's amplitude below perception threshold individually makes the compound compose smoothly as "ambient stage breathing" rather than synchronized pulse |
 | 2026-04-17 | Ornament cycle periods deliberately different (4s sway / 2.2s bulb / 6s shimmer / 3s title breathe) | Four simultaneous cycles at the SAME period would synchronize into an annoying pulse. Non-harmonic periods drift out of phase continuously, producing a sensed-not-seen "living room" background rather than a rhythmic wave. Cycles picked to have no simple integer ratios between them |
 | 2026-04-17 | Bunting transform-origin `50% 0` (pivot at top center) rather than center or bottom | Bunting in the physical world hangs from a central rope anchor — top-center pivot matches that physics. Rotating around center would swing the whole strip side-to-side like a pendulum, which reads wrong for a stretched-rope element. Top-center pivot gives the rope a natural "flag-in-wind" motion |
+| 2026-04-18 | F-17 rotate-gate qualified by `(pointer: coarse)` rather than a `/test` bypass | The gate's intent is "phone held sideways" — a physical-device signal. Adding `pointer: coarse` keeps the media query self-describing (it fires only when the device is actually touch), so the gate no longer fires in desktop iframes that happen to have landscape-short viewports (`/test/` at any standard laptop height). Symmetric to F-08's `pointer: fine` signal on the desktop-gate. A global `/test` query-param bypass would have needed JS state on every surface; the CSS media-query qualifier lives in one line |
+| 2026-04-18 | Pretext vendored as `client-shared/pretext.js` + `pretext-hooks.js` wrapper, not consumed directly | The Pretext API is an ES module; `client-controller/gameplay.js` and `client-host/main.js` are classic scripts (no `type="module"`). The hooks wrapper does the dynamic `import('/shared/pretext.js')` once, surfaces an imperative `window.PretextHooks` API, and gates all measurement on `Promise.all([import, document.fonts.ready])` so the first `prepare()` uses real font metrics. Keeps the callers a no-knowledge adapter surface |
+| 2026-04-18 | Pretext hooks are additive, never load-bearing | If the dynamic import fails or `document.fonts.ready` rejects, `PretextHooks.measure` stays a no-op and elements keep their CSS-defined heights. No caller branches on `isReady`; the pattern degrades silently. This is why the hook script can be added to every HTML entry point without a fallback-asset audit |
+| 2026-04-18 | WebP content-negotiation via server-side MIME swap + `Vary: Accept`, not per-asset `<picture>` tags | Rewriting every HTML / JS / CSS / canvas call site to emit a `<picture><source type="image/webp">` fallback would have meant dozens of edits and broken the canvas renderers (which `new Image()` — no picture element). `server/index.js preferWebp()` intercepts the byte-serving layer: requests for `/assets/foo.png` carrying `Accept: image/webp` with a `foo.webp` sibling on disk silently get the WebP; everything else gets the PNG. `Vary: Accept` keeps proxies honest. Every existing asset path keeps working |
+| 2026-04-18 | PNG stays the source-canonical format; WebP is wire-only | Canvas renderers that sample pixels (`SpriteLoader.loadPainterly` chroma-key, `CharDraw.blob` procedural reads) need predictable RGBA data. Browser WebP decoding is visually identical to PNG but the workflow stays simpler when the art pipeline outputs PNG and the server compresses at serve time. Keeps the 89MB of canonical PNGs in the repo (no double-commit of PNG + WebP authoritative sources) |
