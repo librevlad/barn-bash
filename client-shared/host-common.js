@@ -42,6 +42,27 @@ const HostCommon = (() => {
   // async, and setTimeout can fire BEFORE they finish loading.
   function _initPainterlyPipeline() {
     if (typeof SpriteLoader === 'undefined') return;
+    // Phase 5a — base sizing rules for <img class="char-glyph"> so
+    // Phase 5a animal PNGs (1024x1024 natural) render at glyph size
+    // inside pills / cards / lobbies on ALL hosts. Main lobby (client-
+    // host/index.html) has its own .player-pill-icon rule; per-game
+    // hosts (escape / hill / meteor / race) inherit these defaults.
+    const baseStyleEl = document.createElement('style');
+    baseStyleEl.id = 'host-common-char-glyph-base';
+    baseStyleEl.textContent =
+      'img.char-glyph {' +
+      '  width: 1em; height: 1em;' +
+      '  object-fit: cover; border-radius: 50%;' +
+      '  display: inline-block; vertical-align: middle;' +
+      '}' +
+      'img.char-glyph-inline {' +
+      '  width: 1.4em; height: 1.4em;' +
+      '  object-fit: cover; border-radius: 50%;' +
+      '  display: inline-block; vertical-align: middle;' +
+      '  margin: 0;' +
+      '}';
+    document.head.appendChild(baseStyleEl);
+
     Object.keys(charAvatars).forEach((id) => {
       SpriteLoader.loadPainterly('charAvatar-' + id, charAvatars[id])
         .then((canvas) => _registerProcessedChar(id, canvas))
