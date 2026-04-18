@@ -586,8 +586,16 @@ const Render2D = (() => {
 
       const s = camera.worldToScreen(e.data.rX, e.data.rY);
 
-      // Dash trail particles
+      // Phase 39c — dash afterimage trail. While dashing, record the
+      // last 5 screen positions and paint them as decreasing-alpha
+      // ghosts behind the live sprite. Gives the dash a "speed-line"
+      // feel without bespoke motion-blur shader.
       if (e.data.dashing) {
+        if (!e.data._ghosts) e.data._ghosts = [];
+        e.data._ghosts.push({ x: s.x, y: s.y });
+        if (e.data._ghosts.length > 5) e.data._ghosts.shift();
+
+        // Trail particles along the way.
         particles.burst(s.x, s.y, 1, {
           ...ParticleSystem.PRESETS.TRAIL,
           color: e.data.colorRgb || '255,255,255',
@@ -595,6 +603,26 @@ const Render2D = (() => {
           life: 0.35,
           size: 4,
         });
+
+        // Paint ghost copies (oldest → newest, rising alpha).
+        for (let gi = 0; gi < e.data._ghosts.length - 1; gi++) {
+          const g = e.data._ghosts[gi];
+          const a = (gi + 1) / e.data._ghosts.length * 0.4;
+          ctx.save();
+          ctx.globalAlpha = a;
+          CharSprite.draw(ctx, g.x, g.y, 22, {
+            character: e.character,
+            colorRgb: e.data.colorRgb,
+            color: e.color,
+            pose: 'dash',
+            clock: clock,
+            idx: e.data.idx || 0,
+          });
+          ctx.restore();
+        }
+      } else if (e.data._ghosts && e.data._ghosts.length > 0) {
+        // Fade tail after dash ends.
+        e.data._ghosts.shift();
       }
 
       // Tick down per-entity hit flash (set by triggerHit)

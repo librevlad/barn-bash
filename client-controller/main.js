@@ -12,6 +12,7 @@ let selectedColor = null;
 let jumpCount = 0;
 let gameplayReady = false;        // true after Gameplay.start() has been called
 let stumbleTimer = null;
+let teeterTimer = null;
 let shieldState = false, speedState = false;
 
 const GAME_NAMES = {
@@ -401,7 +402,16 @@ function onMessage(e) {
     case 'teetering':
       if (msg.playerId !== playerId || !gameplayReady) break;
       Gameplay.rejectAction('TEETERING!');
+      Gameplay.setModifier('teetering', true);
       navigator.vibrate?.([60, 30, 60, 30, 60]);
+      clearTimeout(teeterTimer);
+      teeterTimer = setTimeout(() => Gameplay.setModifier('teetering', false), 1500);
+      break;
+
+    case 'bump':
+      if (msg.to !== playerId || !gameplayReady) break;
+      Gameplay.rejectAction('BUMPED!');
+      navigator.vibrate?.(80);
       break;
 
     case 'ground_pound':
