@@ -2017,12 +2017,23 @@ synchronized across screens.
     prefers-reduced-motion. Spec:
     `docs/superpowers/specs/2026-04-18-typography-embellishments-design.md`.
 
+23. **Phase 23** (shipped 2026-04-18): ornate object frames v2
+    — 23a JOIN QR card (`.top-url`) gilded treatment with
+    multi-layer inset shadow + 4 diamond corner accents; 23b
+    connection-lost toast (`.gp-lost-toast`) with pulsing amber
+    ring (`gpLostPulseRing` 1.6s heartbeat); 23c progress dots
+    + intro bulbs upgraded to dimensional radial-gradient brass
+    studs with specular highlights. CSS-only, zero new art.
+    Spec:
+    `docs/superpowers/specs/2026-04-18-ornate-object-frames-v2-design.md`.
+
 After Phase 21 the painted surfaces breathe AND drift AND
-catch moving light. After Phase 22 hero titles also EMBOSS
-with theatrical weight and bloom flanking gold flourishes.
-Remaining Hearthstone-polish arc: Phase 23 ornate object
-frames v2, Phase 24 parallax backgrounds, Phase 25 sound
-design, Phase 26 animation polish.
+catch moving light. After Phase 22 hero titles EMBOSS with
+theatrical weight and bloom flanking gold flourishes. After
+Phase 23 rectangular + pill + dot UI objects gild themselves
+with carved-brass treatments. Remaining Hearthstone-polish
+arc: Phase 24 parallax backgrounds, Phase 25 sound design,
+Phase 26 animation polish.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
