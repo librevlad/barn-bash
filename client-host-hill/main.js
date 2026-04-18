@@ -142,13 +142,13 @@ function updateScoreboard(state, conn, aliveCount) {
   }
   if (!leaderId && rows.length > 0) leaderId = (rows.find(p => p.alive) || {}).id || null;
 
-  // Phase 44 — narrator taunt on leader change (only once per swap,
-  // ignores the first-crown case when _lastLeaderId was null).
+  // Phase 44/45 — narrator taunt + crown-shift chime on leader change.
   if (leaderId && _lastLeaderId && leaderId !== _lastLeaderId) {
     const newLeader = rows.find(p => p.id === leaderId);
     if (newLeader && newLeader.name) {
       Narrator.custom(fillTaunt(pickTaunt(TAUNTS.newLeader), { name: newLeader.name }));
     }
+    Sound.play('crownShift');
   }
   _lastLeaderId = leaderId;
 
@@ -157,6 +157,7 @@ function updateScoreboard(state, conn, aliveCount) {
   for (const p of rows) {
     if (_teeterSince[p.id] && !p.teetering && p.alive) {
       delete _teeterSince[p.id];
+      Sound.play('teeterSave');
       if (Math.random() < 0.5 && p.name) {
         Narrator.custom(fillTaunt(pickTaunt(TAUNTS.teeterRecover), { name: p.name }));
       }
@@ -406,7 +407,8 @@ HostHarness.on({
   },
 
   ground_pound: (msg) => {
-    Sound.play('meteorImpact');
+    // Phase 45 — dedicated slam SFX (was sharing meteorImpact).
+    Sound.play('groundPoundSlam');
     if (typeof FX !== 'undefined') { FX.screenFlash('#B070FF', 0.2); FX.textPopup(640, 320, 'GROUND POUND!', '#B070FF'); }
     if (msg.playerId) Render2D.triggerGroundPound(msg.playerId);
     showMsg(pname(msg.playerId) + ' GROUND POUND!', 1200);

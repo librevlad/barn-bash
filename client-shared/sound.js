@@ -173,19 +173,77 @@ const Sound = (() => {
       setTimeout(() => tone(120, 0.2, 'sine', 0.12), 100);
     },
 
-    // King of the Hill
-    dash() {
+    // King of the Hill — Phase 45: richer dash whoosh. opts.power
+    // ∈ [0, 1] raises peak frequency + gain so charged dashes sound
+    // heftier than quick flicks. Undefined opts → mid-strength feel.
+    dash(opts) {
+      ensure();
+      const t = ctx.currentTime;
+      const p = (opts && typeof opts.power === 'number') ? Math.max(0, Math.min(1, opts.power)) : 0.6;
+      const peak = 480 + p * 380;     // 480..860 Hz
+      const gainPk = 0.18 + p * 0.14; // 0.18..0.32
+
+      // Whoosh sweep (triangle rising then falling).
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(260, t);
+      osc.frequency.exponentialRampToValueAtTime(peak, t + 0.05);
+      osc.frequency.exponentialRampToValueAtTime(180, t + 0.18);
+      gain.gain.setValueAtTime(gainPk, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.22);
+
+      // Noise tail — sell the "air rush".
+      noise(0.14, 0.1 + p * 0.08, 1800);
+    },
+
+    // Phase 45 — dedicated ground-pound slam separate from meteor
+    // impact. Deep thud + debris rattle + bright spark flash so it
+    // lands as the beefiest in-game event.
+    groundPoundSlam() {
+      ensure();
+      const t = ctx.currentTime;
+      // Bass thud
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(80, t);
+      osc.frequency.exponentialRampToValueAtTime(42, t + 0.22);
+      gain.gain.setValueAtTime(0.38, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.35);
+      // Debris rattle
+      noise(0.22, 0.2, 900);
+      // Spark ting
+      tone(1600, 0.08, 'square', 0.08);
+    },
+
+    // Phase 45 — short cheering bell when the crown shifts to a new
+    // leader. Rising perfect-5th chime with a soft tail.
+    crownShift() {
+      ensure();
+      const t = ctx.currentTime;
+      tone(660, 0.14, 'sine', 0.12);
+      setTimeout(() => tone(990, 0.18, 'sine', 0.14), 80);
+    },
+
+    // Phase 45 — relieved breath on teeter recovery. Soft downward
+    // triangle swell, very quiet.
+    teeterSave() {
       ensure();
       const t = ctx.currentTime;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(300, t);
-      osc.frequency.exponentialRampToValueAtTime(600, t + 0.08);
-      gain.gain.setValueAtTime(0.2, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.frequency.setValueAtTime(720, t);
+      osc.frequency.exponentialRampToValueAtTime(400, t + 0.25);
+      gain.gain.setValueAtTime(0.09, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
       osc.connect(gain).connect(ctx.destination);
-      osc.start(t); osc.stop(t + 0.12);
+      osc.start(t); osc.stop(t + 0.28);
     },
     bump(opts) {
       // Phase 43 — pitch scales with combo streak. opts.pitch ∈ [1, 2]

@@ -257,7 +257,7 @@ function updateJoystickMode() {
         if (!ws || ws.readyState !== 1) return;
         ws.send(JSON.stringify({ type: 'input', action: 'dash', power: power }));
         if (gameplayReady) Gameplay.onLocalAction('DASH!');
-        Sound.play('dash');
+        Sound.play('dash', { power: power });
       },
     });
     hillDashBtn.install();
