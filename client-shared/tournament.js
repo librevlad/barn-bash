@@ -248,6 +248,63 @@ const Tournament = (() => {
         margin-bottom: 16px;
       }
 
+      /* Phase 20b — painted attraction-announce poster behind the
+         round-intro text stack. Size tuned so the central cream panel
+         aligns with ROUND X + game-name; TOURNAMENT and GET READY sit
+         ABOVE and BELOW the painted bounds via absolute positioning
+         (scoped to mode-round-intro so standings + champion keep the
+         flex-flow layout). */
+      #t-content .t-round-intro-backdrop {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        max-height: 380px; max-width: 420px;
+        width: auto; height: auto;
+        opacity: 0.95;
+        z-index: 0;
+        pointer-events: none;
+      }
+      #t-content.mode-round-intro .t-bar,
+      #t-content.mode-round-intro .t-round-intro-number,
+      #t-content.mode-round-intro .t-round-intro-game,
+      #t-content.mode-round-intro .t-round-intro-ready {
+        position: relative;
+        z-index: 1;
+      }
+      /* Phase 20b — move TOURNAMENT above the poster and GET READY
+         below via absolute anchors. Values tuned to sit just outside
+         the 380px poster extent so they land on the dark overlay scrim,
+         not on the painted top/bottom ribbons. */
+      #t-content.mode-round-intro .t-bar {
+        position: absolute;
+        top: calc(50% - 230px);
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+      }
+      #t-content.mode-round-intro .t-round-intro-ready {
+        position: absolute;
+        top: calc(50% + 210px);
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+      }
+      /* Phase 20b — game name flips to dark-on-cream per Phase 12a
+         precedent (painted cream panel demands dark text). ROUND X
+         keeps its gold-on-red letterpress (legible on cream via the
+         existing shadow). */
+      #t-content.mode-round-intro .t-round-intro-game {
+        color: var(--text-on-gold, #3d2817);
+        text-shadow: 0 1px 0 rgba(255, 221, 107, 0.35);
+      }
+      /* GET READY stays gold but on the dark overlay scrim now, with
+         slight boost to letterspacing + shadow for the dramatic beat. */
+      #t-content.mode-round-intro .t-round-intro-ready {
+        color: var(--accent-gold-hot, #ffdd6b);
+        text-shadow: 0 2px 0 var(--accent-red-deep, #6b1818),
+                     0 0 18px rgba(244, 197, 66, 0.35);
+      }
+
       /* Round intro dramatic */
       #t-content .t-round-intro-number {
         font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
@@ -354,7 +411,7 @@ const Tournament = (() => {
     // Phase 12a CSS (column-stack slot-strip layout) scopes to
     // .mode-standings; champion view keeps its horizontal card layout.
     content.classList.add('mode-standings');
-    content.classList.remove('mode-champion');
+    content.classList.remove('mode-champion', 'mode-round-intro');
     const maxPts = Math.max(...Object.values(data.scores), 0);
     const players = window._lastPlayers || {};
     const sorted = Object.entries(data.scores).sort(function(a, b) { return b[1] - a[1]; });
@@ -468,7 +525,7 @@ const Tournament = (() => {
     // .mode-standings; switch modes so champion keeps its horizontal
     // card layout + the Phase 9a throne backdrop integration.
     content.classList.add('mode-champion');
-    content.classList.remove('mode-standings');
+    content.classList.remove('mode-standings', 'mode-round-intro');
     var players = window._lastPlayers || {};
     var sorted = Object.entries(data.scores).sort(function(a, b) { return b[1] - a[1]; });
 
@@ -556,17 +613,42 @@ const Tournament = (() => {
     var content = document.getElementById('t-content');
     var gameName = GAME_NAMES[data.gameId] || data.gameId;
 
+    // Phase 20b — scope painted attraction-poster CSS via mode class.
+    // Mirrors the Phase 12a mode-standings / mode-champion pattern so
+    // each tournament mode's backdrop CSS is self-contained.
+    content.classList.add('mode-round-intro');
+    content.classList.remove('mode-standings', 'mode-champion');
+
     // Narrator commentary
     if (typeof Narrator !== 'undefined' && Narrator.tournamentRoundIntro) {
       Narrator.tournamentRoundIntro(data.round || 1, data.totalRounds || 3, gameName);
     }
 
-    var html = '<div class="t-bar" style="opacity:0;animation:tFadeSlideUp 0.4s ease-out forwards;">TOURNAMENT</div>';
+    // Phase 20b — painted attraction-announce poster prepended inside
+    // content.innerHTML so mode switches (renderStandings /
+    // renderChampion) automatically drop this backdrop. Mirrors Phase
+    // 9a tournament-champion + Phase 12a standings-scroll patterns.
+    // Raw img src is the on-disk PNG (may have a baked white/checker
+    // background); SpriteLoader.loadPainterly async-strips it and
+    // swaps src to the processed data URL once ready.
+    var html = '<img class="t-round-intro-backdrop" src="/assets/tournament-round-intro.png" onerror="this.remove()">';
+    html += '<div class="t-bar" style="opacity:0;animation:tFadeSlideUp 0.4s ease-out forwards;">TOURNAMENT</div>';
     html += '<div class="t-round-intro-number">ROUND ' + (data.round || '?') + '</div>';
     html += '<div class="t-round-intro-game">' + gameName + '</div>';
     html += '<div class="t-round-intro-ready">GET READY</div>';
 
     content.innerHTML = html;
+    if (typeof SpriteLoader !== 'undefined') {
+      var applyProcessedIntro = function () {
+        var sprite = SpriteLoader.get('tournament-round-intro');
+        var img = content.querySelector('.t-round-intro-backdrop');
+        if (sprite && img) img.src = sprite.toDataURL('image/png');
+      };
+      var cached = SpriteLoader.get('tournament-round-intro');
+      if (cached) applyProcessedIntro();
+      else SpriteLoader.loadPainterly('tournament-round-intro',
+        '/assets/tournament-round-intro.png').then(applyProcessedIntro).catch(function () {});
+    }
     show();
 
     // Play sound
