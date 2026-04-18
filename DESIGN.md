@@ -2038,14 +2038,28 @@ synchronized across screens.
     prefers-reduced-motion. Spec:
     `docs/superpowers/specs/2026-04-18-parallax-torchlight-design.md`.
 
+25. **Phase 25** (shipped 2026-04-18): sound design extensions
+    — three procedural synthesis additions to existing
+    `client-shared/sound.js` (384 lines WebAudio, 5 themes, ~30
+    SFX). 25a `THEMES.tournament` (90 BPM bass-heavy + gilded
+    arp, startMusic on Tournament.show / stop on hide); 25b
+    `effects.fanfare` (5-note ascending sawtooth trumpet sting,
+    fires 400ms after PostGame.show on hasWinner); 25c
+    `effects.uiClick` + delegated pointerdown listener on all
+    button classes (.ticket-btn, .modal-btn, .sprite-btn,
+    .gp-go-btn, .pg-btn, #btn-start, .back-link, etc.). Zero
+    audio files; all procedural. Spec:
+    `docs/superpowers/specs/2026-04-18-sound-design-design.md`.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
 Phase 23 rectangular + pill + dot UI objects gild themselves
 with carved-brass treatments. After Phase 24 the painted
 backdrops themselves gently drift (camera-float) and flicker
-(torchlight). Remaining Hearthstone-polish arc: Phase 25 sound
-design, Phase 26 animation polish.
+(torchlight). After Phase 25 every button ticks, every winner
+earns a fanfare, every tournament moment is scored with music.
+Remaining Hearthstone-polish arc: Phase 26 animation polish.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
