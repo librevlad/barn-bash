@@ -1657,6 +1657,70 @@ this is internal visual-depth polish, not a new scored dimension.
 Spec:
 `docs/superpowers/specs/2026-04-18-ingame-hud-chrome-design.md`.
 
+Twenty-first realization: host-side painted polish — Phase 20,
+shipped 2026-04-18 across 4 commits. Closes two remaining host-
+side painted gaps so the host surface paints end-to-end:
+
+- **20a — host PostGame `backdropMode`.** `PostGame.show` gains
+  an `opts.backdropMode` parameter distinguishing `'podium'`
+  (Phase 8c race layout — anchored bottom-center, max 440×380)
+  from `'hall'` (Phase 18 gameover-hall cover-fit). Default
+  stays `'podium'` for backward compat. The `<img>` backdrop
+  gets a dual class (`pg-backdrop pg-backdrop-${mode}`) so
+  podium mode keeps its existing CSS and hall mode gets a
+  dedicated cover-fit rule with `object-fit: cover`. The
+  overlay's scrim switches on a `data-backdrop-mode="hall"`
+  attribute: 0.92 for podium (competes with race's bottom-
+  anchored composition otherwise), 0.55 for hall (lets the
+  painted spotlight and curtains read). Hill, meteor, and
+  escape per-game `main.js` pass `backdrop: '/assets/gameover-
+  hall.png', backdropMode: 'hall'`. Race keeps `race-podium.png`
+  at default podium. Host and controller now show the same
+  Phase 18 painted hall atmosphere on game-end — one visual
+  mood across both surfaces.
+- **20b — `tournament-round-intro.png`** (new 1024×1024
+  painted attraction-announce poster — wooden signboard with
+  ornate carved ribbon banners, cream-white inner panel, flanking
+  carnival pennants + striped tent pole, gold-leaf corner
+  flourishes). Reverses the Phase 9 "skip round-intro backdrop"
+  decision now that painted backdrops are firmly established
+  across every adjacent surface. `Tournament.renderRoundIntro`
+  prepends `<img class="t-round-intro-backdrop">` inside
+  `#t-content.innerHTML` (mirrors Phase 9a champion pattern
+  — mode switches automatically drop prior-mode backdrops).
+  A new `mode-round-intro` class scopes the round-intro CSS
+  so standings + champion modes stay self-contained.
+- Layout decision: TOURNAMENT bar + GET READY italic moved to
+  absolute positions ABOVE and BELOW the painted poster (via
+  `calc(50% ± NNNpx)`). The poster's top + bottom painted
+  ribbon banners would have competed with the DOM text if
+  left inside natural flex flow. Text colors scoped per mode:
+  game-name flips to `--text-on-gold` (dark-on-cream on the
+  painted central panel — Phase 12a standings precedent),
+  ROUND X keeps gold-on-red letterpress (legible on cream
+  via existing shadow), GET READY flips to gold-hot with red
+  letterpress on the dark overlay scrim below the poster.
+- **20c — DESIGN.md close** (this block).
+- **20d — WebP sibling** (Phase 17c pipeline).
+  `tournament-round-intro.webp` 135KB (-91% of 1.44MB PNG).
+
+Phase 15b corner ornaments were already extended to both
+tournament + postgame overlays — `HostCommon.addCornerOrnaments`
+is called at overlay-create time on both surfaces. So a
+separate Phase 20 sub-phase for corner ornaments wasn't
+needed — prior work already covered it.
+
+After Phase 20 the host surface paints end-to-end: main lobby
+(`bg.png`), per-game lobbies (Phase 10, 4 backdrops),
+tournament standings (Phase 12a scroll), tournament round-intro
+(**Phase 20b** poster), tournament champion (Phase 9a throne),
+PostGame race (Phase 8c podium), PostGame non-race (**Phase 20a**
+hall reuse), ornaments (Phase 15b bunting + corners). Every
+visible host screen has a painted composition behind its text.
+Audit grade stays at A+ (3.84) — internal visual-depth polish.
+Spec:
+`docs/superpowers/specs/2026-04-18-host-polish-design.md`.
+
 1. **Phase 1** (shipped 2026-04-15): controller onboarding + initial theme tokens.
 2. **Phase 1.5** (shipped 2026-04-15, this pass): shared `theme.css`, host
    lobby migration, all 4 per-game host UIs, shared overlays (narrator,
@@ -1858,6 +1922,28 @@ end-of-game beats. The only un-painted in-game surfaces
 ephemeral, or functional states with rationale in the
 Phase 19 spec.
 
+20. **Phase 20** (shipped 2026-04-18): host-side painted
+    polish — 20a `PostGame.show` gains `backdropMode: 'hall' |
+    'podium'` option; hill/meteor/escape pass Phase 18
+    `gameover-hall.png` + mode 'hall' (scrim drops to 0.55);
+    race keeps `race-podium.png` at default mode 'podium'
+    (scrim stays 0.92). 20b `tournament-round-intro.png`
+    painted attraction-poster renders behind round-intro
+    TOURNAMENT/ROUND X/game-name stack; TOURNAMENT + GET
+    READY absolute-positioned outside the poster bounds so
+    the painted top/bottom ribbons don't compete with DOM
+    text; a new `mode-round-intro` class scopes the layout
+    CSS like Phase 12a `mode-standings` does. 20c DESIGN.md
+    21st realization close. 20d WebP sibling (-91%). Spec:
+    `docs/superpowers/specs/2026-04-18-host-polish-design.md`.
+
+After Phase 20 the host surface paints end-to-end (main lobby
++ per-game lobbies + every tournament mode + every PostGame
+variant + corner ornaments), and both host + controller shared
+PostGame states (non-race winner + gameover) show the same
+Phase 18 painted hall — the product's visual atmosphere is now
+synchronized across screens.
+
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
 first, and this document is updated to reflect the addition.
@@ -1967,3 +2053,7 @@ first, and this document is updated to reflect the addition.
 | 2026-04-18 | Hintbar scrim lightens 0.82 -> 0.45 to let the painted stage read | Original 0.82 solid dark gradient was paired with a transparent flat background; now with a painted theatre stage underneath, 0.82 would bury the proscenium + wooden floor. 0.45 retains the bottom-fade that blends into the safe-area inset, keeps tonal separation from live gameplay behind the overlay, but lets the painted stage dominate the 96px strip's atmosphere |
 | 2026-04-18 | Countdown digit plaque uses a bigger `::before` inset than the score block | The 180px countdown letterform is ~2.8x the 64px score. Using the same inset for both would either crowd the score (too much plaque) or shrink around the countdown (plaque ornaments clipping the letterform). Separate per-surface inset rules pair each letterform size with a proportional plaque frame: score block `-18/-36/-10/-36`, countdown digit `-30/-80/-20/-80` |
 | 2026-04-18 | `.gp-topbar` intentionally stays CSS-only in Phase 19 | Top-bar is a thin 44px strip holding a small eyebrow (game name small-caps) and a phase icon. Painting it would add a busy top band competing with the score plaque rendered just below, and eyebrow text already reads comfortably against the existing subtle gradient. In-game vertical hierarchy benefits from ONE painted anchor per zone — score plaque is that anchor for the top half, hintbar stage for the bottom half |
+| 2026-04-18 | Phase 20 PostGame gets a `backdropMode` option, not per-mode CSS classes on the overlay | The overlay already has a `.pg-backdrop` class shared by the img; adding `.pg-backdrop-podium` / `.pg-backdrop-hall` keeps existing rules intact and lets mode-specific layouts co-exist without touching the existing race flow. The overlay container uses a `[data-backdrop-mode="hall"]` attribute selector for the scrim override so `'podium'` mode stays at 0.92 (race needs the dark bg behind its bottom-anchored podium) and `'hall'` drops to 0.55 (so the full-cover painted atmosphere reads). Default 'podium' preserves the Phase 8c race flow without edits |
+| 2026-04-18 | Phase 20 reverses Phase 9's "skip round-intro backdrop" decision | Phase 9 said the curtain-reveal aesthetic would fight a backdrop. Two phases later, painted backdrops have shipped on every other tournament mode (standings scroll, champion throne) + every gameover mode + every lobby + every in-game HUD surface. Not painting round-intro now reads as an inconsistency, not a deliberate restraint. The attraction-poster format (painted signboard with cream inner panel) specifically frames the reveal rather than fighting it — the curtain parts onto the painted poster, which reads as the NEXT attraction being announced |
+| 2026-04-18 | Round-intro TOURNAMENT + GET READY absolute-positioned above/below the painted poster | Poster has painted top + bottom ribbon banners that would have competed with the DOM text if TOURNAMENT (top of stack) and GET READY (bottom of stack) landed inside the poster bounds via natural flex flow. Absolute anchors `calc(50% - 230px)` / `calc(50% + 210px)` pull those two rows onto the dark overlay scrim OUTSIDE the poster, where they read cleanly. ROUND X + game name stay in-flex, centered over the painted cream panel |
+| 2026-04-18 | Round-intro `mode-round-intro` class scopes layout like Phase 12a `mode-standings` | Tournament overlay renders three modes (standings, round-intro, champion) on the same `#t-content` element. Each mode needs its own layout rules without bleeding into the others. The mode class precedent (Phase 12a for standings) keeps every mode's CSS a self-contained scope. `renderRoundIntro` adds `mode-round-intro` + clears the two others; `renderStandings` + `renderChampion` clear `mode-round-intro` on their own add-class calls. Three modes, three self-contained blocks, no cross-contamination |
