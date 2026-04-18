@@ -2079,6 +2079,22 @@ synchronized across screens.
     typescript ^5.5, @types/node ^20.11. Spec:
     `docs/superpowers/specs/2026-04-18-dx-tier-1-design.md`.
 
+28. **Phase 28** (shipped 2026-04-18): shared WebSocket
+    protocol schema — first phase of the Rune-grade foundation
+    arc (Phases 28-34). Eliminates raw-JSON WS fragility.
+    `client-shared/protocol.js` UMD module exports enum types,
+    type-guard predicates, constructor helpers, generic
+    `validate()` gate, and `send(ws, msg)` helper with
+    readyState guard. Server `wss.on('connection')` validates
+    inbound messages BEFORE dispatch; malformed / unknown
+    messages logged (under DEBUG_PROTOCOL=1) and dropped. 10+
+    client WS call sites migrated to `Protocol.send(ws,
+    Protocol.makeX())` across main host + 4 per-game hosts +
+    controller join flow. 17 unit tests in
+    `protocol.test.js`; `npm test` runs 23 tests total (6
+    players + 17 protocol). Zero runtime deps added. Spec:
+    `docs/superpowers/specs/2026-04-18-protocol-schema-design.md`.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
@@ -2097,10 +2113,16 @@ motion, audio layer, and micro-interactions.
 
 **Phase 27 opened the DX tooling track.** TypeScript catches
 bugs at edit time (via JSDoc + ambient globals.d.ts); Vite
-gives HMR + proxy for fast dev iteration. Future DX Tier 2
-would be GSAP for complex animation sequencing + `noImplicitAny`
-ratcheting; Tier 3 would be full ES-module + `.ts` migration if
-the bundler value compounds.
+gives HMR + proxy for fast dev iteration.
+
+**Phase 28 opened the Rune-grade foundation arc (Phases
+28-34).** A shared WebSocket protocol schema gives server +
+client a single source of truth for message shapes. Malformed
+messages rejected at the WS boundary. Remaining arc:
+Phase 29 pure reducer game logic, Phase 30 test suite + CI
+gate, Phase 31 production build pipeline, Phase 32 ES modules
+migration, Phase 33 telemetry + error tracking, Phase 34
+shared per-game host harness.
 
 Each phase opens its own spec and consumes (and optionally extends) this
 DESIGN.md. When a phase adds a new token, it goes into `client-shared/theme.css`
