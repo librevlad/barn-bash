@@ -466,6 +466,66 @@
   /* Phase 22b — freeze flourish fade-in */
   .hero-flourish::before,
   .hero-flourish::after { animation: none; opacity: 1; }
+  /* Phase 24 — freeze backdrop drift + torchlight flicker */
+  .lobby-backdrop,
+  #t-hall-backdrop,
+  #postgame-overlay .pg-backdrop-hall,
+  .gameplay-root .gp-gameover-backdrop,
+  .gameplay-root .gp-elim-backdrop,
+  #t-content .t-scroll-backdrop,
+  #t-content .t-backdrop,
+  #t-content .t-round-intro-backdrop,
+  #postgame-overlay .pg-backdrop-podium,
+  .gameplay-root .gp-spec-backdrop { animation: none; }
+}
+
+/* ============================================================
+   Phase 24 — Parallax drift + torchlight flicker on painted
+   backdrops. Two keyframes; the drift applies only to cover-fit
+   backdrops (centered backdrops exclude drift to avoid clashing
+   with their static translate(-50%,-50%) anchor, but accept
+   flicker since filter stays orthogonal to transform).
+   ============================================================ */
+@keyframes backdropDrift {
+  0%   { transform: translate(-0.3%, -0.2%) scale(1.002); }
+  33%  { transform: translate( 0.3%, -0.15%) scale(0.998); }
+  66%  { transform: translate(-0.15%, 0.3%) scale(1.001); }
+  100% { transform: translate(-0.3%, -0.2%) scale(1.002); }
+}
+@keyframes torchFlicker {
+  0%, 100% { filter: brightness(1)    hue-rotate(0deg); }
+  25%      { filter: brightness(1.03) hue-rotate(-1.5deg); }
+  50%      { filter: brightness(0.97) hue-rotate(2deg); }
+  75%      { filter: brightness(1.02) hue-rotate(-2deg); }
+}
+
+/* Cover-fit backdrops: drift + flicker compound. Stagger delays so
+   no two surfaces sync their breath. */
+.lobby-backdrop,
+#t-hall-backdrop,
+#postgame-overlay .pg-backdrop-hall,
+.gameplay-root .gp-gameover-backdrop,
+.gameplay-root .gp-elim-backdrop {
+  animation: backdropDrift 14s ease-in-out infinite,
+             torchFlicker 42s ease-in-out infinite;
+  will-change: transform, filter;
+}
+.lobby-backdrop                               { animation-delay: 0s,    0s; }
+#t-hall-backdrop                              { animation-delay: 2s,   10s; }
+#postgame-overlay .pg-backdrop-hall           { animation-delay: 4s,   20s; }
+.gameplay-root .gp-gameover-backdrop          { animation-delay: 6s,   30s; }
+.gameplay-root .gp-elim-backdrop              { animation-delay: 8s,    5s; }
+
+/* Centered backdrops: flicker only (drift would clash with their
+   translate(-50%,-50%) anchor). */
+#t-content .t-scroll-backdrop,
+#t-content .t-backdrop,
+#t-content .t-round-intro-backdrop,
+#postgame-overlay .pg-backdrop-podium,
+.gameplay-root .gp-spec-backdrop {
+  animation: torchFlicker 42s ease-in-out infinite;
+  animation-delay: 14s;
+  will-change: filter;
 }
 
 /* ============================================================
