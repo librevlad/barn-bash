@@ -37,6 +37,13 @@ function App() {
   const [tweaksOpen, setTweaksOpen] = useState$(false);
   const [editAvailable, setEditAvailable] = useState$(false);
 
+  // --- Multiplayer sidecar: connects as host, surfaces phone players,
+  //     broadcasts screen transitions so the controller UI knows what
+  //     contract to render. Input fan-out lives on mp.onInput(cb).
+  const mp = (window.__BarnBashMP && window.__BarnBashMP.useMultiplayer)
+    ? window.__BarnBashMP.useMultiplayer()
+    : { connected: false, remotePlayers: [], broadcastScreen: ()=>{}, broadcastMinigameStart: ()=>{}, broadcastMinigameEnd: ()=>{}, onInput: ()=>()=>{}, send: ()=>{} };
+
   useEffect$(() => {
     localStorage.setItem('barnyard-tweaks', JSON.stringify(tweaks));
   }, [tweaks]);
@@ -49,6 +56,10 @@ function App() {
     return inGame ? 'title' : s;
   });
   useEffect$(() => { localStorage.setItem('barnyard-screen', screen); }, [screen]);
+
+  // Broadcast screen transitions to connected phone controllers so
+  // they can switch between lobby view and per-minigame input view.
+  useEffect$(() => { mp.broadcastScreen(screen); }, [screen, mp.broadcastScreen]);
 
   const [gameState, setGameState] = useState$(() => ({
     round: 1,
@@ -178,11 +189,16 @@ function App() {
       <div className="stage-wrap">
         <div className="stage" ref={stageRef} data-screen-label={labelFor(screen)}>
           {screen === 'title' && (
-            <TitleScreen
-              onPlay={startGame}
-              onCustomize={()=>{ startGame(); }}
-              onSettings={()=>setTweaksOpen(true)}
-            />
+            <>
+              <TitleScreen
+                onPlay={startGame}
+                onCustomize={()=>{ startGame(); }}
+                onSettings={()=>setTweaksOpen(true)}
+              />
+              {window.__BarnBashMP && window.__BarnBashMP.MultiplayerHUD && (
+                <window.__BarnBashMP.MultiplayerHUD mp={mp} corner="top-left" />
+              )}
+            </>
           )}
           {screen === 'select' && (
             <CharacterSelect

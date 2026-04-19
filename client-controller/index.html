@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#1a0e08" />
+<title>Barn Bash — Controller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2a1a10;
+    --cream: #fff3d6;
+    --cream-2: #ffe6a9;
+    --wood: #b8763d;
+    --wood-dk: #7a4920;
+    --red: #e04b3b;
+    --yellow: #ffc93c;
+    --blue: #4aa3e0;
+    --green: #6cc24a;
+    --orange: #f08a3a;
+    --pink: #f28bbd;
+    --purple: #a36bd1;
+  }
+  html,body { margin:0; padding:0; height:100%;
+    background:
+      radial-gradient(circle at 30% 10%, #ffd26b 0%, transparent 40%),
+      radial-gradient(circle at 70% 90%, #e04b3b 0%, transparent 50%),
+      linear-gradient(180deg, #ffc93c 0%, #f08a3a 60%, #a8291a 100%);
+    font-family:'Fredoka',system-ui,sans-serif; color:var(--ink); overflow:hidden;
+    user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  #root { position:fixed; inset:0; padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom)); box-sizing:border-box; display:flex; flex-direction:column; }
+
+  .title { font-family:'Luckiest Guy',cursive; letter-spacing:1.5px; color:#fff;
+    -webkit-text-stroke:1.5px var(--ink); text-shadow:0 3px 0 rgba(0,0,0,.25);
+    font-size:36px; text-align:center; margin:8px 0 4px; }
+  .subtitle { text-align:center; font-weight:600; color:var(--ink); opacity:.8; margin-bottom:16px; font-size:14px; letter-spacing:.5px; text-transform:uppercase; }
+
+  .card { background:#fff; border:4px solid var(--ink); border-radius:20px; box-shadow:0 8px 0 var(--ink); padding:20px 18px; margin:10px 4px; }
+
+  .field { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .field label { font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:var(--wood-dk); }
+  .field input { font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; padding:12px 14px; border:3px solid var(--ink); border-radius:14px; background:#fff6e0; color:var(--ink); outline:none; }
+  .field input:focus { background:#fff; box-shadow:0 0 0 3px rgba(255,201,60,.45); }
+
+  .critter-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .critter { aspect-ratio:1; border:3px solid var(--ink); border-radius:14px; background:#fff6e0; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy',cursive; font-size:12px; color:var(--ink); padding:4px; text-align:center; line-height:1.1; }
+  .critter.on { background:var(--yellow); box-shadow:0 3px 0 var(--ink); transform:translateY(-2px); }
+  .critter.taken { opacity:.3; pointer-events:none; }
+
+  .btn { font-family:'Luckiest Guy',cursive; letter-spacing:1.5px; color:#fff;
+    -webkit-text-stroke:1.5px var(--ink); text-shadow:0 3px 0 rgba(0,0,0,.25);
+    background:var(--yellow); border:4px solid var(--ink); border-radius:18px;
+    padding:14px 24px; box-shadow:0 8px 0 var(--ink); cursor:pointer; font-size:24px;
+    width:100%; }
+  .btn:active { transform:translateY(5px); box-shadow:0 3px 0 var(--ink); }
+  .btn.green { background:var(--green); }
+  .btn.red { background:var(--red); }
+  .btn.blue { background:var(--blue); }
+  .btn[disabled] { filter:grayscale(.6) brightness(.8); cursor:not-allowed; }
+
+  .statusbar { position:fixed; top:8px; right:12px; font-size:11px; font-weight:700; letter-spacing:.5px; color:var(--ink); opacity:.7; display:flex; align-items:center; gap:6px; }
+  .statusbar .dot { width:8px; height:8px; border-radius:50%; background:var(--red); box-shadow:0 0 6px currentColor; }
+  .statusbar.connected .dot { background:var(--green); }
+
+  .tap-pad { flex:1; border:5px solid var(--ink); border-radius:24px;
+    background:radial-gradient(circle at 50% 40%, #ffd88c, #ffb13a 60%, #d47714);
+    box-shadow:inset 0 6px 0 rgba(255,255,255,.4), inset 0 -6px 0 rgba(0,0,0,.15), 0 10px 0 var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Luckiest Guy',cursive; font-size:64px; color:#fff;
+    -webkit-text-stroke:3px var(--ink); text-shadow:0 6px 0 var(--ink);
+    cursor:pointer; user-select:none; transition:transform .05s ease, box-shadow .05s ease;
+    margin-top:12px;
+  }
+  .tap-pad:active, .tap-pad.hit { transform:translateY(6px); box-shadow:inset 0 6px 0 rgba(255,255,255,.4), 0 4px 0 var(--ink); }
+
+  .screen-hint { text-align:center; font-weight:600; margin:6px 0 0; font-size:15px; }
+  .player-strip { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .player-strip .pill { background:#fff; border:3px solid var(--ink); border-radius:999px; padding:6px 12px; font-weight:700; font-size:13px; box-shadow:0 3px 0 var(--ink); }
+  .center { text-align:center; }
+  @keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+  .pulse { animation:bounce 1.1s ease-in-out infinite; }
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="statusbar" class="statusbar"><span class="dot"></span><span id="status-text">connecting…</span></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="controller.jsx"></script>
+</body>
+</html>
