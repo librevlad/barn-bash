@@ -698,18 +698,24 @@
 #lobby-players {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 10px;
   justify-content: center;
-  max-width: 720px;
+  /* Phase 58 — max-width tightened to fit inside the ~500px
+     interior of the painted proscenium arch backdrop. Prevents
+     5+ slot rows from spilling onto the painted posts/vines. */
+  max-width: 480px;
   font-family: var(--font-accent);
-  font-size: 17px;
+  font-size: 16px;
   color: var(--text-cream);
 }
 .player-slot {
   position: relative;
-  width: 122px; height: 154px;
-  border-radius: 14px;
-  padding: 10px 10px 12px;
+  /* Phase 58 — compact slot dimensions (was 122×154). Four
+     slots at 94+gap10 = 406 fit comfortably inside arch interior;
+     up to 8 slots wrap to 2 rows. */
+  width: 94px; height: 124px;
+  border-radius: 12px;
+  padding: 8px 8px 10px;
   display: flex; flex-direction: column;
   align-items: center; justify-content: flex-start;
   background:
@@ -740,7 +746,8 @@
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 .player-slot .slot-avatar {
-  width: 78px; height: 78px;
+  /* Phase 58 — avatar scaled with slot (was 78×78). */
+  width: 62px; height: 62px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.12), rgba(0,0,0,0.3));
   box-shadow:
@@ -750,9 +757,9 @@
     0 0 0 3px var(--slot-rim, rgba(216, 152, 45, 0.85));
   overflow: hidden;
   display: flex; align-items: center; justify-content: center;
-  font-size: 34px;
+  font-size: 28px;
   color: rgba(255, 240, 210, 0.35);
-  margin: 2px 0 8px;
+  margin: 2px 0 6px;
 }
 /* Phase 57c — empty-slot avatar flips from CG plastic sphere to
    a painted brass medallion: warm red-velvet interior, two-layer
@@ -771,8 +778,9 @@
     0 0 0 2px rgba(20, 10, 5, 0.9),
     0 0 0 4px var(--slot-rim, rgba(140, 100, 50, 0.65)),
     0 0 14px rgba(255, 200, 120, 0.18);
-  color: rgba(255, 225, 170, 0.5);
-  font-size: 28px;
+  /* Phase 58 — brighter "?" so empty state reads clearly */
+  color: rgba(255, 230, 180, 0.78);
+  font-size: 22px;
   letter-spacing: 0;
 }
 .player-slot.empty .slot-name {
@@ -984,4 +992,89 @@ body > #bg {
    and the canvas re-appears naturally. */
 body:has(#lobby:not(.hidden)) > canvas {
   display: none;
+}
+
+/* ============================================================
+   Phase 58b — per-game painted hero backdrop. When #bg carries
+   a `.hero-<game>` class, the painted hero PNG takes over the
+   full viewport and the Phase 57a CSS-theatrical composition is
+   bypassed. The hero already includes the gold filigree frame,
+   bunting, proscenium arch, velvet curtains, stage steps, and
+   orb slot placeholders — so the separate overlay elements
+   (#lobby::before bunting, .ornament-corner filigree, and
+   #lobby .lobby-backdrop arch) are hidden to avoid doubling
+   the painted chrome. Per-game lobbies without a hero keep
+   the Phase 57a CSS composition.
+   ============================================================ */
+body > #bg.hero-escape {
+  background-image: url('/assets/lobby-escape-hero.png');
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg-wood-deep);
+  filter: none;
+}
+body:has(> #bg.hero-escape) #lobby::before,
+body:has(> #bg.hero-escape) .ornament-corner,
+body:has(> #bg.hero-escape) #lobby .lobby-backdrop {
+  display: none;
+}
+
+/* Phase 58b — HTML overlay anchors for escape hero. Painted
+   hero already carries the title sign, the cream canvas banner
+   template, 4 gold orbs, and the stage. HTML layer hides its
+   own redundant title and pins #lobby-info / #lobby-players /
+   #lobby-hint to the painted anchors (banner ~40%, orbs ~58%,
+   stage apron ~85% vertically). Empty slot avatar hidden —
+   painted orb carries the "?" symbol. Filled slot (brass card
+   + avatar) overlays the painted orb when a player joins. */
+body:has(> #bg.hero-escape) #lobby {
+  justify-content: flex-start;
+  padding: 0;
+}
+body:has(> #bg.hero-escape) #lobby h1,
+body:has(> #bg.hero-escape) #lobby h2,
+body:has(> #bg.hero-escape) #lobby .hud-title {
+  display: none;
+}
+body:has(> #bg.hero-escape) #lobby-info {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(50, 22, 10, 0.82);
+  text-shadow: none;
+  font-size: 15px;
+  font-style: italic;
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+body:has(> #bg.hero-escape) #lobby-players {
+  position: absolute;
+  /* Painted orb centers are at y≈58% of the hero image. Card's
+     avatar center sits ~35% from card top; for avatar to land on
+     orb center we anchor the card top near orb top (orb radius
+     ≈ 4.5% of viewport → orb top ≈ 53.5%). */
+  top: 52%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  max-width: 440px;
+  gap: 10px;
+  margin: 0;
+  flex-wrap: nowrap;
+}
+body:has(> #bg.hero-escape) #lobby-hint {
+  position: absolute;
+  top: 88%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 230, 180, 0.88);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.6);
+  margin: 0;
+}
+/* Hero hides empty slot medallion — painted gold orb in the
+   hero fills that role with the "?" already painted in. Filled
+   slot shows normally (brass card + avatar) on top of the
+   painted orb. */
+body:has(> #bg.hero-escape) .player-slot.empty {
+  visibility: hidden;
 }
