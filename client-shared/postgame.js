@@ -84,6 +84,37 @@ const PostGame = (() => {
         font-size: 72px; margin-bottom: 8px;
         animation: pgBounce 0.6s ease-out;
       }
+      /* Phase 54 — painted animal portrait replaces the emoji icon
+         when we have a winner character. Circular brass frame, the
+         winner's color on the rim, entry overshoot. onerror on the
+         inner <img> swaps to a text-node emoji — font-size keeps
+         that fallback big enough to read inside the 132px disc. */
+      #postgame-overlay .pg-winner-portrait {
+        width: 132px; height: 132px;
+        border-radius: 50%;
+        margin-bottom: 10px;
+        background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.14), rgba(0,0,0,0.35));
+        box-shadow:
+          inset 0 3px 0 rgba(255, 250, 220, 0.28),
+          inset 0 -3px 6px rgba(0, 0, 0, 0.45),
+          0 0 0 3px rgba(20, 10, 5, 0.85),
+          0 0 0 6px var(--winner-rim, var(--accent-gold, #f4c542)),
+          0 10px 32px rgba(0, 0, 0, 0.55),
+          0 0 60px var(--winner-glow, rgba(244, 197, 66, 0.55));
+        overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 72px; line-height: 1;
+        animation: pgPortraitPop 0.7s var(--ease-bounce, cubic-bezier(0.34, 1.56, 0.64, 1));
+      }
+      #postgame-overlay .pg-winner-portrait img {
+        width: 100%; height: 100%; object-fit: cover;
+        border-radius: 0;
+      }
+      @keyframes pgPortraitPop {
+        0%   { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+        70%  { transform: scale(1.1) rotate(6deg); opacity: 1; }
+        100% { transform: scale(1) rotate(0); opacity: 1; }
+      }
       #postgame-overlay .pg-winner-name {
         font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
         font-size: 40px; font-weight: 400;
@@ -321,6 +352,18 @@ const PostGame = (() => {
 
     const hasWinner = opts.winnerId && opts.winnerName;
     const icon = hasWinner ? (charIcons[opts.winnerCharacter] || '🏆') : (opts.loseIcon || '💀');
+    // Phase 54 — when we know the winner's character and HostCommon
+    // is loaded, render the painted animal portrait. renderCharGlyph
+    // picks the processed (checker-stripped) data URL when the
+    // painterly pipeline has finished, falls back to the raw PNG
+    // otherwise, and carries its own text-node emoji fallback
+    // through onerror. When unavailable, we keep the original
+    // emoji .pg-winner-icon branch.
+    const winnerAvatarHTML = (hasWinner && opts.winnerCharacter
+      && typeof HostCommon !== 'undefined'
+      && typeof HostCommon.renderCharGlyph === 'function')
+      ? HostCommon.renderCharGlyph(opts.winnerCharacter, 'pg-winner-char')
+      : null;
     const autoSeconds = opts.autoLobbySeconds || 15;
     let remaining = autoSeconds;
 
@@ -378,8 +421,15 @@ const PostGame = (() => {
     const backdropHTML = opts.backdrop
       ? `<img class="pg-backdrop pg-backdrop-${backdropMode}" src="${opts.backdrop}" onerror="this.remove()">`
       : '';
+    // Phase 54 — prefer painted portrait over emoji icon when we
+    // have a winner with a known character. Rim picks up the
+    // winner's color; the glow layer shares the color but falls
+    // back to the CSS default when no winnerColor was supplied.
+    const winnerVisualHTML = winnerAvatarHTML
+      ? `<div class="pg-winner-portrait" style="${opts.winnerColor ? '--winner-rim:' + opts.winnerColor + ';--winner-glow:' + opts.winnerColor : ''}">${winnerAvatarHTML}</div>`
+      : `<div class="pg-winner-icon" style="${hasWinner ? 'filter:drop-shadow(0 0 20px ' + opts.winnerColor + ')' : ''}">${icon}</div>`;
     overlay.innerHTML = backdropHTML + `
-      <div class="pg-winner-icon" style="${hasWinner ? 'filter:drop-shadow(0 0 20px ' + opts.winnerColor + ')' : ''}">${icon}</div>
+      ${winnerVisualHTML}
       ${hasWinner ? `
         <div class="pg-winner-name hero-flourish" style="color:${opts.winnerColor};text-shadow:0 2px 0 var(--accent-red-deep,#6b1818), 0 0 25px ${opts.winnerColor}">${opts.winnerName}</div>
         <div class="pg-winner-label">${opts.winLabel || 'WINS!'}</div>
