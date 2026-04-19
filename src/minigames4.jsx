@@ -447,7 +447,7 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
           }}>
             <Avatar char={p.char} size={28}/>
             <span style={{fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)'}}>
-              {p.char.name.toUpperCase()}: {scores[i]}
+              {playerLabel(p)}: {scores[i]}
             </span>
           </div>
         ))}

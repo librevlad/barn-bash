@@ -87,6 +87,10 @@ const wss = new WebSocketServer({ server });
 let host = null;                     // single WebSocket for the host
 const controllers = new Map();       // playerId (number) → { ws, name, character, color, clientId? }
 let nextPlayerId = 1;
+// Last screen + active minigame broadcast from host — replayed to new
+// controllers on connect so late-joining phones land on the right UI.
+let lastScreen = null;
+let lastMinigame = null;
 
 function safeSend(ws, obj) {
   if (!ws || ws.readyState !== 1) return;
@@ -116,6 +120,9 @@ wss.on('connection', (ws, req) => {
       let msg; try { msg = JSON.parse(raw.toString()); } catch (_) { return; }
       // Host broadcasts state / targeted messages to controllers.
       if (msg.type === 'state' || msg.type === 'screen' || msg.type === 'minigameStart' || msg.type === 'minigameEnd' || msg.type === 'roundEnd' || msg.type === 'scoreUpdate') {
+        if (msg.type === 'screen') lastScreen = msg;
+        if (msg.type === 'minigameStart') lastMinigame = msg;
+        if (msg.type === 'minigameEnd') lastMinigame = null;
         broadcastToControllers(msg);
       } else if (msg.type === 'toPlayer' && msg.playerId != null) {
         const c = controllers.get(msg.playerId);
@@ -136,6 +143,10 @@ wss.on('connection', (ws, req) => {
   // Tell host a player is in the room (even before name/char are picked).
   safeSend(host, { type: 'playerJoin', id: playerId });
   broadcastToControllers({ type: 'playerList', players: snapshotPlayers() });
+  // Replay current screen / active minigame so the phone doesn't linger on
+  // the default 'title' hint while the host is mid-game.
+  if (lastScreen) safeSend(ws, lastScreen);
+  if (lastMinigame) safeSend(ws, lastMinigame);
 
   ws.on('message', (raw) => {
     let msg; try { msg = JSON.parse(raw.toString()); } catch (_) { return; }

@@ -18,6 +18,18 @@ const CRITTERS = [
   { id: 'frog',    name: 'Ribbit',    color: '#6cc24a' },
 ];
 
+// Must mirror MINIGAMES in src/screens.jsx so phone vote tiles line up.
+const BOARD_TILES = [
+  { id:'tap',    name:'Pig Sprint',      icon:'🏁', tint:'#ffc93c' },
+  { id:'hay',    name:'Hay Panic',       icon:'🌾', tint:'#8acb4a' },
+  { id:'egg',    name:'Egg Pass',        icon:'🥚', tint:'#fff5e4' },
+  { id:'aim',    name:'Apple Aim',       icon:'🎯', tint:'#e04b3b' },
+  { id:'mud',    name:'Mud Dash',        icon:'💧', tint:'#4aa3e0' },
+  { id:'gopher', name:'Whack-a-Gopher',  icon:'🔨', tint:'#a36bd1' },
+  { id:'tug',    name:'Tug-o-War',       icon:'🪢', tint:'#c18040' },
+  { id:'fish',   name:'Fishing Frenzy',  icon:'🎣', tint:'#4aa3e0' },
+];
+
 const CLIENT_ID_KEY = 'barn-bash-controller-clientId';
 function getOrMakeClientId() {
   try {
@@ -43,33 +55,62 @@ function App() {
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [joined, setJoined] = useState(false);
+  const [joined, setJoined] = useState(() => localStorage.getItem('barn-bash-joined') === '1');
   const [name, setName] = useState(() => localStorage.getItem('barn-bash-name') || '');
   const [critter, setCritter] = useState(() => localStorage.getItem('barn-bash-critter') || '');
-  // Host drives which screen is active. Defaults so a fresh phone that
-  // connects before the host broadcasts anything still sees a sane state.
   const [hostScreen, setHostScreen] = useState('title');
-  const [minigame, setMinigame] = useState(null); // { id, prompt, contract }
+  const [minigame, setMinigame] = useState(null);
   const wsRef = useRef(null);
+  // Latest join payload so we can re-send on reconnect without stale closures.
+  const joinedRef = useRef(null);
 
   useStatusbar(connected);
 
   useEffect(() => {
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const clientId = getOrMakeClientId();
-    const ws = new WebSocket(`${proto}//${location.host}/?role=controller&clientId=${clientId || ''}`);
-    wsRef.current = ws;
-    ws.addEventListener('open', () => setConnected(true));
-    ws.addEventListener('close', () => { setConnected(false); setPlayerId(null); });
-    ws.addEventListener('message', (e) => {
-      let msg; try { msg = JSON.parse(e.data); } catch (_) { return; }
-      if (msg.type === 'hello' && msg.role === 'controller') setPlayerId(msg.playerId);
-      else if (msg.type === 'playerList') setPlayers(msg.players || []);
-      else if (msg.type === 'screen') setHostScreen(msg.screen || 'title');
-      else if (msg.type === 'minigameStart') setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract });
-      else if (msg.type === 'minigameEnd') setMinigame(null);
-    });
-    return () => { try { ws.close(); } catch (_) {} };
+    let ws;
+    let closed = false;
+    let backoff = 500;
+    const connect = () => {
+      if (closed) return;
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const clientId = getOrMakeClientId();
+      ws = new WebSocket(`${proto}//${location.host}/?role=controller&clientId=${clientId || ''}`);
+      wsRef.current = ws;
+      ws.addEventListener('open', () => {
+        setConnected(true);
+        backoff = 500;
+        // auto-rejoin if we previously joined — survives host reload too
+        const j = joinedRef.current;
+        if (j && j.name && j.character) {
+          try { ws.send(JSON.stringify({ type: 'join', ...j })); } catch (_) {}
+        }
+      });
+      ws.addEventListener('close', () => {
+        setConnected(false); setPlayerId(null);
+        if (!closed) {
+          const d = Math.min(5000, backoff);
+          backoff = Math.min(5000, backoff * 1.7);
+          setTimeout(connect, d);
+        }
+      });
+      ws.addEventListener('message', (e) => {
+        let msg; try { msg = JSON.parse(e.data); } catch (_) { return; }
+        if (msg.type === 'hello' && msg.role === 'controller') setPlayerId(msg.playerId);
+        else if (msg.type === 'playerList') setPlayers(msg.players || []);
+        else if (msg.type === 'screen') setHostScreen(msg.screen || 'title');
+        else if (msg.type === 'minigameStart') setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract });
+        else if (msg.type === 'minigameEnd') setMinigame(null);
+      });
+    };
+    // seed join payload from localStorage so the first `open` can re-join
+    const lsName = localStorage.getItem('barn-bash-name');
+    const lsCritter = localStorage.getItem('barn-bash-critter');
+    if (localStorage.getItem('barn-bash-joined') === '1' && lsName && lsCritter) {
+      const pick = CRITTERS.find(c => c.id === lsCritter) || CRITTERS[0];
+      joinedRef.current = { name: lsName, character: pick.id, color: pick.color };
+    }
+    connect();
+    return () => { closed = true; try { ws && ws.close(); } catch (_) {} };
   }, []);
 
   const send = (obj) => {
@@ -88,6 +129,8 @@ function App() {
     const pick = CRITTERS.find(c => c.id === critter) || CRITTERS[0];
     localStorage.setItem('barn-bash-name', n);
     localStorage.setItem('barn-bash-critter', pick.id);
+    localStorage.setItem('barn-bash-joined', '1');
+    joinedRef.current = { name: n, character: pick.id, color: pick.color };
     send({ type: 'join', name: n, character: pick.id, color: pick.color });
     setJoined(true);
   };
@@ -130,8 +173,46 @@ function App() {
         <div className="pill">{name}</div>
         <div className="pill">{CRITTERS.find(c=>c.id===critter)?.name || '—'}</div>
       </div>
-      {minigame ? <MinigameInput game={minigame} send={send}/> : <LobbyScreen hostScreen={hostScreen} players={players}/>}
+      {minigame
+        ? <MinigameInput game={minigame} send={send}/>
+        : hostScreen === 'board'
+          ? <BoardVoteScreen send={send}/>
+          : <LobbyScreen hostScreen={hostScreen} players={players}/>}
     </div>
+  );
+}
+
+function BoardVoteScreen({ send }) {
+  const [voted, setVoted] = useState(null);
+  const vote = (id) => {
+    setVoted(id);
+    send({ type: 'input', kind: 'boardVote', data: { id } });
+  };
+  return (
+    <>
+      <div className="screen-hint">
+        {voted ? `voted for ${BOARD_TILES.find(t=>t.id===voted)?.name}` : 'tap a mini-game!'}
+      </div>
+      <div style={{flex:1, display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginTop:10, overflowY:'auto', paddingRight:4}}>
+        {BOARD_TILES.map(t => (
+          <div key={t.id}
+               onPointerDown={(e)=>{e.preventDefault(); vote(t.id);}}
+               style={{
+                 background: voted === t.id ? 'var(--yellow)' : t.tint,
+                 border:'4px solid var(--ink)', borderRadius:16,
+                 boxShadow: voted === t.id ? '0 3px 0 var(--ink)' : '0 6px 0 var(--ink)',
+                 transform: voted === t.id ? 'translateY(3px)' : 'none',
+                 padding:10, display:'flex', flexDirection:'column', alignItems:'center',
+                 justifyContent:'center', cursor:'pointer', minHeight:80,
+               }}>
+            <div style={{fontSize:32}}>{t.icon}</div>
+            <div style={{fontFamily:"'Luckiest Guy'",fontSize:14,color:'var(--ink)',textAlign:'center',marginTop:4,lineHeight:1.1}}>
+              {t.name.toUpperCase()}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

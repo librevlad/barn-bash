@@ -210,7 +210,7 @@ function EggPass({ state, onFinish, onQuit }) {
             }}>
               <Avatar char={p.char} size={80} bob={isHolder}/>
               <div style={{fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)', marginTop:4}}>
-                {p.char.name.toUpperCase()}
+                {playerLabel(p)}
               </div>
               {i === 0 && !p.isCPU && <div style={{fontSize:10,fontFamily:"'Luckiest Guy'",color:'var(--red)'}}>YOU</div>}
               {isDead && <div style={{position:'absolute',top:-18,left:'50%',transform:'translateX(-50%) rotate(-8deg)',background:'var(--red)',color:'#fff',padding:'2px 10px',border:'3px solid var(--ink)',borderRadius:8,fontFamily:"'Luckiest Guy'"}}>OUT</div>}
@@ -255,7 +255,7 @@ function EggPass({ state, onFinish, onQuit }) {
       {holder !== 0 && !finished && (
         <div style={{position:'absolute',bottom:30,left:0,right:0,textAlign:'center'}}>
           <div style={{display:'inline-block',background:'#fff',border:'3px solid var(--ink)',borderRadius:14,padding:'8px 16px',fontFamily:"'Luckiest Guy'",fontSize:18}}>
-            {players[holder].char.name.toUpperCase()} HAS THE EGG!
+            {playerLabel(players[holder])} HAS THE EGG!
           </div>
         </div>
       )}
@@ -264,7 +264,7 @@ function EggPass({ state, onFinish, onQuit }) {
       {finished && (
         <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.3)',display:'grid',placeItems:'center',zIndex:40}}>
           <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:100,color:'var(--yellow)',WebkitTextStroke:'5px var(--ink)',textShadow:'0 8px 0 var(--ink)'}}>
-            {players[alive.findIndex(Boolean)].char.name.toUpperCase()} WINS!
+            {playerLabel(players[alive.findIndex(Boolean)])} WINS!
           </div>
         </div>
       )}

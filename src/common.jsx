@@ -6,6 +6,13 @@ function randBetween(a, b) { return a + Math.random() * (b - a); }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+// Preferred display label: phone player's entered name if set, else critter name.
+function playerLabel(p) {
+  if (!p) return '';
+  if (p.displayName && !p.isCPU) return p.displayName.toUpperCase();
+  return (p.char && p.char.name ? p.char.name : '').toUpperCase();
+}
+
 // Cloud decorations drifting in the sky
 function Clouds({ count = 4 }) {
   const clouds = useMemo(() => (

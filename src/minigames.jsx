@@ -154,7 +154,7 @@ function PigSprint({ state, onFinish, onQuit }) {
             </div>
             {/* name tag */}
             <div style={{position:'absolute', right:10, top:10, fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)', background:i===0?'#ffc93c':'#fff', padding:'2px 8px', borderRadius:8, border:'2px solid var(--ink)'}}>
-              {p.char.name.toUpperCase()} {finishOrder.indexOf(i) >= 0 && ['🥇','🥈','🥉','4️⃣'][finishOrder.indexOf(i)]}
+              {playerLabel(p)} {finishOrder.indexOf(i) >= 0 && ['🥇','🥈','🥉','4️⃣'][finishOrder.indexOf(i)]}
             </div>
             {/* finish line */}
             <div style={{position:'absolute', right: 20, top: 10, bottom:10, width:8,
@@ -389,7 +389,7 @@ function HayPanic({ state, onFinish, onQuit }) {
           }}>
             <Avatar char={p.char} size={32}/>
             <span style={{fontFamily:"'Luckiest Guy'", fontSize:14, color:'var(--ink)'}}>
-              {p.char.name.toUpperCase()} {i===0 && '(YOU)'}
+              {playerLabel(p)} {i===0 && !p.displayName && '(YOU)'}
             </span>
             {alive[i] ? <span style={{color:'var(--green-dk)'}}>●</span> : <span>💥</span>}
           </div>

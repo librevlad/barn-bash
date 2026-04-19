@@ -188,7 +188,7 @@ function AppleAim({ state, onFinish, onQuit }) {
           }}>
             <Avatar char={p.char} size={32}/>
             <span style={{fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)'}}>
-              {p.char.name.toUpperCase()}: {scores[i]}
+              {playerLabel(p)}: {scores[i]}
             </span>
           </div>
         ))}
@@ -301,7 +301,7 @@ function AppleAim({ state, onFinish, onQuit }) {
       {currentPlayer.isCPU && (phase === 'angle' || phase === 'power') && (
         <div style={{position:'absolute',bottom:30,left:0,right:0,textAlign:'center'}}>
           <div style={{display:'inline-block',background:'#fff',border:'3px solid var(--ink)',borderRadius:14,padding:'8px 16px',fontFamily:"'Luckiest Guy'",fontSize:18}}>
-            🤖 {currentPlayer.char.name.toUpperCase()} IS AIMING...
+            🤖 {playerLabel(currentPlayer)} IS AIMING...
           </div>
         </div>
       )}
@@ -480,7 +480,7 @@ function WhackAGopher({ state, onFinish, onQuit }) {
           }}>
             <Avatar char={p.char} size={28}/>
             <span style={{fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)'}}>
-              {p.char.name.toUpperCase()}: {scores[i]}
+              {playerLabel(p)}: {scores[i]}
             </span>
           </div>
         ))}

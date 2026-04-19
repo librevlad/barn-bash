@@ -220,6 +220,8 @@ function CharacterSelect({ onBack, onStart, playerCount=4, remotePlayers=null })
 function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
   const isYou = idx === 0;
   const bgs = ['#ffd7a8','#d8e8ff','#ffd8d8','#ddf5d0','#f5e0ff','#fff3c0','#d0f0f0','#f5dcc0'];
+  const nameLabel = (slot.displayName && !slot.isCPU) ? slot.displayName.toUpperCase() : slot.char.name.toUpperCase();
+  const showAsCritter = slot.displayName && !slot.isCPU && slot.displayName.toUpperCase() !== slot.char.name.toUpperCase();
   return (
     <div className="pop-in" style={{
       background: slot.ready ? bgs[idx % bgs.length] : '#eadec0',
@@ -230,8 +232,8 @@ function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
       transition:'transform .2s ease, box-shadow .2s ease'
     }}>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)'}}>
-        <span>P{idx+1} {isYou && '(YOU)'}</span>
-        {!isYou && (
+        <span>P{idx+1} {slot.displayName && !slot.isCPU ? '📱' : (isYou ? '(YOU)' : '')}</span>
+        {!isYou && !slot.displayName && (
           <button onClick={()=>toggleCPU(idx)} style={{
             background: slot.isCPU ? 'var(--blue)' : 'var(--grass)', color:'#fff', border:'2px solid var(--ink)',
             borderRadius:8, padding:'2px 8px', fontFamily:"'Luckiest Guy'", fontSize:12, cursor:'pointer'
@@ -240,16 +242,16 @@ function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
       </div>
 
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:8}}>
-        <button onClick={()=>!slot.isCPU && cycle(idx, -1)} disabled={slot.isCPU} style={arrowBtn}>◀</button>
+        <button onClick={()=>!slot.isCPU && !slot.displayName && cycle(idx, -1)} disabled={slot.isCPU || !!slot.displayName} style={arrowBtn}>◀</button>
         <Avatar char={slot.char} size={110} bob/>
-        <button onClick={()=>!slot.isCPU && cycle(idx, 1)} disabled={slot.isCPU} style={arrowBtn}>▶</button>
+        <button onClick={()=>!slot.isCPU && !slot.displayName && cycle(idx, 1)} disabled={slot.isCPU || !!slot.displayName} style={arrowBtn}>▶</button>
       </div>
 
       <div style={{textAlign:'center', fontFamily:"'Luckiest Guy'", fontSize:22, color:'var(--ink)', marginTop:4}}>
-        {slot.char.name.toUpperCase()}
+        {nameLabel}
       </div>
       <div style={{textAlign:'center', fontSize:12, color:'var(--ink-soft)', fontStyle:'italic', marginBottom:8}}>
-        "{slot.char.tag}"
+        {showAsCritter ? `as ${slot.char.name}` : `"${slot.char.tag}"`}
       </div>
 
       <button onClick={()=>!slot.isCPU && toggleReady(idx)} disabled={slot.isCPU} style={{
@@ -287,6 +289,40 @@ const MINIGAMES = [
 
 function BoardScreen({ state, onPick, onTweaks }) {
   const { round, totalRounds, scores, players, coins, modifier } = state;
+  const [votes, setVotes] = useState({}); // { [id]: [pi, pi, ...] }
+  const pickedRef = useRef(false);
+
+  // Phone voting — first mini-game to receive a vote (or majority when all
+  // connected phones vote) gets auto-picked. Host tile clicks still work too.
+  useEffect(() => {
+    const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+    if (!mp || !mp.onInput) return;
+    const remoteCount = players.filter(p => p.remoteId).length;
+    const off = mp.onInput(({ id, kind, data }) => {
+      if (kind !== 'boardVote' || !data) return;
+      const pi = players.findIndex(p => p.remoteId === id);
+      if (pi < 0) return;
+      const choice = data.id;
+      if (!MINIGAMES.find(m => m.id === choice && m.ready)) return;
+      setVotes(prev => {
+        const next = {};
+        // player votes only once — remove any prior slot
+        Object.keys(prev).forEach(k => { next[k] = (prev[k] || []).filter(x => x !== pi); });
+        next[choice] = [...(next[choice] || []), pi];
+        // pick when every connected phone has cast a vote
+        const totalVoters = Object.values(next).reduce((a, xs) => a + xs.length, 0);
+        if (!pickedRef.current && remoteCount > 0 && totalVoters >= remoteCount) {
+          // majority wins; tie broken by first reached
+          let bestId = null, bestN = 0;
+          Object.entries(next).forEach(([k, xs]) => { if (xs.length > bestN) { bestId = k; bestN = xs.length; } });
+          if (bestId) { pickedRef.current = true; setTimeout(() => onPick(bestId), 450); }
+        }
+        return next;
+      });
+    });
+    return () => { try { off && off(); } catch (_) {} };
+  }, [players, onPick]);
+
   return (
     <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,#bfe3a6 0%, #8fcf72 60%, #5aac45 100%)'}}>
       {/* pastoral pattern */}
@@ -323,7 +359,7 @@ function BoardScreen({ state, onPick, onTweaks }) {
           }}>
             <Avatar char={p.char} size={44}/>
             <div>
-              <div style={{fontFamily:"'Luckiest Guy'",fontSize:14, color:'var(--ink)'}}>{p.char.name.toUpperCase()} {i===0 && <span style={{color:'var(--red)'}}>(YOU)</span>}</div>
+              <div style={{fontFamily:"'Luckiest Guy'",fontSize:14, color:'var(--ink)'}}>{playerLabel(p)} {i===0 && !p.displayName && <span style={{color:'var(--red)'}}>(YOU)</span>}</div>
               <div style={{display:'flex',alignItems:'center',gap:4}}>
                 <Coin size={16}/><span style={{fontFamily:"'Luckiest Guy'",fontSize:18,color:'var(--wood-dk)'}}>{scores[i]}</span>
               </div>
@@ -346,14 +382,15 @@ function BoardScreen({ state, onPick, onTweaks }) {
       <div style={{position:'absolute', top: 330, left:0, right:0, display:'grid',
         gridTemplateColumns:'repeat(3, 280px)', gap:26, justifyContent:'center'}}>
         {MINIGAMES.map(mg => (
-          <MiniCard key={mg.id} mg={mg} onPick={() => mg.ready && onPick(mg.id)}/>
+          <MiniCard key={mg.id} mg={mg} onPick={() => mg.ready && onPick(mg.id)}
+                    voters={(votes[mg.id] || []).map(pi => players[pi]).filter(Boolean)}/>
         ))}
       </div>
     </div>
   );
 }
 
-function MiniCard({ mg, onPick }) {
+function MiniCard({ mg, onPick, voters = [] }) {
   const [hover, setHover] = useState(false);
   return (
     <div
@@ -361,13 +398,27 @@ function MiniCard({ mg, onPick }) {
       onClick={onPick}
       style={{
         background: mg.tint, border:'5px solid var(--ink)', borderRadius:20,
-        boxShadow: hover && mg.ready ? '0 14px 0 var(--ink)' : '0 8px 0 var(--ink)',
-        transform: hover && mg.ready ? 'translateY(-6px) rotate(-1deg)' : 'none',
+        boxShadow: hover && mg.ready ? '0 14px 0 var(--ink)' : voters.length ? '0 10px 0 var(--ink)' : '0 8px 0 var(--ink)',
+        transform: hover && mg.ready ? 'translateY(-6px) rotate(-1deg)' : voters.length ? 'translateY(-3px)' : 'none',
         transition: 'all .15s ease',
         cursor: mg.ready ? 'pointer' : 'not-allowed',
         padding:18, position:'relative',
         filter: mg.ready ? 'none' : 'grayscale(.5) brightness(.85)'
       }}>
+      {voters.length > 0 && (
+        <div style={{
+          position:'absolute', top:-16, right:-10, display:'flex', gap:-4, zIndex:5
+        }}>
+          {voters.map((v, i) => (
+            <div key={i} style={{
+              background:'#fff', border:'3px solid var(--ink)', borderRadius:'50%',
+              padding:2, boxShadow:'0 3px 0 var(--ink)', marginLeft: i ? -8 : 0, zIndex: 10-i
+            }}>
+              <Avatar char={v.char} size={28}/>
+            </div>
+          ))}
+        </div>
+      )}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={{fontFamily:"'Luckiest Guy'", fontSize:26, color:'var(--ink)'}}>{mg.name.toUpperCase()}</div>
         <div style={{fontSize:40}}>{mg.icon}</div>
@@ -428,7 +479,7 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
             )}
             <div style={{fontFamily:"'Luckiest Guy'", fontSize:36, color:rank===0?'#d99312':'var(--ink)'}}>#{rank+1}</div>
             <Avatar char={r.p.char} size={100} bob={rank===0}/>
-            <div style={{fontFamily:"'Luckiest Guy'", fontSize:18, color:'var(--ink)'}}>{r.p.char.name.toUpperCase()}</div>
+            <div style={{fontFamily:"'Luckiest Guy'", fontSize:18, color:'var(--ink)'}}>{playerLabel(r.p)}</div>
             <div style={{display:'flex', justifyContent:'center', gap:6, alignItems:'center', marginTop:6,
               background: r.e > 0 ? 'var(--yellow)' : '#eee', border:'3px solid var(--ink)', borderRadius:10, padding:'4px 10px'
             }}>
@@ -498,7 +549,7 @@ function Podium({ players, scores, onPlayAgain, onQuit }) {
         {champion && (
           <div className="pop-in" style={{marginTop:10,display:'inline-flex',alignItems:'center',gap:10,background:'rgba(0,0,0,.35)',border:'4px solid #fff',borderRadius:16,padding:'8px 22px',animationDelay:'.4s'}}>
             <Avatar char={champion.p.char} size={42}/>
-            <span style={{fontFamily:"'Luckiest Guy'",color:'#fff',fontSize:28,letterSpacing:2}}>{champion.p.char.name.toUpperCase()} WINS!</span>
+            <span style={{fontFamily:"'Luckiest Guy'",color:'#fff',fontSize:28,letterSpacing:2}}>{playerLabel(champion.p)} WINS!</span>
           </div>
         )}
       </div>
@@ -515,7 +566,7 @@ function Podium({ players, scores, onPlayAgain, onQuit }) {
               <div className="pop-in" style={{animationDelay:(i*0.3 + 0.6)+'s'}}>
                 <div style={{fontSize:52, textAlign:'center', filter:rankIdx===0?'drop-shadow(0 0 12px #fff8c0)':''}}>{medals[rankIdx]}</div>
                 <Avatar char={r.p.char} size={rankIdx === 0 ? 170 : 120} bob={rankIdx===0}/>
-                <div style={{textAlign:'center',fontFamily:"'Luckiest Guy'",fontSize:22, color:'var(--ink)',marginTop:4}}>{r.p.char.name.toUpperCase()}</div>
+                <div style={{textAlign:'center',fontFamily:"'Luckiest Guy'",fontSize:22, color:'var(--ink)',marginTop:4}}>{playerLabel(r.p)}</div>
                 <div style={{textAlign:'center',display:'flex',justifyContent:'center',gap:4,alignItems:'center'}}>
                   <Coin size={22}/>
                   <span style={{fontFamily:"'Luckiest Guy'",fontSize:26, color:'var(--wood-dk)'}}>{r.s}</span>
