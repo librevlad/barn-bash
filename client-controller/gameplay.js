@@ -281,11 +281,15 @@ window.Gameplay = (function () {
       if (typeof SpriteLoader === 'undefined') return;
       var swaps = [
         { el: els.specBackdrop, key: 'standings-scroll-spec', src: '/assets/standings-scroll.png' },
-        { el: els.goBackdrop,   key: 'gameover-hall',         src: '/assets/gameover-hall.png' },
+        // Phase 60a — painted mobile-portrait winner hero
+        // replaces the generic landscape gameover-hall.png
+        // on the phone. Clean asset, no checker-strip needed.
+        { el: els.goBackdrop,   key: 'gameover-hall-mobile-hero', src: '/assets/gameover-hall-mobile-hero.png', clean: true },
         { el: els.elimBackdrop, key: 'elim-shadow',           src: '/assets/elim-shadow.png' },
       ];
       swaps.forEach(function (s) {
         if (!s.el) return;
+        if (s.clean) return; // Phase 60a — skip checker-strip for clean heros
         var cached = SpriteLoader.get(s.key);
         var apply = function (canvas) {
           if (!canvas || !s.el) return;
@@ -323,8 +327,8 @@ window.Gameplay = (function () {
     // composition sits in the painted center-stage spotlight.
     els.go = el('div', 'gp-gameover-overlay');
     els.goBackdrop = document.createElement('img');
-    els.goBackdrop.className = 'gp-gameover-backdrop';
-    els.goBackdrop.src = '/assets/gameover-hall.png';
+    els.goBackdrop.className = 'gp-gameover-backdrop hero';
+    els.goBackdrop.src = '/assets/gameover-hall-mobile-hero.png';
     els.goBackdrop.alt = '';
     els.goBackdrop.onerror = function () { this.remove(); };
     els.goLabel = el('div', 'gp-go-label', { text: 'Round complete' });
