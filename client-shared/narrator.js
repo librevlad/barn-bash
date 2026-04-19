@@ -200,12 +200,18 @@ const Narrator = (() => {
     if (overlay) return;
     overlay = document.createElement('div');
     overlay.id = 'narrator-overlay';
+    // Phase 61a — painted carved parchment plaque. Replaces the
+    // flat rgba-pill with a layered CSS composition that reads
+    // as "hand-painted scroll pinned to a wooden backing":
+    //   1) wooden plank base gradient with grain streaks
+    //   2) aged cream parchment on top, slight rough edges
+    //   3) gold brass rivets at 4 corners
+    //   4) warm inner glow + drop shadow so it lifts off the
+    //      painted hero behind it
     overlay.style.cssText = `
       position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
-      max-width: 640px; width: 88%; padding: 12px 22px 12px 14px;
-      background: rgba(90, 58, 32, 0.82);
-      border: 1.5px solid var(--accent-gold, #f4c542);
-      border-radius: 14px; backdrop-filter: blur(10px);
+      max-width: 640px; width: 88%;
+      padding: 14px 24px 14px 16px;
       font-family: var(--font-accent, 'Cutive'), Georgia, serif;
       color: var(--text-cream, #f5ead4);
       font-size: 17px; font-style: italic;
@@ -215,45 +221,106 @@ const Narrator = (() => {
       transition: opacity 0.4s, transform 0.4s;
       z-index: 35;
       display: flex; align-items: center; gap: 14px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6),
-                  0 0 18px rgba(244, 197, 66, 0.15);
+      border: none; border-radius: 18px;
+      background:
+        /* parchment top layer — warm cream with subtle grain */
+        linear-gradient(180deg,
+          rgba(245, 228, 190, 0.96) 0%,
+          rgba(228, 205, 160, 0.94) 55%,
+          rgba(205, 178, 130, 0.92) 100%),
+        /* wood backing peek at edges */
+        linear-gradient(180deg,
+          rgba(70, 42, 20, 1) 0%,
+          rgba(52, 30, 14, 1) 100%);
+      background-clip: padding-box, border-box;
+      box-shadow:
+        /* thick dark inner stroke (carved edge) */
+        inset 0 0 0 2px rgba(45, 25, 12, 0.9),
+        /* warm gold rim just inside the dark stroke */
+        inset 0 0 0 4px rgba(195, 145, 55, 0.7),
+        /* parchment top highlight */
+        inset 0 2px 0 rgba(255, 245, 210, 0.5),
+        /* parchment bottom ink shadow */
+        inset 0 -3px 6px rgba(100, 60, 20, 0.35),
+        /* lifted drop shadow + warm halo */
+        0 10px 24px rgba(0, 0, 0, 0.7),
+        0 0 32px rgba(244, 197, 66, 0.2);
     `;
+    // Phase 61a — four brass rivets pinned to the plaque corners
+    // via ::before / ::after layered siblings. Injected on first
+    // paint so the rounded-rectangle reads as "parchment pinned
+    // to wood".
+    ['tl', 'tr', 'bl', 'br'].forEach((pos) => {
+      const rivet = document.createElement('div');
+      rivet.className = 'narrator-rivet narrator-rivet-' + pos;
+      overlay.appendChild(rivet);
+    });
     document.body.appendChild(overlay);
 
     const style = document.createElement('style');
     style.textContent = `
       #narrator-overlay.show { opacity: 1 !important; }
+      /* Phase 61a — portrait now sits in a carved brass medallion
+         that matches the painted hero avatar discs (Phase 54/55). */
       #narrator-overlay .narrator-portrait {
         flex: 0 0 auto;
         width: 64px; height: 64px;
         border-radius: 50%;
         object-fit: cover;
-        background: rgba(45, 28, 12, 0.4);
-        border: 2px solid var(--accent-gold-edge, #8a6718);
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
-                    0 2px 6px rgba(0, 0, 0, 0.5);
+        background: radial-gradient(circle at 35% 30%,
+          rgba(255, 255, 255, 0.12),
+          rgba(0, 0, 0, 0.35));
+        box-shadow:
+          inset 0 2px 0 rgba(255, 250, 220, 0.32),
+          inset 0 -2px 4px rgba(0, 0, 0, 0.45),
+          0 0 0 2px rgba(20, 10, 5, 0.9),
+          0 0 0 4px rgba(216, 152, 45, 0.85),
+          0 2px 8px rgba(0, 0, 0, 0.55);
       }
       #narrator-overlay .narrator-body {
         flex: 1 1 auto; min-width: 0;
         display: flex; flex-direction: column;
+        position: relative; z-index: 1;
       }
+      /* Phase 61a — "GAME MASTER" label reads as carved gold
+         letterpress on the parchment, not a web UI caption. */
       #narrator-overlay .narrator-label {
-        font-family: var(--font-accent, 'Cutive'), Georgia, serif;
-        font-size: 10px;
-        letter-spacing: 3px;
-        color: var(--accent-gold, #f4c542);
-        opacity: 0.9;
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        font-size: 11px;
+        letter-spacing: 4px;
+        color: var(--accent-red-deep, #6b1818);
+        opacity: 0.92;
         text-transform: uppercase;
         font-style: normal;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
         display: block;
+        text-shadow: 0 1px 0 rgba(255, 240, 200, 0.45);
       }
+      /* Phase 61a — quip text as warm dark-brown ink on cream
+         parchment (was cream on dark). Reads as hand-written. */
       #narrator-overlay .narrator-text {
         font-family: var(--font-accent, 'Cutive'), Georgia, serif;
         font-size: 17px;
-        color: var(--text-cream, #f5ead4);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        color: rgba(55, 28, 14, 0.92);
+        text-shadow: 0 1px 0 rgba(255, 240, 200, 0.45);
       }
+      /* Phase 61a — brass rivets at the 4 corners of the plaque. */
+      #narrator-overlay .narrator-rivet {
+        position: absolute;
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%,
+          #ffe290 0%, #d5972b 55%, #7a4c12 100%);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 250, 210, 0.55),
+          inset 0 -1px 2px rgba(60, 30, 8, 0.7),
+          0 1px 2px rgba(0, 0, 0, 0.55);
+        pointer-events: none;
+      }
+      #narrator-overlay .narrator-rivet-tl { top: 8px;    left: 8px; }
+      #narrator-overlay .narrator-rivet-tr { top: 8px;    right: 8px; }
+      #narrator-overlay .narrator-rivet-bl { bottom: 8px; left: 8px; }
+      #narrator-overlay .narrator-rivet-br { bottom: 8px; right: 8px; }
     `;
     document.head.appendChild(style);
   }
