@@ -164,8 +164,9 @@ function PigSprint({ state, onFinish, onQuit }) {
             <div style={{position:'absolute', left:10, top:10, fontFamily:"'Luckiest Guy'", fontSize:18, color:'var(--ink)', background:'#fff', padding:'2px 8px', borderRadius:8, border:'2px solid var(--ink)'}}>
               LANE {i+1}
             </div>
-            {/* name tag */}
-            <div style={{position:'absolute', right:10, top:10, fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)', background:i===0?'#ffc93c':'#fff', padding:'2px 8px', borderRadius:8, border:'2px solid var(--ink)'}}>
+            {/* name tag — sits left of the finish stripe so multi-char names
+                (VLAD, HOPPER, MARMALADE) don't get clipped by the bar */}
+            <div style={{position:'absolute', right:44, top:10, fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)', background:i===0?'#ffc93c':'#fff', padding:'2px 8px', borderRadius:8, border:'2px solid var(--ink)', whiteSpace:'nowrap'}}>
               {playerLabel(p)} {finishOrder.indexOf(i) >= 0 && ['🥇','🥈','🥉','4️⃣'][finishOrder.indexOf(i)]}
             </div>
             {/* finish line */}
@@ -235,8 +236,14 @@ function HayPanic({ state, onFinish, onQuit }) {
   const [time, setTime] = useState(0);
   const survivalTime = useRef(players.map(() => 0));
   const [alive, setAlive] = useState(() => players.map(() => true));
-  const [you, setYou] = useState({ x: FIELD_W/2, vx: 0 });
-  const [cpus, setCpus] = useState(() => players.slice(1).map((_,i)=>({ x: (i+1) * FIELD_W / players.length, vx: 0, dir: Math.random() > .5 ? 1 : -1, nextTurn: 0.5 })));
+  // Spread P0 and the CPU lane(s) across the field so 2-player games
+  // don't spawn both critters on the exact same pixel (P0 at W/2 clashed
+  // with cpu[0] = 1 * W/2 in the old formula).
+  const [you, setYou] = useState({ x: FIELD_W / (players.length + 1), vx: 0 });
+  const [cpus, setCpus] = useState(() => players.slice(1).map((_,i)=>({
+    x: (i + 2) * FIELD_W / (players.length + 1),
+    vx: 0, dir: Math.random() > .5 ? 1 : -1, nextTurn: 0.5
+  })));
   const [bales, setBales] = useState([]);
   const keys = useRef({ left:false, right:false });
   const difficulty = state.difficulty;

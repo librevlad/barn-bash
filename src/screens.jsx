@@ -220,8 +220,8 @@ function CharacterSelect({ onBack, onStart, playerCount=4, remotePlayers=null })
 function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
   const isYou = idx === 0;
   const bgs = ['#ffd7a8','#d8e8ff','#ffd8d8','#ddf5d0','#f5e0ff','#fff3c0','#d0f0f0','#f5dcc0'];
-  const nameLabel = (slot.displayName && !slot.isCPU) ? slot.displayName.toUpperCase() : slot.char.name.toUpperCase();
-  const showAsCritter = slot.displayName && !slot.isCPU && slot.displayName.toUpperCase() !== slot.char.name.toUpperCase();
+  const nameLabel = slot.displayName ? slot.displayName.toUpperCase() : slot.char.name.toUpperCase();
+  const showAsCritter = slot.displayName && slot.displayName.toUpperCase() !== slot.char.name.toUpperCase();
   return (
     <div className="pop-in" style={{
       background: slot.ready ? bgs[idx % bgs.length] : '#eadec0',

@@ -95,15 +95,15 @@
     cursor:pointer; line-height:1; user-select:none; transition:transform .06s ease, box-shadow .06s ease; }
   .react-btn:active, .react-btn.hit { transform:translateY(3px); box-shadow:0 1px 0 var(--ink); }
 
-  .holes-pad { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:10px; margin-top:12px; }
+  .holes-pad { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; margin-top:14px; align-content:center; justify-self:center; width:100%; }
   .hole-btn { border:5px solid var(--ink); border-radius:50%;
     background:radial-gradient(circle at 50% 35%, #8f6a3b 0%, #6b4a2e 55%, #3a2510 100%);
-    box-shadow:inset 0 6px 20px rgba(0,0,0,.6), 0 8px 0 var(--ink);
+    box-shadow:inset 0 6px 20px rgba(0,0,0,.6), 0 6px 0 var(--ink);
     display:flex; align-items:center; justify-content:center;
-    font-family:'Luckiest Guy',cursive; font-size:34px; color:var(--cream);
+    font-family:'Luckiest Guy',cursive; font-size:28px; color:var(--cream);
     -webkit-text-stroke:2px var(--ink); text-shadow:0 3px 0 var(--ink);
     cursor:pointer; user-select:none; transition:transform .05s ease, box-shadow .05s ease;
-    aspect-ratio:1;
+    aspect-ratio:1; min-width:0;
   }
   .hole-btn:active, .hole-btn.hit { transform:translateY(4px); box-shadow:inset 0 6px 20px rgba(0,0,0,.6), 0 2px 0 var(--ink); }
 

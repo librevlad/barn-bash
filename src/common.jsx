@@ -6,10 +6,12 @@ function randBetween(a, b) { return a + Math.random() * (b - a); }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-// Preferred display label: phone player's entered name if set, else critter name.
+// Preferred display label: a real phone-owned slot keeps its entered name
+// even if isCPU is temporarily true (phone is mid-reconnect and AI is
+// standing in). Pure CPU slots fall back to the critter name.
 function playerLabel(p) {
   if (!p) return '';
-  if (p.displayName && !p.isCPU) return p.displayName.toUpperCase();
+  if (p.displayName) return p.displayName.toUpperCase();
   return (p.char && p.char.name ? p.char.name : '').toUpperCase();
 }
 
