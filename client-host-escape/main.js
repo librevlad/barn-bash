@@ -97,8 +97,10 @@ HostHarness.boot({
       loseQuote: 'Nobody survived. I love it when that happens.',
       stats: [],
       leaderboard: leaderboard,
-      // Phase 20a — reuse Phase 18 universal gameover-hall
-      backdrop: '/assets/gameover-hall.png',
+      // Phase 59c — per-game painted post-game hero (painted
+      // retreating fox silhouette in dusk forest + empty
+      // spotlight pool for winner portrait).
+      backdrop: '/assets/gameover-hall-escape-hero.png',
       backdropMode: 'hall',
       onPlayAgain: () => HostHarness.send(Protocol.makeRestart()),
       onLobby: () => { HostHarness.send(Protocol.makeRestart()); setTimeout(() => window.location.href = '/host/', 200); },

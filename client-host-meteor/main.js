@@ -83,8 +83,10 @@ HostHarness.boot({
       loseQuote: 'Total annihilation. Beautiful.',
       stats: [],
       leaderboard: leaderboard,
-      // Phase 20a — reuse Phase 18 universal gameover-hall
-      backdrop: '/assets/gameover-hall.png',
+      // Phase 59c — per-game painted post-game hero (painted
+      // scorched safe-zone platform + cosmic starfield +
+      // empty spotlight for winner portrait).
+      backdrop: '/assets/gameover-hall-meteor-hero.png',
       backdropMode: 'hall',
       onPlayAgain: () => HostHarness.send(Protocol.makeRestart()),
       onLobby: () => { HostHarness.send(Protocol.makeRestart()); setTimeout(() => window.location.href = '/host/', 200); },

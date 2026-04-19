@@ -249,8 +249,10 @@ HostHarness.boot({
       loseQuote: 'The hill claims all...',
       stats: [],
       leaderboard: leaderboard,
-      // Phase 20a — reuse Phase 18 universal gameover-hall
-      backdrop: '/assets/gameover-hall.png',
+      // Phase 59c — per-game painted post-game hero (painted
+      // cut-stone throne on moss hill + gold crown +
+      // empty spotlight for winner portrait).
+      backdrop: '/assets/gameover-hall-hill-hero.png',
       backdropMode: 'hall',
       onPlayAgain: () => HostHarness.send(Protocol.makeRestart()),
       onLobby: () => { HostHarness.send(Protocol.makeRestart()); setTimeout(() => window.location.href = '/host/', 200); },
