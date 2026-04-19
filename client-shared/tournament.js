@@ -368,6 +368,69 @@ const Tournament = (() => {
         z-index: 0;
         pointer-events: none;
       }
+      /* Phase 59a — per-game hero variant. When the backdrop carries
+         .hero, it's a full-viewport painted illustration (1376×768)
+         so we stretch it edge-to-edge instead of the legacy 380×420
+         centered poster. Painted content already includes the arch,
+         game title sign, blank parchment scroll, and "UP NEXT"
+         marquee; HTML overlay only writes the ROUND N number. */
+      #t-content .t-round-intro-backdrop.hero {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        transform: none;
+        width: 100%; height: 100%;
+        max-width: none; max-height: none;
+        object-fit: cover;
+        opacity: 1;
+        z-index: 1;
+      }
+      /* Phase 59a — hero mode hides HTML chrome that the painted
+         scene already carries: TOURNAMENT bar (the painted arch
+         sign says "FRANTICS / <GAME>" prominently), game-name
+         line (painted "UP NEXT: <GAME TITLE>" marquee), and
+         GET READY (the whole beat is a 3s countdown — the
+         painted stage itself communicates it). Only ROUND N
+         stays, pinned to the painted parchment scroll at
+         y≈50%. Flex flow replaced with absolute positioning
+         and the baseline scale-settle animation is disabled
+         (its transform was clobbering the centering translate). */
+      #t-content.mode-round-intro:has(.t-round-intro-backdrop.hero) .t-bar,
+      #t-content.mode-round-intro:has(.t-round-intro-backdrop.hero) .t-round-intro-game,
+      #t-content.mode-round-intro:has(.t-round-intro-backdrop.hero) .t-round-intro-ready {
+        display: none;
+      }
+      #t-content.mode-round-intro:has(.t-round-intro-backdrop.hero) .t-round-intro-number {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0;
+        font-size: 80px;
+        font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
+        letter-spacing: 4px;
+        color: #4a2612;
+        text-shadow:
+          0 2px 0 rgba(255, 220, 140, 0.35),
+          0 0 14px rgba(90, 40, 18, 0.4);
+        white-space: nowrap;
+        /* Custom hero fade-in that preserves the -50%/-50% centering
+           transform. Baseline tFadeSlideUp / tRoundScaleSettle both
+           overwrite the transform property and would wipe the
+           centering. */
+        animation: tHeroRoundFade 0.5s ease-out 0.1s both;
+        z-index: 2;
+      }
+      @keyframes tHeroRoundFade {
+        from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      }
+      /* hero-flourish ::before/::after (gold diamond flankers) paint
+         over the painted parchment. Hide them in hero mode — the
+         scroll itself frames the ROUND text. */
+      #t-content.mode-round-intro:has(.t-round-intro-backdrop.hero) .t-round-intro-number.hero-flourish::before,
+      #t-content.mode-round-intro:has(.t-round-intro-backdrop.hero) .t-round-intro-number.hero-flourish::after {
+        display: none;
+      }
       #t-content.mode-round-intro .t-bar,
       #t-content.mode-round-intro .t-round-intro-number,
       #t-content.mode-round-intro .t-round-intro-game,
@@ -817,21 +880,31 @@ const Tournament = (() => {
       Narrator.tournamentRoundIntro(data.round || 1, data.totalRounds || 3, gameName);
     }
 
-    // Phase 20b — painted attraction-announce poster prepended inside
-    // content.innerHTML so mode switches (renderStandings /
-    // renderChampion) automatically drop this backdrop. Mirrors Phase
-    // 9a tournament-champion + Phase 12a standings-scroll patterns.
-    // Raw img src is the on-disk PNG (may have a baked white/checker
-    // background); SpriteLoader.loadPainterly async-strips it and
-    // swaps src to the processed data URL once ready.
-    var html = '<img class="t-round-intro-backdrop" src="/assets/tournament-round-intro.png" onerror="this.remove()">';
+    // Phase 59a — per-game painted round-intro hero. The hero
+    // carries the "FRANTICS / <GAME>" carved sign, the "UP
+    // NEXT / <GAME TITLE>" marquee below, a blank painted
+    // parchment scroll (HTML writes the ROUND number overlay),
+    // and the Phase 58 frame + bunting + curtains + stage.
+    // Falls back to the generic tournament-round-intro.png if
+    // gameId doesn't match one of the 4 known games.
+    var heroMap = {
+      escapeFox: '/assets/tournament-round-intro-escape-hero.png',
+      race:      '/assets/tournament-round-intro-race-hero.png',
+      hillKing:  '/assets/tournament-round-intro-hill-hero.png',
+      meteor:    '/assets/tournament-round-intro-meteor-hero.png',
+    };
+    var heroSrc = heroMap[data.gameId] || '/assets/tournament-round-intro.png';
+    var heroCls = 't-round-intro-backdrop' + (heroMap[data.gameId] ? ' hero' : '');
+    var html = '<img class="' + heroCls + '" src="' + heroSrc + '" onerror="this.remove()">';
     html += '<div class="t-bar" style="opacity:0;animation:tFadeSlideUp 0.4s ease-out forwards;">TOURNAMENT</div>';
     html += '<div class="t-round-intro-number hero-flourish">ROUND ' + (data.round || '?') + '</div>';
     html += '<div class="t-round-intro-game">' + gameName + '</div>';
     html += '<div class="t-round-intro-ready">GET READY</div>';
 
     content.innerHTML = html;
-    if (typeof SpriteLoader !== 'undefined') {
+    if (typeof SpriteLoader !== 'undefined' && !heroMap[data.gameId]) {
+      // Only run painterly checker-strip on the legacy generic
+      // asset. The per-game hero PNGs are already clean.
       var applyProcessedIntro = function () {
         var sprite = SpriteLoader.get('tournament-round-intro');
         var img = content.querySelector('.t-round-intro-backdrop');
