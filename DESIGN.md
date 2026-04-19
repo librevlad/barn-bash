@@ -2820,6 +2820,92 @@ spectate on the phone), narrator overlay chrome refresh,
 hintbar-stage PNG refresh if it still reads as lower-
 register against the hero backdrops.
 
+60. **Phase 60** (shipped 2026-04-19): painted hero
+    treatment extended to the **controller** (phone)
+    client's three overlay screens so the painted register
+    is continuous across host AND player surfaces. Three
+    new 768×1376 portrait PNG heros land (~1.8-2 MB each)
+    replacing the generic landscape gameover-hall.png +
+    elim-shadow.png + standings-scroll.png that the mobile
+    client had been cropping awkwardly. Spec at
+    `docs/superpowers/specs/2026-04-19-painted-screens-
+    phase-60-design.md`.
+
+    * **60a — gameover-hall-mobile-hero.png.** Peak beat
+      — winner announcement on each player's phone after
+      every round. Painted portrait proscenium arch, gold
+      filigree frame, bunting with warm bulbs, carved
+      "FRANTICS / WINNER" signboard at top, two hanging
+      brass lanterns, empty warm spotlight pool at upper
+      stage for the Phase 54 winner-portrait disc overlay,
+      painted cream canvas banner below for hero-name +
+      subline, small pedestal/scroll for narrator quip,
+      stone stage apron at the bottom.
+
+    * **60b — elim-shadow-hero.png.** Somber exit beat —
+      shown when the player themselves gets eliminated.
+      Tarnished gold frame with dim bunting (unlit bulbs),
+      painted cracked weathered stone archway with dark
+      silhouetted pine trees beyond and cold moonlight
+      breaking through suggesting the player exits the
+      stage, dim circular pool of cold light inside the
+      arch for own-avatar overlay, painted dark stone
+      plaque for ELIMINATED text, cold mist at stage apron,
+      dark crimson curtains closing inward. Palette shifts
+      from warm-firelit to cold-blue-grey + muted red + dim
+      gold.
+
+    * **60c — gp-spec-backdrop-hero.png.** Calm watching
+      beat — player sits on a painted audience balcony
+      and watches the remaining round play out. Carved
+      ornate gold-leafed balcony rail in the foreground
+      with two brass sconces, silhouetted vacant velvet
+      audience chairs behind the rail, distant warm-lit
+      proscenium stage visible through painted curtains,
+      painted cream canvas banner pinned to the rail for
+      SPECTATING title, open dark space below for HTML
+      spectator list, warm ember particles between
+      balcony and stage. Register between peak gameover
+      and somber elim.
+
+    * Integration (client-controller/gameplay.js + .css):
+      one-line `src` swap per screen, SpriteLoader
+      entries marked `clean: true` to skip the checker-
+      strip pipeline on the clean hero assets. Each
+      backdrop carries a new `.hero` class for CSS
+      differentiation. Hero variant overrides replace the
+      legacy centered/bounded backdrop with full-viewport
+      cover-fit. Spectate hero required anchor tuning on
+      `.gp-spec-title` / `.gp-spec-list` / `.gp-spec-quip`
+      so the HTML overlays land on the painted banner /
+      dark-below / bunting-top rectangles respectively.
+      Gameover and elim reused the existing HTML overlay
+      positions without CSS changes — the painted
+      spotlight and arch pools land where the `.gp-go-
+      winner-avatar` and `.gp-elim-avatar` HTML discs
+      naturally sit.
+
+**Painted register complete across host + controller.**
+After Phase 60 every painted surface in a full session —
+player joins on phone, sees main lobby on host, picks a
+character, sees per-game lobby with painted proscenium,
+plays through the round-intro painted scroll + gameplay
+canvas, sees gameover hero on phone with own avatar in
+warm spotlight OR elim hero with cold archway, then either
+returns to gameplay next round or watches the spectate
+balcony — every one of those surfaces reads as
+Hearthstone-tier painted illustration in the same visual
+register.
+
+Remaining polish candidates (Phase 61+): narrator overlay
+chrome refresh (currently a flat cream pill — could become
+a painted carved plaque matching the new register),
+hintbar-stage PNG refresh (Phase 19b, still reads OK but
+is lower-tier commissioned art), ornament-bunting /
+ornament-corner overlays (replaced by painted frame on
+hero screens; still in place on non-hero screens for
+consistency — could be retired where heros replace them).
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
