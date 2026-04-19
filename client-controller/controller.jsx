@@ -67,6 +67,7 @@ function App() {
   const [score, setScore] = useState(null); // { mine, leader, label }
   const [turn, setTurn] = useState(null);   // { activeId, activeName, phase }
   const [summary, setSummary] = useState(null); // { minigame, rank, earned, total }
+  const [finale, setFinale] = useState(null);   // { rank, total }
   const wsRef = useRef(null);
   // Latest join payload so we can re-send on reconnect without stale closures.
   const joinedRef = useRef(null);
@@ -111,8 +112,14 @@ function App() {
         let msg; try { msg = JSON.parse(e.data); } catch (_) { return; }
         if (msg.type === 'hello' && msg.role === 'controller') { setPlayerId(msg.playerId); playerIdRef.current = msg.playerId; }
         else if (msg.type === 'playerList') setPlayers(msg.players || []);
-        else if (msg.type === 'screen') setHostScreen(msg.screen || 'title');
-        else if (msg.type === 'minigameStart') { setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract }); setScore(null); setTurn(null); setSummary(null); prevMineRef.current = null; vibrate([60, 40, 60]); }
+        else if (msg.type === 'screen') {
+          const s = msg.screen || 'title';
+          setHostScreen(s);
+          // A new game is starting — drop the finale splash so the player
+          // sees the lobby / vote UI instead of yesterday's crown.
+          if (s === 'title' || s === 'select') setFinale(null);
+        }
+        else if (msg.type === 'minigameStart') { setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract }); setScore(null); setTurn(null); setSummary(null); setFinale(null); prevMineRef.current = null; vibrate([60, 40, 60]); }
         else if (msg.type === 'minigameEnd') { setMinigame(null); setScore(null); setTurn(null); prevMineRef.current = null; vibrate(140); }
         else if (msg.type === 'roundEnd') {
           const me = msg.byId && playerIdRef.current != null ? msg.byId[playerIdRef.current] : null;
@@ -123,6 +130,17 @@ function App() {
             else if (me.rank <= 3) vibrate([60, 40, 60]);
             else vibrate(30);
           }
+        }
+        else if (msg.type === 'gameOver') {
+          const me = msg.byId && playerIdRef.current != null ? msg.byId[playerIdRef.current] : null;
+          if (me) {
+            setFinale({ rank: me.rank, total: me.total });
+            // Big celebration buzz scaled to placing
+            if (me.rank === 1) vibrate([120, 60, 120, 60, 200]);
+            else if (me.rank <= 3) vibrate([80, 40, 80]);
+            else vibrate([40, 40, 40]);
+          }
+          setSummary(null);
         }
         else if (msg.type === 'turnUpdate') {
           setTurn({ activeId: msg.activeId ?? null, activeName: msg.activeName || null, phase: msg.phase || null });
@@ -225,13 +243,15 @@ function App() {
           onClose={() => setSwapOpen(false)}
         />
       )}
-      {minigame
-        ? <MinigameInput game={minigame} send={send} score={score} turn={turn} myId={playerId}/>
-        : summary
-          ? <RoundSummary summary={summary}/>
-          : hostScreen === 'board'
-            ? <BoardVoteScreen send={send}/>
-            : <LobbyScreen hostScreen={hostScreen} players={players}/>}
+      {finale
+        ? <FinaleScreen finale={finale}/>
+        : minigame
+          ? <MinigameInput game={minigame} send={send} score={score} turn={turn} myId={playerId}/>
+          : summary
+            ? <RoundSummary summary={summary}/>
+            : hostScreen === 'board'
+              ? <BoardVoteScreen send={send}/>
+              : <LobbyScreen hostScreen={hostScreen} players={players}/>}
       <ReactionBar send={send}/>
     </div>
   );
@@ -240,6 +260,42 @@ function App() {
 const RANK_TAGS = { 1: { label:'#1 · WINNER!', color:'var(--yellow)', emoji:'🏆' },
                     2: { label:'#2',           color:'#c0c0c0',       emoji:'🥈' },
                     3: { label:'#3',           color:'#cd7f32',       emoji:'🥉' } };
+const FINALE_TAGS = {
+  1: { title:'CHAMPION!',  color:'var(--yellow)', emoji:'👑', sub:'The whole barn is cheering.' },
+  2: { title:'SILVER',     color:'#d4d4d4',       emoji:'🥈', sub:'So close. One more round next time.' },
+  3: { title:'BRONZE',     color:'#cd7f32',       emoji:'🥉', sub:'Podium finish. Not bad.' },
+};
+function FinaleScreen({ finale }) {
+  const tag = FINALE_TAGS[finale.rank] || {
+    title:`#${finale.rank}`, color:'#888', emoji:'🎯',
+    sub:'Rematch? There\'s always a rematch.'
+  };
+  return (
+    <div className="card pulse" style={{
+      flex:1, display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', gap:14, textAlign:'center',
+      background:`radial-gradient(circle at 50% 30%, ${tag.color} 0%, #fff 70%)`
+    }}>
+      <div style={{fontSize:14, fontWeight:700, letterSpacing:2, color:'var(--wood-dk)'}}>GAME OVER</div>
+      <div style={{fontSize:96, lineHeight:1}}>{tag.emoji}</div>
+      <div style={{
+        background:tag.color, color:'var(--ink)', border:'5px solid var(--ink)',
+        borderRadius:18, padding:'10px 28px', boxShadow:'0 6px 0 var(--ink)',
+        fontFamily:"'Luckiest Guy',cursive", fontSize:34, letterSpacing:2,
+        WebkitTextStroke:'1px var(--ink)'
+      }}>{tag.title}</div>
+      <div style={{
+        background:'var(--yellow)', border:'4px solid var(--ink)', borderRadius:14,
+        padding:'8px 20px', boxShadow:'0 5px 0 var(--ink)',
+        fontFamily:"'Luckiest Guy',cursive", fontSize:26
+      }}>{finale.total} coins total</div>
+      <div style={{fontSize:13, fontWeight:600, color:'var(--wood-dk)', maxWidth:240, lineHeight:1.3}}>
+        {tag.sub}
+      </div>
+    </div>
+  );
+}
+
 function RoundSummary({ summary }) {
   const tag = RANK_TAGS[summary.rank] || { label:`#${summary.rank}`, color:'#888', emoji:'🎯' };
   const gotCoins = summary.earned > 0;

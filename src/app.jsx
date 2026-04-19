@@ -191,7 +191,28 @@ function App() {
         if (curr.round > curr.totalRounds || (curr.round === curr.totalRounds && curr.lastEarned.some(v=>v>0) === false)) return curr;
         return curr;
       });
-      setScreen(gameState.round >= gameState.totalRounds ? 'podium' : 'board');
+      const goingToPodium = gameState.round >= gameState.totalRounds;
+      if (goingToPodium && mp.broadcastGameOver) {
+        // Build final-ranks payload from the freshest totals (scores + the
+        // round that just closed) so phones show placement that matches the
+        // host's Podium exactly.
+        const finalScores = gameState.scores.map((v, i) => v + (gameState.lastEarned[i] || 0));
+        const byTotal = gameState.players.map((p, i) => ({ i, t: finalScores[i] || 0 }))
+          .sort((a, b) => b.t - a.t);
+        const rankOf = new Array(gameState.players.length);
+        let lastTotal = null, lastRank = 0;
+        byTotal.forEach((row, idx) => {
+          if (row.t !== lastTotal) { lastRank = idx + 1; lastTotal = row.t; }
+          rankOf[row.i] = lastRank;
+        });
+        const byId = {};
+        gameState.players.forEach((p, i) => {
+          if (!p.remoteId) return;
+          byId[p.remoteId] = { rank: rankOf[i], total: finalScores[i] || 0 };
+        });
+        mp.broadcastGameOver({ byId });
+      }
+      setScreen(goingToPodium ? 'podium' : 'board');
     }, 0);
   };
 

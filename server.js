@@ -128,7 +128,7 @@ wss.on('connection', (ws, req) => {
     ws.on('message', (raw) => {
       let msg; try { msg = JSON.parse(raw.toString()); } catch (_) { return; }
       // Host broadcasts state / targeted messages to controllers.
-      if (msg.type === 'state' || msg.type === 'screen' || msg.type === 'minigameStart' || msg.type === 'minigameEnd' || msg.type === 'roundEnd' || msg.type === 'scoreUpdate' || msg.type === 'turnUpdate') {
+      if (msg.type === 'state' || msg.type === 'screen' || msg.type === 'minigameStart' || msg.type === 'minigameEnd' || msg.type === 'roundEnd' || msg.type === 'gameOver' || msg.type === 'scoreUpdate' || msg.type === 'turnUpdate') {
         if (msg.type === 'screen') lastScreen = msg;
         if (msg.type === 'minigameStart') { lastMinigame = msg; lastScore = null; lastTurn = null; }
         if (msg.type === 'minigameEnd') { lastMinigame = null; lastScore = null; lastTurn = null; }
