@@ -71,6 +71,16 @@ function useMultiplayer() {
   const broadcastScreen = useMPCallback((screen) => send({ type: 'screen', screen }), [send]);
   const broadcastMinigameStart = useMPCallback((id, prompt, contract) => send({ type: 'minigameStart', id, prompt, contract }), [send]);
   const broadcastMinigameEnd = useMPCallback((id) => send({ type: 'minigameEnd', id }), [send]);
+  // Mid-game scoreboard: { byId: {playerId: score}, leader: maxScore, label? }.
+  // Mini-games can call this on every RAF tick — we throttle to ~6Hz so phones
+  // aren't flooded with 60 messages/sec.
+  const lastScoreSentRef = useMPRef(0);
+  const broadcastScores = useMPCallback((payload) => {
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now - lastScoreSentRef.current < 150) return;
+    lastScoreSentRef.current = now;
+    send({ type: 'scoreUpdate', ...payload });
+  }, [send]);
 
   // Subscribe to controller input events. Returns unsubscribe fn.
   const onInput = useMPCallback((fn) => {
@@ -80,9 +90,9 @@ function useMultiplayer() {
 
   const api = useMPMemo(() => ({
     connected, remotePlayers,
-    broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd,
+    broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores,
     onInput, send,
-  }), [connected, remotePlayers, broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, onInput, send]);
+  }), [connected, remotePlayers, broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores, onInput, send]);
 
   // Pin the API onto the window so minigame components (deep in the
   // tree) can grab it without prop drilling through App → Minigame.

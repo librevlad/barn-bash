@@ -43,6 +43,18 @@ function PigSprint({ state, onFinish, onQuit }) {
     mp.broadcastMinigameStart('sprint', 'TAP AS FAST AS YOU CAN!', 'tap');
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('sprint'); };
   }, [mp]);
+  // broadcast live progress (0..FINISH) so phones can see their own lane
+  useEffect(() => {
+    if (!mp || !mp.broadcastScores) return;
+    const byId = {};
+    let leader = 0;
+    players.forEach((p, i) => {
+      const s = Math.round(positions[i] || 0);
+      if (p.remoteId) byId[p.remoteId] = s;
+      if (s > leader) leader = s;
+    });
+    mp.broadcastScores({ byId, leader, label: 'yards' });
+  }, [mp, positions, players]);
   useEffect(() => {
     if (!mp || !mp.onInput) return;
     const off = mp.onInput(({ id, kind }) => {

@@ -390,6 +390,17 @@ function MudDash({ state, onFinish, onQuit }) {
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('muddash'); };
   }, [mp]);
   useEffect(() => {
+    if (!mp || !mp.broadcastScores) return;
+    const byId = {};
+    let leader = 0;
+    players.forEach((p, i) => {
+      const s = Math.round(pstate[i] ? pstate[i].dist : 0);
+      if (p.remoteId) byId[p.remoteId] = s;
+      if (s > leader) leader = s;
+    });
+    mp.broadcastScores({ byId, leader, label: 'meters' });
+  }, [mp, pstate, players]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
     players.forEach((p) => {
       if (p.remoteId && !remoteControls.current[p.remoteId]) {

@@ -164,6 +164,17 @@ function AppleAim({ state, onFinish, onQuit }) {
     });
     return () => { try { off && off(); } catch (_) {} };
   }, [mp, phase, currentPlayer, started, finished]);
+  useEffect(() => {
+    if (!mp || !mp.broadcastScores) return;
+    const byId = {};
+    let leader = 0;
+    players.forEach((p, i) => {
+      const s = scores[i] || 0;
+      if (p.remoteId) byId[p.remoteId] = s;
+      if (s > leader) leader = s;
+    });
+    mp.broadcastScores({ byId, leader, label: 'rings' });
+  }, [mp, scores, players]);
 
   // finish
   useEffect(() => {
@@ -438,6 +449,17 @@ function WhackAGopher({ state, onFinish, onQuit }) {
     mp.broadcastMinigameStart('whack', 'BOP GOPHERS • SKIP BUNNIES', 'holes');
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('whack'); };
   }, [mp]);
+  useEffect(() => {
+    if (!mp || !mp.broadcastScores) return;
+    const byId = {};
+    let leader = 0;
+    players.forEach((p, i) => {
+      const s = scores[i] || 0;
+      if (p.remoteId) byId[p.remoteId] = s;
+      if (s > leader) leader = s;
+    });
+    mp.broadcastScores({ byId, leader, label: 'bops' });
+  }, [mp, scores, players]);
   useEffect(() => {
     if (!mp || !mp.onInput) return;
     const off = mp.onInput(({ id, kind, data }) => {

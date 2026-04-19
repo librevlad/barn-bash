@@ -30,6 +30,10 @@ const BOARD_TILES = [
   { id:'fish',   name:'Fishing Frenzy',  icon:'🎣', tint:'#4aa3e0' },
 ];
 
+function vibrate(ms) {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (_) {}
+}
+
 const CLIENT_ID_KEY = 'barn-bash-controller-clientId';
 function getOrMakeClientId() {
   try {
@@ -60,9 +64,16 @@ function App() {
   const [critter, setCritter] = useState(() => localStorage.getItem('barn-bash-critter') || '');
   const [hostScreen, setHostScreen] = useState('title');
   const [minigame, setMinigame] = useState(null);
+  const [score, setScore] = useState(null); // { mine, leader, label }
   const wsRef = useRef(null);
   // Latest join payload so we can re-send on reconnect without stale closures.
   const joinedRef = useRef(null);
+  // playerId mirrored into a ref so WS listeners can read it without
+  // re-subscribing on every state change.
+  const playerIdRef = useRef(null);
+  // Last score sent to the phone so we can trigger a short vibration the
+  // instant the player's own score advances.
+  const prevMineRef = useRef(null);
 
   useStatusbar(connected);
 
@@ -95,11 +106,20 @@ function App() {
       });
       ws.addEventListener('message', (e) => {
         let msg; try { msg = JSON.parse(e.data); } catch (_) { return; }
-        if (msg.type === 'hello' && msg.role === 'controller') setPlayerId(msg.playerId);
+        if (msg.type === 'hello' && msg.role === 'controller') { setPlayerId(msg.playerId); playerIdRef.current = msg.playerId; }
         else if (msg.type === 'playerList') setPlayers(msg.players || []);
         else if (msg.type === 'screen') setHostScreen(msg.screen || 'title');
-        else if (msg.type === 'minigameStart') setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract });
-        else if (msg.type === 'minigameEnd') setMinigame(null);
+        else if (msg.type === 'minigameStart') { setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract }); setScore(null); prevMineRef.current = null; vibrate([60, 40, 60]); }
+        else if (msg.type === 'minigameEnd') { setMinigame(null); setScore(null); prevMineRef.current = null; vibrate(140); }
+        else if (msg.type === 'scoreUpdate') {
+          const myId = playerIdRef.current;
+          const byId = msg.byId || {};
+          const mine = myId != null ? (byId[myId] ?? 0) : 0;
+          const prev = prevMineRef.current;
+          if (prev != null && mine > prev) vibrate(40);
+          prevMineRef.current = mine;
+          setScore({ mine, leader: msg.leader ?? 0, label: msg.label || null });
+        }
       });
     };
     // seed join payload from localStorage so the first `open` can re-join
@@ -173,7 +193,7 @@ function App() {
         <div className="pill pill-name">{name} <span className="pill-sub">· {CRITTERS.find(c=>c.id===critter)?.name || '—'}</span></div>
       </div>
       {minigame
-        ? <MinigameInput game={minigame} send={send}/>
+        ? <MinigameInput game={minigame} send={send} score={score}/>
         : hostScreen === 'board'
           ? <BoardVoteScreen send={send}/>
           : <LobbyScreen hostScreen={hostScreen} players={players}/>}
@@ -233,22 +253,50 @@ function LobbyScreen({ hostScreen, players }) {
   );
 }
 
-function MinigameInput({ game, send }) {
-  // Contract-driven input screen. Host broadcasts `contract`:
-  //   'tap'   — mash a big button (Sprint, Tug, Egg, Apple, Fishing)
-  //   'steer' — left/jump/right 3-button pad (Hay Panic, Mud Dash)
-  //   'holes' — 6-hole grid (Whack-a-Gopher)
+function MinigameInput({ game, send, score }) {
   const contract = game.contract || 'tap';
-  if (contract === 'tap')   return <TapContract   prompt={game.prompt} send={send}/>;
-  if (contract === 'steer') return <SteerContract prompt={game.prompt} send={send}/>;
-  if (contract === 'holes') return <HolesContract prompt={game.prompt} send={send}/>;
-  return <LobbyScreen hostScreen="playing" players={[]}/>;
+  const body = contract === 'tap'   ? <TapContract   prompt={game.prompt} send={send}/>
+            : contract === 'steer' ? <SteerContract prompt={game.prompt} send={send}/>
+            : contract === 'holes' ? <HolesContract prompt={game.prompt} send={send}/>
+            : <LobbyScreen hostScreen="playing" players={[]}/>;
+  return (
+    <>
+      {score && <ScoreStrip score={score}/>}
+      {body}
+    </>
+  );
+}
+
+function ScoreStrip({ score }) {
+  const leading = score.leader > 0 && score.mine >= score.leader;
+  return (
+    <div style={{
+      display:'flex', gap:8, justifyContent:'center', marginTop:4, marginBottom:2
+    }}>
+      <div style={{
+        background: leading ? 'var(--yellow)' : '#fff',
+        border:'3px solid var(--ink)', borderRadius:999, padding:'4px 12px',
+        fontFamily:"'Luckiest Guy',cursive", fontSize:14, letterSpacing:.5,
+        boxShadow:'0 3px 0 var(--ink)'
+      }}>
+        YOU: {score.mine}
+      </div>
+      <div style={{
+        background:'#fff', border:'3px solid var(--ink)', borderRadius:999, padding:'4px 12px',
+        fontFamily:"'Luckiest Guy',cursive", fontSize:14, letterSpacing:.5,
+        boxShadow:'0 3px 0 var(--ink)', opacity:.75
+      }}>
+        LEAD: {score.leader}
+      </div>
+    </div>
+  );
 }
 
 function TapContract({ prompt, send }) {
   const [hit, setHit] = useState(false);
   const tap = () => {
     send({ type: 'input', kind: 'tap', data: { t: Date.now() } });
+    vibrate(15);
     setHit(true);
     setTimeout(() => setHit(false), 60);
   };
@@ -269,12 +317,13 @@ function SteerContract({ prompt, send }) {
   const press = (dir) => {
     setActive(a => ({ ...a, [dir]: true }));
     send({ type: 'input', kind: 'steer', data: { dir, down: true } });
+    vibrate(10);
   };
   const release = (dir) => {
     setActive(a => ({ ...a, [dir]: false }));
     send({ type: 'input', kind: 'steer', data: { dir, down: false } });
   };
-  const jump = () => { send({ type: 'input', kind: 'steer', data: { dir: 'jump', down: true } }); };
+  const jump = () => { send({ type: 'input', kind: 'steer', data: { dir: 'jump', down: true } }); vibrate(25); };
   const bindHold = (dir) => ({
     onPointerDown: (e) => { e.preventDefault(); press(dir); },
     onPointerUp:   (e) => { e.preventDefault(); release(dir); },
@@ -298,6 +347,7 @@ function HolesContract({ prompt, send }) {
   const [hit, setHit] = useState(-1);
   const whack = (h) => {
     send({ type: 'input', kind: 'holes', data: { h } });
+    vibrate(18);
     setHit(h);
     setTimeout(() => setHit(p => p === h ? -1 : p), 120);
   };

@@ -94,6 +94,17 @@ function TugOWar({ state, onFinish, onQuit }) {
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('tug'); };
   }, [mp]);
   useEffect(() => {
+    if (!mp || !mp.broadcastScores) return;
+    const byId = {};
+    let leader = 0;
+    players.forEach((p, i) => {
+      const s = tapCounts[i] || 0;
+      if (p.remoteId) byId[p.remoteId] = s;
+      if (s > leader) leader = s;
+    });
+    mp.broadcastScores({ byId, leader, label: 'taps' });
+  }, [mp, tapCounts, players]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
     const off = mp.onInput(({ id, kind }) => {
       if (kind !== 'tap') return;
@@ -377,6 +388,17 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
     mp.broadcastMinigameStart('fishing', 'TAP TO DROP YOUR HOOK!', 'tap');
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('fishing'); };
   }, [mp]);
+  useEffect(() => {
+    if (!mp || !mp.broadcastScores) return;
+    const byId = {};
+    let leader = 0;
+    players.forEach((p, i) => {
+      const s = scores[i] || 0;
+      if (p.remoteId) byId[p.remoteId] = s;
+      if (s > leader) leader = s;
+    });
+    mp.broadcastScores({ byId, leader, label: 'catch' });
+  }, [mp, scores, players]);
   useEffect(() => {
     if (!mp || !mp.onInput) return;
     players.forEach((p, i) => {
