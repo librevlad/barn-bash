@@ -513,7 +513,6 @@
 
 /* Cover-fit backdrops: drift + flicker compound. Stagger delays so
    no two surfaces sync their breath. */
-.lobby-backdrop,
 #t-hall-backdrop,
 #postgame-overlay .pg-backdrop-hall,
 .gameplay-root .gp-gameover-backdrop,
@@ -522,14 +521,19 @@
              torchFlicker 42s ease-in-out infinite;
   will-change: transform, filter;
 }
-.lobby-backdrop                               { animation-delay: 0s,    0s; }
 #t-hall-backdrop                              { animation-delay: 2s,   10s; }
 #postgame-overlay .pg-backdrop-hall           { animation-delay: 4s,   20s; }
 .gameplay-root .gp-gameover-backdrop          { animation-delay: 6s,   30s; }
 .gameplay-root .gp-elim-backdrop              { animation-delay: 8s,    5s; }
 
 /* Centered backdrops: flicker only (drift would clash with their
-   translate(-50%,-50%) anchor). */
+   translate(-50%,-50%) anchor). Phase 24 originally lumped
+   .lobby-backdrop with cover-fit drift, but per-host HTML
+   centers it via translate(-50%,-50%) with max-width/height —
+   drift's keyframe transform wiped the centering, pinning the
+   image to the bottom-right quadrant. Moved here with the
+   other centered backdrops. */
+.lobby-backdrop,
 #t-content .t-scroll-backdrop,
 #t-content .t-backdrop,
 #t-content .t-round-intro-backdrop,
