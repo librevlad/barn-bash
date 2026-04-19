@@ -479,6 +479,30 @@ function CrownSVG({ size = 64 }) {
 function Scoreboard({ players, scores, earned, onContinue, minigameName, round, totalRounds }) {
   const ranked = [...players].map((p,i)=>({p,i,s:scores[i],e:earned[i]})).sort((a,b)=>b.e - a.e);
   const leaderboard = [...players].map((p,i)=>({p,i,total: scores[i] + earned[i]})).sort((a,b)=>b.total - a.total);
+
+  // Ready-up tracking: phones tap READY on their summary overlay. When every
+  // phone-owned slot has confirmed, auto-continue so the host doesn't need
+  // to reach for the keyboard.
+  const [readyIds, setReadyIds] = useState(() => new Set());
+  const remoteCount = players.filter(p => p.remoteId).length;
+  const readyCount = readyIds.size;
+  useEffect(() => {
+    const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+    if (!mp || !mp.onInput) return;
+    const off = mp.onInput(({ id, kind }) => {
+      if (kind !== 'ready') return;
+      setReadyIds(prev => prev.has(id) ? prev : new Set([...prev, id]));
+    });
+    return () => { try { off && off(); } catch (_) {} };
+  }, []);
+  const pickedRef = useRef(false);
+  useEffect(() => {
+    if (pickedRef.current) return;
+    if (remoteCount > 0 && readyCount >= remoteCount) {
+      pickedRef.current = true;
+      setTimeout(onContinue, 450);
+    }
+  }, [readyCount, remoteCount, onContinue]);
   return (
     <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #1a4b7a 0%, #2d6fa0 50%, #4aa3e0 100%)'}}>
       {/* scanlines */}
@@ -543,9 +567,18 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
       </div>
 
       <div style={{position:'absolute',bottom:50,left:0,right:0,textAlign:'center'}}>
-        <Btn variant="green" size="xl" onClick={onContinue} className="pulse">
-          {round >= totalRounds ? 'FINAL PODIUM! 🏆' : `ROUND ${round+1} ▶`}
-        </Btn>
+        {remoteCount > 0 && (
+          <div style={{marginBottom:10, display:'inline-block', background:'rgba(0,0,0,.35)',
+            border:'3px solid var(--cream)', borderRadius:14, padding:'6px 16px',
+            fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--cream)', letterSpacing:1}}>
+            {readyCount}/{remoteCount} READY
+          </div>
+        )}
+        <div>
+          <Btn variant="green" size="xl" onClick={onContinue} className="pulse">
+            {round >= totalRounds ? 'FINAL PODIUM! 🏆' : `ROUND ${round+1} ▶`}
+          </Btn>
+        </div>
       </div>
     </div>
   );
