@@ -2743,6 +2743,83 @@ composer can drop in new note arrays.
       painted orb rows, empty painted orbs communicate
       "room for more" when player count is below capacity.
 
+59. **Phase 59** (shipped 2026-04-19): painted hero
+    treatment extended to the remaining high-visibility
+    tournament + post-game screens so the full in-session
+    flow (lobby → round-intro → gameplay → standings →
+    post-game → next round) reads as one continuous
+    Hearthstone-tier painted series. Spec at
+    `docs/superpowers/specs/2026-04-19-painted-screens-
+    phase-59-design.md`. Eight new painted 1376×768 PNG
+    heros land in `/assets/`.
+
+    * **59a — tournament round-intro heros (4 per-game).**
+      `tournament-round-intro-<game>-hero.png` for escape,
+      race, hill, meteor. Each carries full painted stage
+      with a carved "FRANTICS / <GAME>" signboard, a blank
+      cream parchment scroll (ready for HTML ROUND N
+      overlay), and a "UP NEXT: <GAME TITLE>" marquee with
+      the matching per-game symbolic motif (fox head /
+      checkered flags / gold crown / comet streak).
+      `renderRoundIntro()` maps `data.gameId` to the
+      matching hero src; unknown game falls back to the
+      legacy `tournament-round-intro.png`. Hero variant
+      overrides the legacy 380×420 centered poster with
+      fixed inset:0 cover-fit. HTML chrome (TOURNAMENT
+      bar, game-name line, GET READY) hidden in hero mode
+      — painted sign + marquee carry them. Only ROUND N
+      stays, pinned to painted parchment at y=50% in dark-
+      brown letterpress so it reads as hand-painted ink
+      on cream. Custom `tHeroRoundFade` keyframe preserves
+      the centering transform through scale-in (baseline
+      `tRoundScaleSettle` and `tFadeSlideUp` both
+      overwrite `transform` and wipe the centering —
+      same class of issue as Phase 56 drift).
+
+    * **59b — tournament standings hero (1 shared).**
+      `tournament-standings-hero.png` replaces the legacy
+      `standings-scroll.png`. Painted ornate wooden
+      scoreboard frame with carved gold-leafed "STANDINGS"
+      header, blank cream parchment interior for HTML
+      player rows, laurel sprigs, small painted trophy
+      silhouette, flanking cream bannerettes, velvet
+      curtains, stage. `.t-scroll-backdrop.hero` cover-fit
+      fixed inset:0; HTML chrome already painted is hidden
+      (TOURNAMENT bar, ROUND N OF N, STANDINGS title). HTML
+      rows pinned to painted parchment rect (top 35%, 340
+      px wide, compact padding so 4-8 rows fit inside the
+      ~140 px painted interior without spilling onto
+      painted orbs below). Narrator commentary pinned to
+      stage apron (top 82%).
+
+    * **59c — post-game hall heros (3 non-race games).**
+      `gameover-hall-<game>-hero.png` for escape / hill /
+      meteor. Each hero carries per-game atmosphere on
+      top of the shared Phase 58 vocabulary — escape
+      paints a retreating fox silhouette in dusk forest
+      with distant fire-ember glow; hill paints a cut-
+      stone throne on a mossy boulder plateau with a
+      floating gold crown; meteor paints a scorched safe-
+      zone platform on fused stone with cosmic starfield
+      and faint meteor streaks. Each has an empty warm
+      spotlight pool at stage center ready for the Phase
+      54 132 px winner-portrait brass disc overlay.
+      `buildPostGameOpts` in each per-host `main.js` swaps
+      the `backdrop:` path from the shared
+      `gameover-hall.png` to its per-game hero; no CSS
+      changes needed (existing `.pg-backdrop-hall` cover-
+      fit works). Race keeps its `race-podium.png`
+      (already Hearthstone-quality, scoped to
+      `backdropMode: 'podium'`).
+
+**Painted continuity complete for tournament flow.** After
+Phase 59 a full session reads as one painted series from
+lobby entry to tournament finale. Remaining candidates
+(Phase 60+): controller mobile screens (gameover, elim,
+spectate on the phone), narrator overlay chrome refresh,
+hintbar-stage PNG refresh if it still reads as lower-
+register against the hero backdrops.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
