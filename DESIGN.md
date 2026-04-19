@@ -2620,6 +2620,129 @@ composer can drop in new note arrays.
       72px on the portrait disc keeps the emoji text-node
       legible if the inner <img> errors out post-pipeline.
 
+55. **Phase 55** (shipped 2026-04-19): tournament-end CHAMPION
+    reveal matches Phase 54's post-game treatment — painted
+    animal PNG inside a 160 px brass-framed disc with double
+    gold rim sitting above the painted throne backdrop.
+    Trophy emoji stays as the fallback when champion
+    character is unknown.
+
+    * renderChampion() resolves champCharacter from
+      window._lastPlayers[champId] and computes
+      champAvatarHTML via HostCommon.renderCharGlyph; the
+      template branches on presence: painted portrait disc
+      (#t-content .t-champion-portrait, 160 px with thick
+      dark inner stroke + gold rim + thin dark outer + gold
+      glow) when character is known, .t-trophy-anim 🏆
+      emoji otherwise. Reuses tTrophyBounce entry cadence so
+      the beat matches the prior trophy-emoji timing.
+
+56. **Phase 56** (shipped 2026-04-19): per-game lobby
+    painted proscenium arch re-centered. Phase 24 parallax-
+    torchlight introduced @keyframes backdropDrift that
+    wiped the per-host `translate(-50%, -50%)` anchor on
+    .lobby-backdrop, pinning the 500×500 arch PNG to the
+    bottom-right quadrant of the viewport.
+
+    * theme.css reclassifies .lobby-backdrop from the
+      cover-fit drift group into the centered flicker-only
+      group (which Phase 24's own comment correctly
+      identified as the right home for `translate(-50%,
+      -50%)` anchored backdrops). Post-fix computed
+      transform is matrix(1, 0, 0, 1, -250, -250) — exactly
+      the expected centering. Same CSS is shared across all
+      four per-game lobbies.
+
+57. **Phase 57** (shipped 2026-04-19): per-game lobby CSS
+    theatrical atmosphere as a bridge before painted heros
+    land. `body > #bg` gets a 5-layer CSS composition —
+    warm radial spotlight halo centered on the arch, red-
+    velvet curtains on left + right edges with vertical
+    folds, carved-wood stage floor at the bottom, dark
+    carnival-hall radial base — replacing the dead wood-
+    plank void from Phase 56. No PNG commission needed;
+    bg.png (the main-lobby composition) carries its own
+    title + CTAs and would have competed with the per-game
+    arch if dropped behind it.
+
+    * `body:has(#lobby:not(.hidden)) > canvas { display:
+      none }` hides the per-game gameplay canvas while the
+      lobby is active so its opaque idle render (night sky
+      for escape, cosmic wash for meteor) doesn't paint on
+      top of #bg. When #lobby gains .hidden during
+      countdown the canvas re-appears naturally.
+
+    * Empty slot card strips background + box-shadow so only
+      the avatar ball + name label float on the painted
+      arch (was a 0.55-opacity dark rectangle covering the
+      commissioned wood + vine art). Empty avatar flips from
+      CG plastic sphere to a warm brass medallion with
+      muted-gold rim and cream "?" at 0.5 alpha.
+
+58. **Phase 58** (shipped 2026-04-19): painted full-viewport
+    hero replaces the Phase 57 CSS theatrical composition on
+    all 4 per-game lobbies. Spec
+    (`docs/superpowers/specs/2026-04-19-lobby-hero-art-
+    design.md`) defined the target reference (Hearthstone-
+    tier painted illustration), common composition, UI
+    safe-zones, per-game variants, and Midjourney / SDXL
+    prompts. User generated four 1376×768 heros matching
+    the spec.
+
+    * **58a — spec landed.** Target reference is a painted
+      theatrical stage: thick baroque gold filigree frame,
+      painted bunting with warm bulbs inside the frame, red
+      velvet curtains with gold tassels on left and right
+      edges, wooden proscenium arch with carved gold-leafed
+      sign, hanging brass lanterns, cream canvas banner,
+      4-6 painted gold orb slot placeholders, stone or
+      plank stage steps, fire ember particles.
+
+    * **58b — escape integrated.** `<div id="bg"
+      class="hero-escape">` opts in. `body > #bg.hero-
+      escape` sets the hero image-set as a cover-fit layer.
+      `body:has(> #bg.hero-escape)` hides #lobby::before
+      bunting, .ornament-corner filigree, and #lobby
+      .lobby-backdrop arch (all three now painted in the
+      hero — keeping the overlays would double the chrome).
+      #lobby h1/h2 hidden (painted sign reads the title).
+      #lobby-info / #lobby-players / #lobby-hint absolute-
+      positioned to painted anchors (banner 40%,
+      slot row 52% top, hint 88%). .player-slot.empty
+      visibility hidden — painted orb carries the "?" and a
+      CSS empty medallion would stack as a dark duplicate;
+      filled slots still paint the brass card + avatar on
+      top of their painted orb position.
+
+    * **58c — race / hill / meteor integrated.** Shared
+      selector chain extended to match all four
+      `.hero-<game>` classes. Per-game index.html adds
+      `class="hero-race"` / `class="hero-hill"` /
+      `class="hero-meteor"`. Single anchor-set works across
+      all four because the 4 generated heros share the same
+      painted layout template, with per-game symbolic
+      motifs: race (crossed checkered flags + gold laurel
+      wreaths + plank stage + yellow track-line), hill
+      (gold crown + royal banners + gold braids + moss-
+      covered stone hill mound), meteor (streaking comet
+      with gold tail + constellation stars + cool blue-
+      white lantern flame + cosmic purple-red curtains +
+      scorched stone with impact craters).
+
+    * **58d — per-game anchor tuning.** AI-generated heros
+      drifted slightly from the shared template: race /
+      hill / meteor painted canvas banners sit 4-8% lower
+      than escape, and orb rows anchor 2-4% lower. Per-
+      hero CSS overrides (banner top 45/44/48%, slot row
+      top 54/55/56%, meteor hint 85% vs 88% default) pull
+      HTML overlays onto each game's actual painted
+      rectangles. Banner text color tuned for hill +
+      meteor (their cream banners render slightly darker
+      than escape's). End result: all 4 painted heros read
+      as a continuous series, filled brass cards align on
+      painted orb rows, empty painted orbs communicate
+      "room for more" when player count is below capacity.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
