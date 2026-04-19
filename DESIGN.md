@@ -2577,6 +2577,49 @@ composer can drop in new note arrays.
       wavesSurvived desc → dodges desc. Value column 'W{n}'.
       Chips: Dodges / Sprints / Pickups.
 
+53. **Phase 53** (shipped 2026-04-19): between-round
+    tournament standings gains a per-round pts-delta chip
+    per player — '+3' for the round winner (gold pill, brass
+    gradient + dark text + glow), '+1' for surviving non-
+    winners, em-dash for players eliminated that round.
+    Conveys who scored what this round without having to
+    diff running totals against memory.
+
+    * Server (server/index.js): handleTournamentGameEnd
+      snapshots pre-round scores, then computes
+      roundDelta[id] = post − pre for every tracked player
+      after point awards. The tournamentStandings broadcast
+      now carries roundDelta + winnerId + gameId so the
+      client can style the chip without rederiving ranks.
+
+    * Client (client-shared/tournament.js): renderStandings
+      reads data.roundDelta + data.winnerId and emits a
+      .t-player-delta chip per row. Winner chip gets .win;
+      zero-delta rows get .zero (dim dash). 0.45 s tDeltaPop
+      entry with overshoot.
+
+54. **Phase 54** (shipped 2026-04-19): post-game winner
+    reveal swaps the 72 px emoji icon for the commissioned
+    painterly animal PNG inside a 132 px brass-framed disc.
+    Winner's color drives the gold-rim layer
+    (--winner-rim) and the soft glow (--winner-glow);
+    entry is a pgPortraitPop scale+rotate overshoot over
+    0.7 s so the champion reads as a framed trophy portrait
+    rather than a system icon.
+
+    * show() computes winnerAvatarHTML via
+      HostCommon.renderCharGlyph(character, 'pg-winner-char'),
+      which already routes to the processed (checker-
+      stripped) data URL when the painterly pipeline has
+      finished and carries a text-node emoji fallback
+      through onerror.
+
+    * Template branches on winnerAvatarHTML: painted
+      portrait when we know the winner's character, else
+      the existing .pg-winner-icon emoji path. font-size:
+      72px on the portrait disc keeps the emoji text-node
+      legible if the inner <img> errors out post-pipeline.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
