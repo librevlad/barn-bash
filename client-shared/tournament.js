@@ -454,6 +454,34 @@ const Tournament = (() => {
         animation: tTrophyBounce 0.8s ease-out forwards;
         filter: drop-shadow(0 0 24px rgba(255, 221, 107, 0.6));
       }
+      /* Phase 55 — painted champion portrait replaces the trophy
+         emoji when we know the champion's character. 160 px disc
+         with double gold rim (thick outer + dark inset + thin
+         outer) so it reads as a framed trophy portrait enthroned
+         above the backdrop. font-size keeps the text-node emoji
+         fallback big enough when the <img> errors post-pipeline. */
+      #t-content .t-champion-portrait {
+        width: 160px; height: 160px;
+        border-radius: 50%;
+        margin: 0 auto 6px;
+        background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.14), rgba(0,0,0,0.35));
+        box-shadow:
+          inset 0 4px 0 rgba(255, 250, 220, 0.32),
+          inset 0 -4px 8px rgba(0, 0, 0, 0.5),
+          0 0 0 4px rgba(20, 10, 5, 0.9),
+          0 0 0 10px var(--accent-gold, #f4c542),
+          0 0 0 13px rgba(20, 10, 5, 0.7),
+          0 16px 44px rgba(0, 0, 0, 0.6),
+          0 0 80px rgba(255, 221, 107, 0.6);
+        overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 96px; line-height: 1;
+        animation: tTrophyBounce 0.8s ease-out forwards;
+      }
+      #t-content .t-champion-portrait img {
+        width: 100%; height: 100%; object-fit: cover;
+        border-radius: 0;
+      }
       #t-content .t-champion-label {
         font-family: var(--font-display, 'Alfa Slab One'), Georgia, serif;
         font-size: 48px; font-weight: 400; letter-spacing: 4px;
@@ -684,8 +712,27 @@ const Tournament = (() => {
       quip = Narrator.tournamentChampionQuip(champDisplayName);
     }
 
+    // Phase 55 — when we know the champion's character, render the
+    // painted animal portrait inside a gold-rimmed 160 px disc.
+    // renderCharGlyph picks the processed (checker-stripped) data
+    // URL from HostCommon's painterly pipeline when it's ready and
+    // carries a text-node emoji fallback through onerror. Trophy
+    // emoji stays as the fallback when no character info is
+    // available (controller lost / lobby-less champion edge case).
+    var champPlayer = data.champId ? (players[data.champId] || {}) : {};
+    var champCharacter = champPlayer.character || null;
+    var champAvatarHTML = (champCharacter
+      && typeof HostCommon !== 'undefined'
+      && typeof HostCommon.renderCharGlyph === 'function')
+      ? HostCommon.renderCharGlyph(champCharacter, 't-champion-char')
+      : null;
+
     var html = '<div class="t-bar" style="opacity:0;animation:tFadeSlideUp 0.4s ease-out 0.2s forwards;">TOURNAMENT COMPLETE</div>';
-    html += '<div class="t-trophy-anim">\uD83C\uDFC6</div>';
+    if (champAvatarHTML) {
+      html += '<div class="t-champion-portrait">' + champAvatarHTML + '</div>';
+    } else {
+      html += '<div class="t-trophy-anim">\uD83C\uDFC6</div>';
+    }
 
     if (champDisplayName) {
       html += '<div class="t-champion-label hero-flourish">CHAMPION!</div>';
