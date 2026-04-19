@@ -87,6 +87,11 @@ function useMultiplayer() {
   // 'YOUR TURN' / 'VLAD TO SHOOT' pill instead of staring at a TAP pad
   // wondering if anything's listening.
   const broadcastTurn = useMPCallback((payload) => send({ type: 'turnUpdate', ...payload }), [send]);
+  // Round-end per-player summary. Payload:
+  //   { minigame: 'Pig Sprint', byId: { [playerId]: { rank, earned, total } } }
+  // Sent once from finishMinigame(); phone renders a personal celebration
+  // overlay ("YOU GOT #2, +3 COINS!") until next minigameStart.
+  const broadcastRoundEnd = useMPCallback((payload) => send({ type: 'roundEnd', ...payload }), [send]);
 
   // Subscribe to controller input events. Returns unsubscribe fn.
   const onInput = useMPCallback((fn) => {
@@ -96,9 +101,9 @@ function useMultiplayer() {
 
   const api = useMPMemo(() => ({
     connected, remotePlayers,
-    broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores, broadcastTurn,
+    broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores, broadcastTurn, broadcastRoundEnd,
     onInput, send,
-  }), [connected, remotePlayers, broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores, broadcastTurn, onInput, send]);
+  }), [connected, remotePlayers, broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores, broadcastTurn, broadcastRoundEnd, onInput, send]);
 
   // Pin the API onto the window so minigame components (deep in the
   // tree) can grab it without prop drilling through App → Minigame.

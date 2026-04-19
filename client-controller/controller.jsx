@@ -66,6 +66,7 @@ function App() {
   const [minigame, setMinigame] = useState(null);
   const [score, setScore] = useState(null); // { mine, leader, label }
   const [turn, setTurn] = useState(null);   // { activeId, activeName, phase }
+  const [summary, setSummary] = useState(null); // { minigame, rank, earned, total }
   const wsRef = useRef(null);
   // Latest join payload so we can re-send on reconnect without stale closures.
   const joinedRef = useRef(null);
@@ -111,8 +112,18 @@ function App() {
         if (msg.type === 'hello' && msg.role === 'controller') { setPlayerId(msg.playerId); playerIdRef.current = msg.playerId; }
         else if (msg.type === 'playerList') setPlayers(msg.players || []);
         else if (msg.type === 'screen') setHostScreen(msg.screen || 'title');
-        else if (msg.type === 'minigameStart') { setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract }); setScore(null); setTurn(null); prevMineRef.current = null; vibrate([60, 40, 60]); }
+        else if (msg.type === 'minigameStart') { setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract }); setScore(null); setTurn(null); setSummary(null); prevMineRef.current = null; vibrate([60, 40, 60]); }
         else if (msg.type === 'minigameEnd') { setMinigame(null); setScore(null); setTurn(null); prevMineRef.current = null; vibrate(140); }
+        else if (msg.type === 'roundEnd') {
+          const me = msg.byId && playerIdRef.current != null ? msg.byId[playerIdRef.current] : null;
+          if (me) {
+            setSummary({ minigame: msg.minigame, rank: me.rank, earned: me.earned, total: me.total });
+            // Buzz based on placing: winner double, podium single, also-ran tap.
+            if (me.rank === 1) vibrate([80, 40, 80, 40, 120]);
+            else if (me.rank <= 3) vibrate([60, 40, 60]);
+            else vibrate(30);
+          }
+        }
         else if (msg.type === 'turnUpdate') {
           setTurn({ activeId: msg.activeId ?? null, activeName: msg.activeName || null, phase: msg.phase || null });
           if (msg.activeId != null && msg.activeId === playerIdRef.current) vibrate([30, 30, 60]);
@@ -216,10 +227,46 @@ function App() {
       )}
       {minigame
         ? <MinigameInput game={minigame} send={send} score={score} turn={turn} myId={playerId}/>
-        : hostScreen === 'board'
-          ? <BoardVoteScreen send={send}/>
-          : <LobbyScreen hostScreen={hostScreen} players={players}/>}
+        : summary
+          ? <RoundSummary summary={summary}/>
+          : hostScreen === 'board'
+            ? <BoardVoteScreen send={send}/>
+            : <LobbyScreen hostScreen={hostScreen} players={players}/>}
       <ReactionBar send={send}/>
+    </div>
+  );
+}
+
+const RANK_TAGS = { 1: { label:'#1 · WINNER!', color:'var(--yellow)', emoji:'🏆' },
+                    2: { label:'#2',           color:'#c0c0c0',       emoji:'🥈' },
+                    3: { label:'#3',           color:'#cd7f32',       emoji:'🥉' } };
+function RoundSummary({ summary }) {
+  const tag = RANK_TAGS[summary.rank] || { label:`#${summary.rank}`, color:'#888', emoji:'🎯' };
+  const gotCoins = summary.earned > 0;
+  return (
+    <div className="card pulse" style={{
+      flex:1, display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', gap:12, textAlign:'center'
+    }}>
+      <div style={{fontSize:12, fontWeight:700, letterSpacing:1, color:'var(--wood-dk)', textTransform:'uppercase'}}>
+        {summary.minigame}
+      </div>
+      <div style={{fontSize:64, lineHeight:1}}>{tag.emoji}</div>
+      <div style={{
+        background:tag.color, color:'var(--ink)', border:'4px solid var(--ink)',
+        borderRadius:14, padding:'8px 20px', boxShadow:'0 5px 0 var(--ink)',
+        fontFamily:"'Luckiest Guy',cursive", fontSize:26, letterSpacing:1
+      }}>{tag.label}</div>
+      <div style={{
+        background: gotCoins ? 'var(--yellow)' : '#eee',
+        border:'3px solid var(--ink)', borderRadius:12, padding:'6px 16px',
+        fontFamily:"'Luckiest Guy',cursive", fontSize:22,
+        color: gotCoins ? 'var(--ink)' : '#888',
+        boxShadow:'0 4px 0 var(--ink)'
+      }}>+{summary.earned} coins</div>
+      <div style={{fontSize:13, fontWeight:600, color:'var(--wood-dk)', marginTop:4}}>
+        total {summary.total}
+      </div>
     </div>
   );
 }

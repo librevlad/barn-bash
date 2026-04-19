@@ -144,6 +144,27 @@ function App() {
   };
 
   const finishMinigame = (earned, name) => {
+    // Compute ranks from current gameState snapshot, then broadcast outside
+    // the setState updater so the side-effect runs once and deterministically.
+    const snap = gameState;
+    const byEarned = snap.players.map((p, i) => ({ i, e: earned[i] || 0 }))
+      .sort((a, b) => b.e - a.e);
+    const rankOf = new Array(snap.players.length);
+    let lastEarned = null, lastRank = 0;
+    byEarned.forEach((row, idx) => {
+      if (row.e !== lastEarned) { lastRank = idx + 1; lastEarned = row.e; }
+      rankOf[row.i] = lastRank;
+    });
+    const byId = {};
+    snap.players.forEach((p, i) => {
+      if (!p.remoteId) return;
+      byId[p.remoteId] = {
+        rank: rankOf[i],
+        earned: earned[i] || 0,
+        total: (snap.scores[i] || 0) + (earned[i] || 0),
+      };
+    });
+    if (mp.broadcastRoundEnd) mp.broadcastRoundEnd({ minigame: name, byId });
     setGameState(s => ({ ...s, lastEarned: earned, lastMinigame: name }));
     setScreen('scoreboard');
   };
