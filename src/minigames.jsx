@@ -299,10 +299,21 @@ function HayPanic({ state, onFinish, onQuit }) {
       ...b, y: b.y + b.vy * dt, rot: b.rot + b.vr * dt
     })).filter(b => b.y < FIELD_H + 80));
 
-    // move you (P0): keyboard OR phone steer if player 0 has a remoteId
+    // move you (P0): CPU-fallback if the slot is flagged isCPU (dropped
+    // phone), otherwise keyboard OR phone steer if the slot has a remoteId.
     setYou(prev => {
+      const p0 = players[0] || {};
+      if (p0.isCPU) {
+        // wander + bale-avoidance AI takes over stranded lane
+        const dir = (prev._dir || 1);
+        const avoid = bales.find(b => Math.abs(b.x - prev.x) < 100 && b.y > FIELD_H * 0.3 && b.y < FIELD_H - 60);
+        const useDir = avoid ? (avoid.x < prev.x ? 1 : -1) : dir;
+        const speed = (difficulty === 'hard' ? 360 : difficulty === 'easy' ? 240 : 300);
+        const nx = clamp(prev.x + useDir * speed * dt, 30, FIELD_W - 30);
+        return { x: nx, vx: useDir * speed, _dir: useDir };
+      }
       let vx = 0;
-      const p0rid = players[0] && players[0].remoteId;
+      const p0rid = p0.remoteId;
       const rs = p0rid ? remoteSteer.current[p0rid] : null;
       const left  = keys.current.left  || (rs && rs.left);
       const right = keys.current.right || (rs && rs.right);

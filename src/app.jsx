@@ -61,6 +61,25 @@ function App() {
   // they can switch between lobby view and per-minigame input view.
   useEffect$(() => { mp.broadcastScreen(screen); }, [screen, mp.broadcastScreen]);
 
+  // Dropped-phone resilience: if a phone-owned slot goes offline mid-game,
+  // flip it to isCPU so AI logic picks up the lane instead of leaving a
+  // stationary sitting duck. Reconnect flips it back.
+  useEffect$(() => {
+    const live = new Set((mp.remotePlayers || []).map(p => p.id));
+    setGameState(s => {
+      if (!s.players || s.players.length === 0) return s;
+      let dirty = false;
+      const next = s.players.map(p => {
+        if (!p.remoteId) return p;
+        const here = live.has(p.remoteId);
+        if (here && p.isCPU) { dirty = true; return { ...p, isCPU: false }; }
+        if (!here && !p.isCPU) { dirty = true; return { ...p, isCPU: true }; }
+        return p;
+      });
+      return dirty ? { ...s, players: next } : s;
+    });
+  }, [mp.remotePlayers]);
+
   const [gameState, setGameState] = useState$(() => ({
     round: 1,
     totalRounds: tweaks.totalRounds,
@@ -313,6 +332,7 @@ function App() {
       </div>
 
       <TweaksPanel tweaks={tweaks} setTweaks={updateTweaks} open={tweaksOpen} setOpen={setTweaksOpen}/>
+      {window.__BarnBashMP && window.__BarnBashMP.ReactionOverlay && <window.__BarnBashMP.ReactionOverlay/>}
     </>
   );
 }

@@ -74,6 +74,7 @@ function App() {
   // Last score sent to the phone so we can trigger a short vibration the
   // instant the player's own score advances.
   const prevMineRef = useRef(null);
+  const [swapOpen, setSwapOpen] = useState(false);
 
   useStatusbar(connected);
 
@@ -191,12 +192,81 @@ function App() {
       <div className="player-strip">
         <div className="pill pill-id">P{players.findIndex(p => p.id === playerId) + 1 || '?'}</div>
         <div className="pill pill-name">{name} <span className="pill-sub">· {CRITTERS.find(c=>c.id===critter)?.name || '—'}</span></div>
+        <div className="pill pill-swap" onPointerDown={(e)=>{e.preventDefault(); setSwapOpen(true);}}>↻</div>
       </div>
+      {swapOpen && (
+        <CritterSwap
+          current={critter}
+          takenBy={new Set(players.filter(p => p.id !== playerId && p.character).map(p => p.character))}
+          onPick={(c) => {
+            setCritter(c.id);
+            localStorage.setItem('barn-bash-critter', c.id);
+            const n = (name || '').trim() || 'Player';
+            joinedRef.current = { name: n, character: c.id, color: c.color };
+            send({ type: 'join', name: n, character: c.id, color: c.color });
+            setSwapOpen(false);
+          }}
+          onClose={() => setSwapOpen(false)}
+        />
+      )}
       {minigame
         ? <MinigameInput game={minigame} send={send} score={score}/>
         : hostScreen === 'board'
           ? <BoardVoteScreen send={send}/>
           : <LobbyScreen hostScreen={hostScreen} players={players}/>}
+      <ReactionBar send={send}/>
+    </div>
+  );
+}
+
+function CritterSwap({ current, takenBy, onPick, onClose }) {
+  return (
+    <div onPointerDown={onClose} style={{
+      position:'fixed', inset:0, background:'rgba(0,0,0,.55)', zIndex:50,
+      display:'flex', alignItems:'center', justifyContent:'center'
+    }}>
+      <div onPointerDown={(e)=>e.stopPropagation()} style={{
+        background:'#fff', border:'4px solid var(--ink)', borderRadius:20,
+        boxShadow:'0 8px 0 var(--ink)', padding:16, width:'85%', maxWidth:340
+      }}>
+        <div style={{fontFamily:"'Luckiest Guy'", fontSize:20, textAlign:'center', marginBottom:10}}>swap critter</div>
+        <div className="critter-grid">
+          {CRITTERS.map(c => {
+            const taken = c.id !== current && takenBy.has(c.id);
+            return (
+              <div key={c.id}
+                   className={`critter ${c.id === current ? 'on' : ''} ${taken ? 'taken' : ''}`}
+                   style={{background: c.id === current ? 'var(--yellow)' : (c.color + '55')}}
+                   onPointerDown={(e)=>{e.preventDefault(); !taken && onPick(c);}}>
+                {c.name}
+              </div>
+            );
+          })}
+        </div>
+        <button className="btn" style={{marginTop:12}} onClick={onClose}>CLOSE</button>
+      </div>
+    </div>
+  );
+}
+
+const REACTIONS = ['🎉', '😂', '😤', '👏'];
+function ReactionBar({ send }) {
+  const [hit, setHit] = useState(null);
+  const fire = (e) => {
+    send({ type: 'input', kind: 'reaction', data: { emoji: e } });
+    vibrate(20);
+    setHit(e);
+    setTimeout(() => setHit(h => h === e ? null : h), 180);
+  };
+  return (
+    <div className="react-bar">
+      {REACTIONS.map(e => (
+        <div key={e}
+             className={`react-btn ${hit === e ? 'hit' : ''}`}
+             onPointerDown={(ev)=>{ev.preventDefault(); fire(e);}}>
+          {e}
+        </div>
+      ))}
     </div>
   );
 }

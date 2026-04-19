@@ -438,5 +438,34 @@ function penalty(matrix, size) {
   return p;
 }
 
+// Global overlay that floats up phone-sent emoji reactions near the top
+// of the host screen. Subscribes via __inputListeners directly so it
+// survives any screen transition without re-mounting.
+function ReactionOverlay() {
+  const [pops, setPops] = useMPState([]);
+  useMPEffect(() => {
+    const fn = ({ kind, data }) => {
+      if (kind !== 'reaction' || !data || !data.emoji) return;
+      const id = Date.now() + Math.random();
+      setPops(prev => [...prev, { id, emoji: data.emoji, x: 20 + Math.random() * 80 }]);
+      setTimeout(() => setPops(prev => prev.filter(p => p.id !== id)), 1800);
+    };
+    __inputListeners.add(fn);
+    return () => __inputListeners.delete(fn);
+  }, []);
+  return (
+    <div style={{position:'fixed', inset:0, pointerEvents:'none', zIndex:9000, overflow:'hidden'}}>
+      {pops.map(p => (
+        <div key={p.id} style={{
+          position:'absolute', left:`${p.x}%`, bottom:'8%',
+          fontSize:72, filter:'drop-shadow(0 6px 0 rgba(0,0,0,.4))',
+          animation:'reactionFloat 1.8s ease-out forwards'
+        }}>{p.emoji}</div>
+      ))}
+      <style>{`@keyframes reactionFloat { 0%{ transform:translateY(0) scale(.4); opacity:0 } 15%{ transform:translateY(-40px) scale(1.1); opacity:1 } 100%{ transform:translateY(-480px) scale(.9); opacity:0 } }`}</style>
+    </div>
+  );
+}
+
 // Expose onto window so app.jsx (loaded later) can pull them.
-window.__BarnBashMP = { useMultiplayer, MultiplayerHUD };
+window.__BarnBashMP = { useMultiplayer, MultiplayerHUD, ReactionOverlay };

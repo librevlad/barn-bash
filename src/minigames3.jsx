@@ -321,13 +321,14 @@ function MudDash({ state, onFinish, onQuit }) {
     // update players
     setPstate(prev => prev.map((p, idx) => {
       let lane = p.lane, jumpT = Math.max(0, p.jumpT - dt);
-      const rid = players[idx] && players[idx].remoteId;
-      const rc = rid ? remoteControls.current[rid] : null;
+      const pl = players[idx] || {};
+      const rid = pl.remoteId;
+      const rc = rid && !pl.isCPU ? remoteControls.current[rid] : null;
       if (rc) {
         lane = rc.lane;
         if (rc.jumpPending && jumpT <= 0.05) { jumpT = 0.6; }
         rc.jumpPending = false;
-      } else if (idx === 0) {
+      } else if (idx === 0 && !pl.isCPU) {
         lane = youLane.current;
         jumpT = Math.max(jumpT, youJump.current);
         youJump.current = Math.max(0, youJump.current - dt);

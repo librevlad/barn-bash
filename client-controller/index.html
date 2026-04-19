@@ -89,6 +89,12 @@
   .steer-btn.jump { background:radial-gradient(circle at 50% 40%, #a8e084, #6cc24a 60%, #3e8a25); }
   .steer-btn:active, .steer-btn.on { transform:translateY(6px); box-shadow:inset 0 6px 0 rgba(255,255,255,.4), 0 4px 0 var(--ink); }
 
+  .react-bar { display:flex; gap:8px; justify-content:center; margin-top:10px; padding:6px 4px; }
+  .react-btn { background:#fff; border:3px solid var(--ink); border-radius:16px;
+    box-shadow:0 4px 0 var(--ink); padding:6px 12px; font-size:28px;
+    cursor:pointer; line-height:1; user-select:none; transition:transform .06s ease, box-shadow .06s ease; }
+  .react-btn:active, .react-btn.hit { transform:translateY(3px); box-shadow:0 1px 0 var(--ink); }
+
   .holes-pad { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:10px; margin-top:12px; }
   .hole-btn { border:5px solid var(--ink); border-radius:50%;
     background:radial-gradient(circle at 50% 35%, #8f6a3b 0%, #6b4a2e 55%, #3a2510 100%);
@@ -107,6 +113,8 @@
   .player-strip .pill-id { background:var(--yellow); flex:0 0 auto; }
   .player-strip .pill-name { flex:1; text-align:center; overflow:hidden; text-overflow:ellipsis; }
   .player-strip .pill-sub { opacity:.55; font-weight:600; font-size:11px; }
+  .player-strip .pill-swap { flex:0 0 auto; cursor:pointer; background:var(--cream-2); font-size:16px; padding:5px 10px; }
+  .player-strip .pill-swap:active { transform:translateY(2px); box-shadow:0 1px 0 var(--ink); }
   .center { text-align:center; }
   @keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
   .pulse { animation:bounce 1.1s ease-in-out infinite; }
