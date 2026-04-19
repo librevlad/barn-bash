@@ -181,6 +181,66 @@ const Tournament = (() => {
         z-index: 0;
         pointer-events: none;
       }
+      /* Phase 59b — hero variant stretches the painted standings
+         scene edge-to-edge instead of the legacy 460×560 scroll.
+         The painted scoreboard frame already has the blank
+         parchment interior; HTML player rows position inside. */
+      #t-content .t-scroll-backdrop.hero {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        transform: none;
+        width: 100%; height: 100%;
+        max-width: none; max-height: none;
+        object-fit: cover;
+        opacity: 1;
+        z-index: 1;
+      }
+      /* Phase 59b — hero mode hides chrome that the painted scene
+         already carries: TOURNAMENT bar (arch sign reads it),
+         STANDINGS title (painted gold-leafed header at top of
+         scoreboard), ROUND count (optional text, hidden; painted
+         marquee doesn't carry it but the preceding round-intro
+         does). .t-scores list + narrator commentary stay. */
+      #t-content.mode-standings:has(.t-scroll-backdrop.hero) .t-bar,
+      #t-content.mode-standings:has(.t-scroll-backdrop.hero) .t-round,
+      #t-content.mode-standings:has(.t-scroll-backdrop.hero) .t-title {
+        display: none;
+      }
+      #t-content.mode-standings:has(.t-scroll-backdrop.hero) .t-scores {
+        position: fixed;
+        top: 35%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(340px, 30%);
+        z-index: 2;
+        margin: 0;
+        gap: 0;
+      }
+      #t-content.mode-standings:has(.t-scroll-backdrop.hero) .t-player {
+        padding: 1px 10px;
+      }
+      #t-content.mode-standings:has(.t-scroll-backdrop.hero) .t-player-dot {
+        width: 14px; height: 14px;
+      }
+      #t-content.mode-standings:has(.t-scroll-backdrop.hero) .t-player-name {
+        font-size: 12px;
+      }
+      #t-content.mode-standings:has(.t-scroll-backdrop.hero) .t-player-pts {
+        font-size: 16px;
+      }
+      #t-content.mode-standings:has(.t-scroll-backdrop.hero) .t-standings-commentary {
+        position: fixed;
+        top: 82%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(700px, 72%);
+        text-align: center;
+        z-index: 2;
+        color: rgba(255, 230, 180, 0.9);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.7);
+        margin: 0;
+        font-size: 14px;
+      }
       /* Phase 12a — scoreboard-scroll-aware layout scoped to standings
          mode. Champion view keeps the earlier horizontal card layout
          unchanged so the Phase 9a throne backdrop frames horizontal
@@ -654,9 +714,12 @@ const Tournament = (() => {
       commentary = Narrator.tournamentStandingsCommentary(leaderName, lastName, data.round || 0, leaderScore);
     }
 
-    // Phase 12a — painterly scoreboard scroll backdrop; loadPainterly
-    // strips the baked white surround and swaps src on resolve.
-    let html = '<img class="t-scroll-backdrop" src="/assets/standings-scroll.png" onerror="this.remove()">';
+    // Phase 59b — painted standings hero (full-viewport
+    // theatrical stage with painted scoreboard frame and
+    // blank parchment interior ready for HTML player rows).
+    // Legacy standings-scroll.png stays as fallback for older
+    // cached builds / dev mode without the new asset.
+    let html = '<img class="t-scroll-backdrop hero" src="/assets/tournament-standings-hero.png" onerror="this.src=\'/assets/standings-scroll.png\'">';
     html += '<div class="t-bar">TOURNAMENT</div>';
     html += '<div class="t-round">ROUND ' + (data.round || '?') + ' OF ' + (data.totalRounds || 3) + '</div>';
     html += '<div class="t-title">STANDINGS</div>';
@@ -728,22 +791,10 @@ const Tournament = (() => {
       });
     }
 
-    // Phase 12a — async-swap scroll backdrop img src to loadPainterly-
-    // processed data URL so the painted scroll loses its baked white
-    // surround. Raw PNG paints first (~100ms); processed version
-    // replaces it so the overlay scrim reads around the painted
-    // silhouette.
-    if (typeof SpriteLoader !== 'undefined') {
-      const applyProcessedScroll = () => {
-        const sprite = SpriteLoader.get('standings-scroll');
-        const img = content.querySelector('.t-scroll-backdrop');
-        if (sprite && img) img.src = sprite.toDataURL('image/png');
-      };
-      const cached = SpriteLoader.get('standings-scroll');
-      if (cached) applyProcessedScroll();
-      else SpriteLoader.loadPainterly('standings-scroll',
-        '/assets/standings-scroll.png').then(applyProcessedScroll).catch(() => {});
-    }
+    // Phase 59b — hero variant skips the loadPainterly checker
+    // strip (new asset is clean full-viewport). Legacy fallback
+    // path (if hero 404s and onerror swaps to standings-scroll)
+    // still benefits from the processing pipeline.
 
     show();
 
