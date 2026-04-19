@@ -119,6 +119,19 @@ function resolve(url) {
     return resolved;
   }
 
+  // Barn Bash — standalone React prototype (single-player-vs-CPU).
+  // Handoff bundle from claude.ai/design. Lives separately from the
+  // live multiplayer stack.
+  if (url === '/barn-bash/')
+    return path.join(root, 'client-barn-bash', 'index.html');
+  if (url.startsWith('/barn-bash/')) {
+    const rel = url.slice('/barn-bash/'.length);
+    if (!rel || rel.includes('..')) return null;
+    const resolved = path.resolve(root, 'client-barn-bash', rel);
+    if (!resolved.startsWith(path.resolve(root, 'client-barn-bash'))) return null;
+    return resolved;
+  }
+
   if (url === '/' || url === '/controller/')
     return path.join(root, 'client-controller', 'index.html');
   if (url.startsWith('/controller/') && (url.endsWith('.js') || url.endsWith('.css')))
@@ -175,7 +188,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (urlPath === '/test' || urlPath === '/host' || urlPath === '/controller' || urlPath === '/host-escape' || urlPath === '/host-hill' || urlPath === '/host-meteor' || urlPath === '/host-race') {
+  if (urlPath === '/test' || urlPath === '/host' || urlPath === '/controller' || urlPath === '/host-escape' || urlPath === '/host-hill' || urlPath === '/host-meteor' || urlPath === '/host-race' || urlPath === '/barn-bash') {
     res.writeHead(301, { Location: urlPath + '/' });
     res.end();
     return;
