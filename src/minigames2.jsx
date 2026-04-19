@@ -175,6 +175,17 @@ function AppleAim({ state, onFinish, onQuit }) {
     });
     mp.broadcastScores({ byId, leader, label: 'rings' });
   }, [mp, scores, players]);
+  // Turn-based: tell phones whose turn it is so the non-active shooter
+  // doesn't stare at a TAP pad wondering why nothing happens.
+  useEffect(() => {
+    if (!mp || !mp.broadcastTurn) return;
+    if (!currentPlayer) return;
+    mp.broadcastTurn({
+      activeId: currentPlayer.remoteId || null,
+      activeName: playerLabel(currentPlayer),
+      phase,
+    });
+  }, [mp, turn, currentPlayer, phase]);
 
   // finish
   useEffect(() => {

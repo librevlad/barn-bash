@@ -81,6 +81,12 @@ function useMultiplayer() {
     lastScoreSentRef.current = now;
     send({ type: 'scoreUpdate', ...payload });
   }, [send]);
+  // Turn indicator for turn-based games (Apple Aim, Egg Pass). Payload:
+  //   { activeId: remoteIdOrNull, activeName: 'VLAD' | 'HOPPER', phase?: 'angle' }
+  // Sent only when the turn actually changes, so phones can render a big
+  // 'YOUR TURN' / 'VLAD TO SHOOT' pill instead of staring at a TAP pad
+  // wondering if anything's listening.
+  const broadcastTurn = useMPCallback((payload) => send({ type: 'turnUpdate', ...payload }), [send]);
 
   // Subscribe to controller input events. Returns unsubscribe fn.
   const onInput = useMPCallback((fn) => {
@@ -90,9 +96,9 @@ function useMultiplayer() {
 
   const api = useMPMemo(() => ({
     connected, remotePlayers,
-    broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores,
+    broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores, broadcastTurn,
     onInput, send,
-  }), [connected, remotePlayers, broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores, onInput, send]);
+  }), [connected, remotePlayers, broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores, broadcastTurn, onInput, send]);
 
   // Pin the API onto the window so minigame components (deep in the
   // tree) can grab it without prop drilling through App → Minigame.

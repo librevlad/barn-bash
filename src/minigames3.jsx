@@ -146,6 +146,16 @@ function EggPass({ state, onFinish, onQuit }) {
     mp.broadcastMinigameStart('egg', 'TAP WHEN YOU HAVE THE EGG!', 'tap');
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('egg'); };
   }, [mp]);
+  // Broadcast whose hands the egg is in so only the holder's phone lights up.
+  useEffect(() => {
+    if (!mp || !mp.broadcastTurn) return;
+    const cur = players[holder];
+    if (!cur) return;
+    mp.broadcastTurn({
+      activeId: cur.remoteId || null,
+      activeName: playerLabel(cur),
+    });
+  }, [mp, holder, players]);
   useEffect(() => {
     if (!mp || !mp.onInput) return;
     const off = mp.onInput(({ id, kind }) => {

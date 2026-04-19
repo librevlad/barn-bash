@@ -87,10 +87,13 @@ const wss = new WebSocketServer({ server });
 let host = null;                     // single WebSocket for the host
 const controllers = new Map();       // playerId (number) → { ws, name, character, color, clientId? }
 let nextPlayerId = 1;
-// Last screen + active minigame broadcast from host — replayed to new
-// controllers on connect so late-joining phones land on the right UI.
+// Last screen + active minigame + scoreboard + turn state, replayed to new
+// controllers on connect so late-joining phones land on the right UI with
+// current numbers instead of waiting for the next throttled broadcast tick.
 let lastScreen = null;
 let lastMinigame = null;
+let lastScore = null;
+let lastTurn = null;
 
 function safeSend(ws, obj) {
   if (!ws || ws.readyState !== 1) return;
@@ -119,14 +122,18 @@ wss.on('connection', (ws, req) => {
     host = ws;
     lastScreen = null;
     lastMinigame = null;
+    lastScore = null;
+    lastTurn = null;
     safeSend(ws, { type: 'hello', role: 'host', players: snapshotPlayers() });
     ws.on('message', (raw) => {
       let msg; try { msg = JSON.parse(raw.toString()); } catch (_) { return; }
       // Host broadcasts state / targeted messages to controllers.
-      if (msg.type === 'state' || msg.type === 'screen' || msg.type === 'minigameStart' || msg.type === 'minigameEnd' || msg.type === 'roundEnd' || msg.type === 'scoreUpdate') {
+      if (msg.type === 'state' || msg.type === 'screen' || msg.type === 'minigameStart' || msg.type === 'minigameEnd' || msg.type === 'roundEnd' || msg.type === 'scoreUpdate' || msg.type === 'turnUpdate') {
         if (msg.type === 'screen') lastScreen = msg;
-        if (msg.type === 'minigameStart') lastMinigame = msg;
-        if (msg.type === 'minigameEnd') lastMinigame = null;
+        if (msg.type === 'minigameStart') { lastMinigame = msg; lastScore = null; lastTurn = null; }
+        if (msg.type === 'minigameEnd') { lastMinigame = null; lastScore = null; lastTurn = null; }
+        if (msg.type === 'scoreUpdate') lastScore = msg;
+        if (msg.type === 'turnUpdate') lastTurn = msg;
         broadcastToControllers(msg);
       } else if (msg.type === 'toPlayer' && msg.playerId != null) {
         const c = controllers.get(msg.playerId);
@@ -164,10 +171,13 @@ wss.on('connection', (ws, req) => {
   // Tell host a player is in the room (even before name/char are picked).
   safeSend(host, { type: 'playerJoin', id: playerId });
   broadcastToControllers({ type: 'playerList', players: snapshotPlayers() });
-  // Replay current screen / active minigame so the phone doesn't linger on
-  // the default 'title' hint while the host is mid-game.
+  // Replay current screen / active minigame / score / turn so a late or
+  // reconnecting phone lands on the right UI with current numbers and
+  // turn info instead of waiting for the next throttled host tick.
   if (lastScreen) safeSend(ws, lastScreen);
   if (lastMinigame) safeSend(ws, lastMinigame);
+  if (lastScore) safeSend(ws, lastScore);
+  if (lastTurn) safeSend(ws, lastTurn);
 
   ws.on('message', (raw) => {
     let msg; try { msg = JSON.parse(raw.toString()); } catch (_) { return; }
@@ -187,16 +197,33 @@ wss.on('connection', (ws, req) => {
   });
 
   ws.on('close', () => {
-    // Only drop the entry if this ws is still the active socket. A reconnect
-    // may have already swapped in a fresh ws under the same playerId; in that
-    // case the stale close should NOT evict the player.
+    // A reload is: old ws closes, new ws opens ~100ms later with the same
+    // clientId. If we delete the entry on close, the new ws can't find the
+    // clientId and gets a fresh playerId, orphaning gameState.remoteId.
+    // Instead, keep the entry and just null out ws + announce 'playerLeave'
+    // so the host can CPU-fallback that lane. A real reconnect restores
+    // c.ws; a true quit leaves the ghost entry until host resets (or
+    // a 45s sweep removes it).
     const c = controllers.get(playerId);
     if (!c || c.ws !== ws) return;
-    controllers.delete(playerId);
+    c.ws = null;
+    c.disconnectedAt = Date.now();
     safeSend(host, { type: 'playerLeave', id: playerId });
     broadcastToControllers({ type: 'playerList', players: snapshotPlayers() });
   });
 });
+
+// Sweep ghost entries (disconnected and not reclaimed within 45 seconds).
+setInterval(() => {
+  const cutoff = Date.now() - 45000;
+  for (const [id, c] of controllers.entries()) {
+    if (!c.ws && (c.disconnectedAt || 0) < cutoff) {
+      controllers.delete(id);
+      safeSend(host, { type: 'playerLeave', id });
+      broadcastToControllers({ type: 'playerList', players: snapshotPlayers() });
+    }
+  }
+}, 15000);
 
 // --- Listen + LAN IP announce -------------------------------------------
 

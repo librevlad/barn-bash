@@ -65,6 +65,7 @@ function App() {
   const [hostScreen, setHostScreen] = useState('title');
   const [minigame, setMinigame] = useState(null);
   const [score, setScore] = useState(null); // { mine, leader, label }
+  const [turn, setTurn] = useState(null);   // { activeId, activeName, phase }
   const wsRef = useRef(null);
   // Latest join payload so we can re-send on reconnect without stale closures.
   const joinedRef = useRef(null);
@@ -110,8 +111,12 @@ function App() {
         if (msg.type === 'hello' && msg.role === 'controller') { setPlayerId(msg.playerId); playerIdRef.current = msg.playerId; }
         else if (msg.type === 'playerList') setPlayers(msg.players || []);
         else if (msg.type === 'screen') setHostScreen(msg.screen || 'title');
-        else if (msg.type === 'minigameStart') { setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract }); setScore(null); prevMineRef.current = null; vibrate([60, 40, 60]); }
-        else if (msg.type === 'minigameEnd') { setMinigame(null); setScore(null); prevMineRef.current = null; vibrate(140); }
+        else if (msg.type === 'minigameStart') { setMinigame({ id: msg.id, prompt: msg.prompt, contract: msg.contract }); setScore(null); setTurn(null); prevMineRef.current = null; vibrate([60, 40, 60]); }
+        else if (msg.type === 'minigameEnd') { setMinigame(null); setScore(null); setTurn(null); prevMineRef.current = null; vibrate(140); }
+        else if (msg.type === 'turnUpdate') {
+          setTurn({ activeId: msg.activeId ?? null, activeName: msg.activeName || null, phase: msg.phase || null });
+          if (msg.activeId != null && msg.activeId === playerIdRef.current) vibrate([30, 30, 60]);
+        }
         else if (msg.type === 'scoreUpdate') {
           const myId = playerIdRef.current;
           const byId = msg.byId || {};
@@ -210,7 +215,7 @@ function App() {
         />
       )}
       {minigame
-        ? <MinigameInput game={minigame} send={send} score={score}/>
+        ? <MinigameInput game={minigame} send={send} score={score} turn={turn} myId={playerId}/>
         : hostScreen === 'board'
           ? <BoardVoteScreen send={send}/>
           : <LobbyScreen hostScreen={hostScreen} players={players}/>}
@@ -324,17 +329,44 @@ function LobbyScreen({ hostScreen, players }) {
   );
 }
 
-function MinigameInput({ game, send, score }) {
+function MinigameInput({ game, send, score, turn, myId }) {
   const contract = game.contract || 'tap';
-  const body = contract === 'tap'   ? <TapContract   prompt={game.prompt} send={send}/>
+  const yourTurn = !!(turn && turn.activeId != null && turn.activeId === myId);
+  // If turn data exists but it isn't ours, lock regardless of whether the
+  // active player is a CPU (activeId null) or another phone.
+  const waiting = !!(turn && !yourTurn);
+  const body = contract === 'tap'   ? <TapContract   prompt={game.prompt} send={send} locked={waiting}/>
             : contract === 'steer' ? <SteerContract prompt={game.prompt} send={send}/>
             : contract === 'holes' ? <HolesContract prompt={game.prompt} send={send}/>
             : <LobbyScreen hostScreen="playing" players={[]}/>;
   return (
     <>
       {score && <ScoreStrip score={score}/>}
+      {turn && <TurnPill turn={turn} yourTurn={yourTurn}/>}
       {body}
     </>
+  );
+}
+
+function TurnPill({ turn, yourTurn }) {
+  const txt = yourTurn
+    ? 'YOUR TURN!'
+    : turn.activeName
+      ? `${turn.activeName}'S TURN`
+      : 'CPU TURN';
+  return (
+    <div style={{
+      display:'flex', justifyContent:'center', marginTop:6, marginBottom:2
+    }}>
+      <div style={{
+        background: yourTurn ? 'var(--green)' : 'var(--wood)',
+        color:'#fff', border:'3px solid var(--ink)', borderRadius:999,
+        padding:'5px 16px', fontFamily:"'Luckiest Guy',cursive", fontSize:16, letterSpacing:1,
+        WebkitTextStroke:'1.5px var(--ink)', textShadow:'0 2px 0 rgba(0,0,0,.3)',
+        boxShadow:'0 4px 0 var(--ink)',
+        animation: yourTurn ? 'bounce 0.9s ease-in-out infinite' : 'none'
+      }}>{txt}</div>
+    </div>
   );
 }
 
@@ -364,9 +396,10 @@ function ScoreStrip({ score }) {
   );
 }
 
-function TapContract({ prompt, send }) {
+function TapContract({ prompt, send, locked }) {
   const [hit, setHit] = useState(false);
   const tap = () => {
+    if (locked) return;
     send({ type: 'input', kind: 'tap', data: { t: Date.now() } });
     vibrate(15);
     setHit(true);
@@ -375,8 +408,8 @@ function TapContract({ prompt, send }) {
   return (
     <>
       <div className="screen-hint">{prompt || 'TAP AS FAST AS YOU CAN!'}</div>
-      <div className={`tap-pad ${hit ? 'hit' : ''}`} onPointerDown={tap} onTouchStart={(e)=>{e.preventDefault(); tap();}}>
-        TAP
+      <div className={`tap-pad ${hit ? 'hit' : ''} ${locked ? 'locked' : ''}`} onPointerDown={tap} onTouchStart={(e)=>{e.preventDefault(); tap();}}>
+        {locked ? 'WAIT' : 'TAP'}
       </div>
     </>
   );
