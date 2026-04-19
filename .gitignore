@@ -2,3 +2,9 @@ node_modules/
 .claude/
 .playwright-mcp/
 .gstack/
+
+# Local dev screenshots from walks and audits
+stage*.png
+audit-*.png
+walk-*.png
+multi-*.png
