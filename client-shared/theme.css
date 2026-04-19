@@ -1006,37 +1006,68 @@ body:has(#lobby:not(.hidden)) > canvas {
    the painted chrome. Per-game lobbies without a hero keep
    the Phase 57a CSS composition.
    ============================================================ */
-body > #bg.hero-escape {
-  background-image: url('/assets/lobby-escape-hero.png');
+body > #bg.hero-escape,
+body > #bg.hero-race,
+body > #bg.hero-hill,
+body > #bg.hero-meteor {
   background-size: cover;
   background-position: center;
   background-color: var(--bg-wood-deep);
   filter: none;
 }
+body > #bg.hero-escape { background-image: url('/assets/lobby-escape-hero.png'); }
+body > #bg.hero-race   { background-image: url('/assets/lobby-race-hero.png'); }
+body > #bg.hero-hill   { background-image: url('/assets/lobby-hill-hero.png'); }
+body > #bg.hero-meteor { background-image: url('/assets/lobby-meteor-hero.png'); }
+
 body:has(> #bg.hero-escape) #lobby::before,
+body:has(> #bg.hero-race)   #lobby::before,
+body:has(> #bg.hero-hill)   #lobby::before,
+body:has(> #bg.hero-meteor) #lobby::before,
 body:has(> #bg.hero-escape) .ornament-corner,
-body:has(> #bg.hero-escape) #lobby .lobby-backdrop {
+body:has(> #bg.hero-race)   .ornament-corner,
+body:has(> #bg.hero-hill)   .ornament-corner,
+body:has(> #bg.hero-meteor) .ornament-corner,
+body:has(> #bg.hero-escape) #lobby .lobby-backdrop,
+body:has(> #bg.hero-race)   #lobby .lobby-backdrop,
+body:has(> #bg.hero-hill)   #lobby .lobby-backdrop,
+body:has(> #bg.hero-meteor) #lobby .lobby-backdrop {
   display: none;
 }
 
-/* Phase 58b — HTML overlay anchors for escape hero. Painted
-   hero already carries the title sign, the cream canvas banner
-   template, 4 gold orbs, and the stage. HTML layer hides its
-   own redundant title and pins #lobby-info / #lobby-players /
-   #lobby-hint to the painted anchors (banner ~40%, orbs ~58%,
-   stage apron ~85% vertically). Empty slot avatar hidden —
-   painted orb carries the "?" symbol. Filled slot (brass card
-   + avatar) overlays the painted orb when a player joins. */
-body:has(> #bg.hero-escape) #lobby {
+/* Phase 58b — HTML overlay anchors for painted hero lobbies.
+   All 4 hero images share the same template (gold frame,
+   bunting, arch with sign, cream canvas banner, 4-5 gold orb
+   slot placeholders, stage steps) so a single set of anchor
+   percentages drives all of them: banner y=40%, orb row top
+   y=52%, stage apron y=88%. Empty CSS slot medallion hidden
+   (painted orb carries the "?"); filled brass card overlays
+   the painted orb when a player joins. */
+body:has(> #bg.hero-escape) #lobby,
+body:has(> #bg.hero-race)   #lobby,
+body:has(> #bg.hero-hill)   #lobby,
+body:has(> #bg.hero-meteor) #lobby {
   justify-content: flex-start;
   padding: 0;
 }
 body:has(> #bg.hero-escape) #lobby h1,
+body:has(> #bg.hero-race)   #lobby h1,
+body:has(> #bg.hero-hill)   #lobby h1,
+body:has(> #bg.hero-meteor) #lobby h1,
 body:has(> #bg.hero-escape) #lobby h2,
-body:has(> #bg.hero-escape) #lobby .hud-title {
+body:has(> #bg.hero-race)   #lobby h2,
+body:has(> #bg.hero-hill)   #lobby h2,
+body:has(> #bg.hero-meteor) #lobby h2,
+body:has(> #bg.hero-escape) #lobby .hud-title,
+body:has(> #bg.hero-race)   #lobby .hud-title,
+body:has(> #bg.hero-hill)   #lobby .hud-title,
+body:has(> #bg.hero-meteor) #lobby .hud-title {
   display: none;
 }
-body:has(> #bg.hero-escape) #lobby-info {
+body:has(> #bg.hero-escape) #lobby-info,
+body:has(> #bg.hero-race)   #lobby-info,
+body:has(> #bg.hero-hill)   #lobby-info,
+body:has(> #bg.hero-meteor) #lobby-info {
   position: absolute;
   top: 40%;
   left: 50%;
@@ -1048,12 +1079,11 @@ body:has(> #bg.hero-escape) #lobby-info {
   letter-spacing: 0.3px;
   margin: 0;
 }
-body:has(> #bg.hero-escape) #lobby-players {
+body:has(> #bg.hero-escape) #lobby-players,
+body:has(> #bg.hero-race)   #lobby-players,
+body:has(> #bg.hero-hill)   #lobby-players,
+body:has(> #bg.hero-meteor) #lobby-players {
   position: absolute;
-  /* Painted orb centers are at y≈58% of the hero image. Card's
-     avatar center sits ~35% from card top; for avatar to land on
-     orb center we anchor the card top near orb top (orb radius
-     ≈ 4.5% of viewport → orb top ≈ 53.5%). */
   top: 52%;
   left: 50%;
   transform: translate(-50%, 0);
@@ -1062,7 +1092,10 @@ body:has(> #bg.hero-escape) #lobby-players {
   margin: 0;
   flex-wrap: nowrap;
 }
-body:has(> #bg.hero-escape) #lobby-hint {
+body:has(> #bg.hero-escape) #lobby-hint,
+body:has(> #bg.hero-race)   #lobby-hint,
+body:has(> #bg.hero-hill)   #lobby-hint,
+body:has(> #bg.hero-meteor) #lobby-hint {
   position: absolute;
   top: 88%;
   left: 50%;
@@ -1071,10 +1104,9 @@ body:has(> #bg.hero-escape) #lobby-hint {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.6);
   margin: 0;
 }
-/* Hero hides empty slot medallion — painted gold orb in the
-   hero fills that role with the "?" already painted in. Filled
-   slot shows normally (brass card + avatar) on top of the
-   painted orb. */
-body:has(> #bg.hero-escape) .player-slot.empty {
+body:has(> #bg.hero-escape) .player-slot.empty,
+body:has(> #bg.hero-race)   .player-slot.empty,
+body:has(> #bg.hero-hill)   .player-slot.empty,
+body:has(> #bg.hero-meteor) .player-slot.empty {
   visibility: hidden;
 }
