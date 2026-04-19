@@ -72,6 +72,10 @@ const Render2D = (() => {
     // Scene layers. 'ui' skips camera transform (screen-space). Phase 38b
     // inserts a `hazards` layer between kingzone and players so cracks /
     // ice zone / bumper render ON the arena but UNDER the characters.
+    // Phase 62c — `painted-scene` layer at z=-1 renders the
+    // commissioned golden-hour mountain battlefield beneath all
+    // procedural arena rendering.
+    scene.createLayer('painted-scene', -1);
     scene.createLayer('arena', 5);
     scene.createLayer('kingzone', 8);
     scene.createLayer('hazards', 12);
@@ -79,6 +83,7 @@ const Render2D = (() => {
     scene.createLayer('crest', 22);
     scene.createLayer('ui', 40);
 
+    scene.getLayer('painted-scene').addFn(drawPaintedScene);
     scene.getLayer('arena').addFn(drawArena);
     scene.getLayer('kingzone').addFn(drawKingZone);
     scene.getLayer('hazards').addFn(drawHazards);
@@ -221,6 +226,24 @@ const Render2D = (() => {
   //      looseness.
   //   5. Brass rim + danger pulse (kept from legacy render).
   // ============================================================
+  // ============================================================
+  // LAYER: PAINTED SCENE (Phase 62c)
+  // ============================================================
+  const paintedScene = new Image();
+  paintedScene.src = '/assets/gameplay-hill-scene.png';
+  let paintedSceneReady = false;
+  paintedScene.onload = () => { paintedSceneReady = true; };
+  paintedScene.onerror = () => { paintedSceneReady = false; };
+  function drawPaintedScene(ctx) {
+    if (!paintedSceneReady) return;
+    const iw = paintedScene.naturalWidth, ih = paintedScene.naturalHeight;
+    if (!iw || !ih) return;
+    const scale = Math.max(W / iw, H / ih);
+    const dw = iw * scale, dh = ih * scale;
+    const dx = (W - dw) / 2, dy = (H - dh) / 2;
+    ctx.drawImage(paintedScene, dx, dy, dw, dh);
+  }
+
   function drawArena(ctx) {
     const SCALE = camera.getZoom();
     const r = renderPlatR * SCALE;
