@@ -1110,3 +1110,22 @@ body:has(> #bg.hero-hill)   .player-slot.empty,
 body:has(> #bg.hero-meteor) .player-slot.empty {
   visibility: hidden;
 }
+
+/* Phase 58d — per-game anchor tuning. The 4 painted hero
+   compositions drift slightly from the shared template: race/
+   hill/meteor painted canvas banners sit lower than escape,
+   and the orb row anchors move down correspondingly. Override
+   the shared anchors (Phase 58b) per-hero so HTML overlays
+   sit on the correct painted rectangles for each game. Text
+   color on the canvas banner is also tuned to hit each hero's
+   cream-banner rendering (hill and meteor banners are slightly
+   darker than escape's). */
+body:has(> #bg.hero-race)   #lobby-info { top: 45%; color: rgba(55, 25, 12, 0.9); }
+body:has(> #bg.hero-hill)   #lobby-info { top: 44%; color: rgba(55, 25, 12, 0.9); }
+body:has(> #bg.hero-meteor) #lobby-info { top: 48%; color: rgba(70, 32, 18, 0.95); }
+
+body:has(> #bg.hero-race)   #lobby-players { top: 54%; }
+body:has(> #bg.hero-hill)   #lobby-players { top: 55%; }
+body:has(> #bg.hero-meteor) #lobby-players { top: 56%; }
+
+body:has(> #bg.hero-meteor) #lobby-hint { top: 85%; }
