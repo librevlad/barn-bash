@@ -512,10 +512,12 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
           </svg>
         </div>
 
-        {/* fish */}
+        {/* fish — FishSVG draws head/mouth on the LEFT, tail on the RIGHT,
+            so to render head-forward we flip opposite to the swim direction:
+            dir=+1 (rightward) → scaleX(-1) flips so head points right. */}
         {fish.map(f => (
           <div key={f.id} style={{
-            position:'absolute', left:f.x, top:f.y, transform:`translate(-50%,-50%) scaleX(${f.dir})`,
+            position:'absolute', left:f.x, top:f.y, transform:`translate(-50%,-50%) scaleX(${-f.dir})`,
             pointerEvents:'none'
           }}>
             <FishSVG kind={f.kind}/>

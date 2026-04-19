@@ -448,6 +448,33 @@ function MiniCard({ mg, onPick, voters = [] }) {
   );
 }
 
+// Winner crown — hand-drawn SVG so it stays flat, scales crisply, and
+// matches the Barn Bash yellow+ink+gems palette instead of relying on the
+// OS emoji glyph (which renders tilted and off-style on different systems).
+function CrownSVG({ size = 64 }) {
+  return (
+    <svg width={size} height={size * 0.72} viewBox="0 0 100 72" aria-hidden="true">
+      {/* Body: three peaks */}
+      <path
+        d="M 8 58 L 14 22 L 30 40 L 50 14 L 70 40 L 86 22 L 92 58 Z"
+        fill="#ffc93c" stroke="#2a1a10" strokeWidth="5" strokeLinejoin="round"
+      />
+      {/* Base band */}
+      <rect x="6" y="54" width="88" height="14" rx="3" fill="#e09010" stroke="#2a1a10" strokeWidth="5"/>
+      {/* Highlights along body */}
+      <path d="M 12 52 L 18 30" stroke="#fff7c0" strokeWidth="3" strokeLinecap="round" opacity=".7"/>
+      <path d="M 48 22 L 50 42" stroke="#fff7c0" strokeWidth="3" strokeLinecap="round" opacity=".7"/>
+      <path d="M 82 30 L 88 52" stroke="#fff7c0" strokeWidth="3" strokeLinecap="round" opacity=".7"/>
+      {/* Gems on peaks */}
+      <circle cx="14" cy="22" r="5" fill="#e04b3b" stroke="#2a1a10" strokeWidth="3"/>
+      <circle cx="50" cy="14" r="6" fill="#4aa3e0" stroke="#2a1a10" strokeWidth="3"/>
+      <circle cx="86" cy="22" r="5" fill="#6cc24a" stroke="#2a1a10" strokeWidth="3"/>
+      {/* Gem on base band */}
+      <circle cx="50" cy="61" r="4" fill="#fff" stroke="#2a1a10" strokeWidth="2.5"/>
+    </svg>
+  );
+}
+
 /* ==========  SCOREBOARD  ========== */
 function Scoreboard({ players, scores, earned, onContinue, minigameName, round, totalRounds }) {
   const ranked = [...players].map((p,i)=>({p,i,s:scores[i],e:earned[i]})).sort((a,b)=>b.e - a.e);
@@ -479,7 +506,9 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
             position:'relative', animationDelay: (rank*0.2)+'s'
           }}>
             {rank === 0 && (
-              <div style={{position:'absolute', top:-34, left:'50%', transform:'translateX(-50%)', fontSize:44, animation:'bob 1.5s ease-in-out infinite'}}>👑</div>
+              <div style={{position:'absolute', top:-38, left:'50%', transform:'translateX(-50%)', animation:'bob 1.5s ease-in-out infinite', filter:'drop-shadow(0 4px 0 rgba(0,0,0,.25))'}}>
+                <CrownSVG/>
+              </div>
             )}
             {rank === 0 && (
               <div style={{position:'absolute',top:-12,left:-12,background:'var(--yellow)',border:'3px solid var(--ink)',borderRadius:10,padding:'2px 8px',fontFamily:"'Luckiest Guy'",fontSize:14,transform:'rotate(-8deg)'}}>WINNER!</div>
