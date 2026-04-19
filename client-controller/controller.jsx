@@ -154,11 +154,14 @@ function LobbyScreen({ hostScreen, players }) {
 }
 
 function MinigameInput({ game, send }) {
-  // Contract-driven input screen. The host sends `contract` describing
-  // what input it wants: 'tap' (mash a big button), 'hold' (press and
-  // hold), 'swipe', 'aim' (touch-drag crosshair), etc. MVP: `tap`.
+  // Contract-driven input screen. Host broadcasts `contract`:
+  //   'tap'   — mash a big button (Sprint, Tug, Egg, Apple, Fishing)
+  //   'steer' — left/jump/right 3-button pad (Hay Panic, Mud Dash)
+  //   'holes' — 6-hole grid (Whack-a-Gopher)
   const contract = game.contract || 'tap';
-  if (contract === 'tap') return <TapContract prompt={game.prompt} send={send}/>;
+  if (contract === 'tap')   return <TapContract   prompt={game.prompt} send={send}/>;
+  if (contract === 'steer') return <SteerContract prompt={game.prompt} send={send}/>;
+  if (contract === 'holes') return <HolesContract prompt={game.prompt} send={send}/>;
   return <LobbyScreen hostScreen="playing" players={[]}/>;
 }
 
@@ -174,6 +177,61 @@ function TapContract({ prompt, send }) {
       <div className="screen-hint">{prompt || 'TAP AS FAST AS YOU CAN!'}</div>
       <div className={`tap-pad ${hit ? 'hit' : ''}`} onPointerDown={tap} onTouchStart={(e)=>{e.preventDefault(); tap();}}>
         TAP
+      </div>
+    </>
+  );
+}
+
+// Three-button ◀ JUMP ▶ pad. Left/right are hold-to-steer (dir events on
+// press/release). JUMP is a discrete tap.
+function SteerContract({ prompt, send }) {
+  const [active, setActive] = useState({ left:false, right:false });
+  const press = (dir) => {
+    setActive(a => ({ ...a, [dir]: true }));
+    send({ type: 'input', kind: 'steer', data: { dir, down: true } });
+  };
+  const release = (dir) => {
+    setActive(a => ({ ...a, [dir]: false }));
+    send({ type: 'input', kind: 'steer', data: { dir, down: false } });
+  };
+  const jump = () => { send({ type: 'input', kind: 'steer', data: { dir: 'jump', down: true } }); };
+  const bindHold = (dir) => ({
+    onPointerDown: (e) => { e.preventDefault(); press(dir); },
+    onPointerUp:   (e) => { e.preventDefault(); release(dir); },
+    onPointerCancel: () => release(dir),
+    onPointerLeave:  () => release(dir),
+  });
+  return (
+    <>
+      <div className="screen-hint">{prompt || 'STEER!'}</div>
+      <div className="steer-pad">
+        <div className={`steer-btn ${active.left ? 'on' : ''}`} {...bindHold('left')}>◀</div>
+        <div className="steer-btn jump" onPointerDown={(e)=>{e.preventDefault(); jump();}}>▲</div>
+        <div className={`steer-btn ${active.right ? 'on' : ''}`} {...bindHold('right')}>▶</div>
+      </div>
+    </>
+  );
+}
+
+// 3×2 grid of numbered holes. Each press sends { kind:'holes', data:{ h:0..5 } }.
+function HolesContract({ prompt, send }) {
+  const [hit, setHit] = useState(-1);
+  const whack = (h) => {
+    send({ type: 'input', kind: 'holes', data: { h } });
+    setHit(h);
+    setTimeout(() => setHit(p => p === h ? -1 : p), 120);
+  };
+  return (
+    <>
+      <div className="screen-hint">{prompt || 'BOP THE GOPHER!'}</div>
+      <div className="holes-pad">
+        {[0,1,2,3,4,5].map(h => (
+          <div key={h}
+               className={`hole-btn ${hit === h ? 'hit' : ''}`}
+               onPointerDown={(e)=>{e.preventDefault(); whack(h);}}>
+            {h+1}
+          </div>
+        ))}
       </div>
     </>
   );

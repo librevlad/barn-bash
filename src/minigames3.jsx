@@ -139,6 +139,22 @@ function EggPass({ state, onFinish, onQuit }) {
     return () => window.removeEventListener('keydown', d);
   }, [holder, passing, alive, started]);
 
+  // phone tap from the current holder passes the egg
+  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  useEffect(() => {
+    if (!mp || !mp.onInput) return;
+    mp.broadcastMinigameStart && mp.broadcastMinigameStart('egg', 'TAP WHEN YOU HAVE THE EGG!', 'tap');
+    const off = mp.onInput(({ id, kind }) => {
+      if (kind !== 'tap') return;
+      if (passing || finished || !started) return;
+      const cur = players[holder];
+      if (!cur || cur.remoteId !== id) return;
+      if (!alive[holder]) return;
+      passEgg();
+    });
+    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('egg'); };
+  }, [mp, holder, passing, started, finished, alive]);
+
   const pct = Math.max(0, timeLeft / baseTime);
 
   return (
@@ -301,7 +317,13 @@ function MudDash({ state, onFinish, onQuit }) {
     // update players
     setPstate(prev => prev.map((p, idx) => {
       let lane = p.lane, jumpT = Math.max(0, p.jumpT - dt);
-      if (idx === 0) {
+      const rid = players[idx] && players[idx].remoteId;
+      const rc = rid ? remoteControls.current[rid] : null;
+      if (rc) {
+        lane = rc.lane;
+        if (rc.jumpPending && jumpT <= 0.05) { jumpT = 0.6; }
+        rc.jumpPending = false;
+      } else if (idx === 0) {
         lane = youLane.current;
         jumpT = Math.max(jumpT, youJump.current);
         youJump.current = Math.max(0, youJump.current - dt);
@@ -354,6 +376,26 @@ function MudDash({ state, onFinish, onQuit }) {
     window.addEventListener('keydown', d);
     return () => window.removeEventListener('keydown', d);
   }, [started, finished]);
+
+  // phone steer contract: left/right = lane ±1, jump = trigger hop
+  const remoteControls = useRef({}); // { [rid]: { lane, jumpPending } }
+  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  useEffect(() => {
+    if (!mp || !mp.onInput) return;
+    players.forEach((p, i) => {
+      if (p.remoteId) remoteControls.current[p.remoteId] = { lane: 1, jumpPending: false };
+    });
+    mp.broadcastMinigameStart && mp.broadcastMinigameStart('muddash', '◀ ▶ LANE · ▲ JUMP', 'steer');
+    const off = mp.onInput(({ id, kind, data }) => {
+      if (kind !== 'steer' || !data) return;
+      const rc = remoteControls.current[id];
+      if (!rc) return;
+      if (data.dir === 'left'  && data.down) rc.lane = Math.max(0, rc.lane - 1);
+      if (data.dir === 'right' && data.down) rc.lane = Math.min(LANES-1, rc.lane + 1);
+      if (data.dir === 'jump'  && data.down) rc.jumpPending = true;
+    });
+    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('muddash'); };
+  }, [mp, players]);
 
   useEffect(() => {
     if (!finished) return;

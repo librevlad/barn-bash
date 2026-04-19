@@ -136,6 +136,20 @@ function AppleAim({ state, onFinish, onQuit }) {
     return () => window.removeEventListener('keydown', d);
   }, [phase, started, finished, currentPlayer]);
 
+  // phone tap from the current shooter advances the phase
+  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  useEffect(() => {
+    if (!mp || !mp.onInput) return;
+    mp.broadcastMinigameStart && mp.broadcastMinigameStart('appleaim', 'TAP TO LOCK ANGLE, POWER, FIRE', 'tap');
+    const off = mp.onInput(({ id, kind }) => {
+      if (kind !== 'tap') return;
+      if (!currentPlayer || currentPlayer.remoteId !== id) return;
+      if (phase === 'angle') setPhase('power');
+      else if (phase === 'power') fire();
+    });
+    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('appleaim'); };
+  }, [mp, phase, currentPlayer, started, finished]);
+
   // finish
   useEffect(() => {
     if (!finished) return;
@@ -383,7 +397,7 @@ function WhackAGopher({ state, onFinish, onQuit }) {
     return () => clearTimeout(t);
   }, [hitFX]);
 
-  const whack = (h) => {
+  const whackFor = (pi, h) => {
     if (!started || finished) return;
     setPops(prev => {
       const next = prev.slice();
@@ -393,12 +407,30 @@ function WhackAGopher({ state, onFinish, onQuit }) {
       if (p.kind === 'gopher') delta = 1;
       else if (p.kind === 'golden') delta = 3;
       else if (p.kind === 'bunny') delta = -1;
-      setScores(s => { const ns = s.slice(); ns[0] += delta; return ns; });
-      setHitFX(fx => [...fx, { id: Date.now()+Math.random(), h, text: delta > 0 ? `+${delta}` : `${delta}`, c: delta > 0 ? '#6cc24a' : '#e04b3b', by: 0 }]);
+      setScores(s => { const ns = s.slice(); ns[pi] += delta; return ns; });
+      const c = delta > 0 ? '#6cc24a' : '#e04b3b';
+      setHitFX(fx => [...fx, { id: Date.now()+Math.random(), h, text: delta > 0 ? `+${delta}` : `${delta}`, c, by: pi }]);
       next[h] = null;
       return next;
     });
   };
+  const whack = (h) => whackFor(0, h);
+
+  // phone holes contract — each remote player's hole tap maps to their index
+  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  useEffect(() => {
+    if (!mp || !mp.onInput) return;
+    mp.broadcastMinigameStart && mp.broadcastMinigameStart('whack', 'BOP GOPHERS • SKIP BUNNIES', 'holes');
+    const off = mp.onInput(({ id, kind, data }) => {
+      if (kind !== 'holes' || !data) return;
+      const h = data.h;
+      if (typeof h !== 'number' || h < 0 || h >= HOLES) return;
+      const pi = players.findIndex(pp => pp.remoteId === id);
+      if (pi < 0) return;
+      whackFor(pi, h);
+    });
+    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('whack'); };
+  }, [mp, started, finished]);
 
   useEffect(() => {
     if (!finished) return;

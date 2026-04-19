@@ -248,6 +248,23 @@ function HayPanic({ state, onFinish, onQuit }) {
     return () => { window.removeEventListener('keydown', dn); window.removeEventListener('keyup', up); };
   }, []);
 
+  // Remote phone steering: per-remoteId { left, right } hold state. Used for
+  // both P0 (if phone-assigned) and CPUs (if remoteId present overrides wander).
+  const remoteSteer = useRef({});
+  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  useEffect(() => {
+    if (!mp || !mp.onInput) return;
+    mp.broadcastMinigameStart && mp.broadcastMinigameStart('haypanic', '◀ ▶ TO DODGE BALES!', 'steer');
+    const off = mp.onInput(({ id, kind, data }) => {
+      if (kind !== 'steer' || !data) return;
+      const s = remoteSteer.current[id] || { left:false, right:false };
+      if (data.dir === 'left')  s.left  = !!data.down;
+      if (data.dir === 'right') s.right = !!data.down;
+      remoteSteer.current[id] = s;
+    });
+    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('haypanic'); };
+  }, [mp]);
+
   useRaf((dt) => {
     if (!started || finished) return;
     setTime(t => t + dt);
@@ -266,23 +283,36 @@ function HayPanic({ state, onFinish, onQuit }) {
       ...b, y: b.y + b.vy * dt, rot: b.rot + b.vr * dt
     })).filter(b => b.y < FIELD_H + 80));
 
-    // move you
+    // move you (P0): keyboard OR phone steer if player 0 has a remoteId
     setYou(prev => {
       let vx = 0;
-      if (keys.current.left) vx -= 460;
-      if (keys.current.right) vx += 460;
+      const p0rid = players[0] && players[0].remoteId;
+      const rs = p0rid ? remoteSteer.current[p0rid] : null;
+      const left  = keys.current.left  || (rs && rs.left);
+      const right = keys.current.right || (rs && rs.right);
+      if (left)  vx -= 460;
+      if (right) vx += 460;
       const x = clamp(prev.x + vx * dt, 30, FIELD_W - 30);
       return { x, vx };
     });
 
-    // move CPUs: wander + simple avoidance
+    // move CPUs (or remote phones in cpu slots): phone steer overrides AI wander
     setCpus(prev => prev.map((c, idx) => {
       const pi = idx + 1;
       if (!alive[pi]) return c;
       let { x, dir, nextTurn } = c;
+      const rid = players[pi] && players[pi].remoteId;
+      const rs = rid ? remoteSteer.current[rid] : null;
+      if (rs) {
+        // phone-controlled: steer by held buttons, ignore wander/avoidance
+        let vx = 0;
+        if (rs.left)  vx -= 360;
+        if (rs.right) vx += 360;
+        x = clamp(x + vx * dt, 30, FIELD_W - 30);
+        return { ...c, x, dir: rs.left ? -1 : rs.right ? 1 : dir };
+      }
       nextTurn -= dt;
       if (nextTurn <= 0) { dir = Math.random() > .5 ? 1 : -1; nextTurn = 0.4 + Math.random()*0.9; }
-      // basic avoidance: if a bale is directly above within 120px x-range and y > field/2, flee
       const avoid = bales.find(b => Math.abs(b.x - x) < 100 && b.y > FIELD_H * 0.3 && b.y < FIELD_H - 60);
       if (avoid) dir = avoid.x < x ? 1 : -1;
       const speed = (difficulty === 'hard' ? 360 : difficulty === 'easy' ? 240 : 300);

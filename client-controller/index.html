@@ -77,6 +77,30 @@
   }
   .tap-pad:active, .tap-pad.hit { transform:translateY(6px); box-shadow:inset 0 6px 0 rgba(255,255,255,.4), 0 4px 0 var(--ink); }
 
+  .steer-pad { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:12px; }
+  .steer-btn { border:5px solid var(--ink); border-radius:20px;
+    background:radial-gradient(circle at 50% 40%, #ffd88c, #ffb13a 60%, #d47714);
+    box-shadow:inset 0 6px 0 rgba(255,255,255,.4), 0 10px 0 var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Luckiest Guy',cursive; font-size:54px; color:#fff;
+    -webkit-text-stroke:2px var(--ink); text-shadow:0 4px 0 var(--ink);
+    cursor:pointer; user-select:none; transition:transform .05s ease, box-shadow .05s ease;
+  }
+  .steer-btn.jump { background:radial-gradient(circle at 50% 40%, #a8e084, #6cc24a 60%, #3e8a25); }
+  .steer-btn:active, .steer-btn.on { transform:translateY(6px); box-shadow:inset 0 6px 0 rgba(255,255,255,.4), 0 4px 0 var(--ink); }
+
+  .holes-pad { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:10px; margin-top:12px; }
+  .hole-btn { border:5px solid var(--ink); border-radius:50%;
+    background:radial-gradient(circle at 50% 35%, #8f6a3b 0%, #6b4a2e 55%, #3a2510 100%);
+    box-shadow:inset 0 6px 20px rgba(0,0,0,.6), 0 8px 0 var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Luckiest Guy',cursive; font-size:34px; color:var(--cream);
+    -webkit-text-stroke:2px var(--ink); text-shadow:0 3px 0 var(--ink);
+    cursor:pointer; user-select:none; transition:transform .05s ease, box-shadow .05s ease;
+    aspect-ratio:1;
+  }
+  .hole-btn:active, .hole-btn.hit { transform:translateY(4px); box-shadow:inset 0 6px 20px rgba(0,0,0,.6), 0 2px 0 var(--ink); }
+
   .screen-hint { text-align:center; font-weight:600; margin:6px 0 0; font-size:15px; }
   .player-strip { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
   .player-strip .pill { background:#fff; border:3px solid var(--ink); border-radius:999px; padding:6px 12px; font-weight:700; font-size:13px; box-shadow:0 3px 0 var(--ink); }

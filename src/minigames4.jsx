@@ -70,12 +70,13 @@ function TugOWar({ state, onFinish, onQuit }) {
     return () => clearInterval(t);
   }, [started, finished]);
 
-  const doTap = () => {
+  const doTapFor = (pi) => {
     if (!started || finished) return;
-    powerRef.current[0] = Math.min(3, powerRef.current[0] + 0.6);
-    setTapCounts(c => { const n = c.slice(); n[0]++; return n; });
-    setLastTap(l => { const n = l.slice(); n[0] = performance.now(); return n; });
+    powerRef.current[pi] = Math.min(3, powerRef.current[pi] + 0.6);
+    setTapCounts(c => { const n = c.slice(); n[pi]++; return n; });
+    setLastTap(l => { const n = l.slice(); n[pi] = performance.now(); return n; });
   };
+  const doTap = () => doTapFor(0);
 
   useEffect(() => {
     const d = (e) => {
@@ -84,6 +85,20 @@ function TugOWar({ state, onFinish, onQuit }) {
     window.addEventListener('keydown', d);
     return () => window.removeEventListener('keydown', d);
   }, [started, finished]);
+
+  // phone tap mash — each phone player pulls their own team
+  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  useEffect(() => {
+    if (!mp || !mp.onInput) return;
+    mp.broadcastMinigameStart && mp.broadcastMinigameStart('tug', 'MASH TAP TO PULL!', 'tap');
+    const off = mp.onInput(({ id, kind }) => {
+      if (kind !== 'tap') return;
+      const pi = players.findIndex(pp => pp.remoteId === id);
+      if (pi < 0) return;
+      doTapFor(pi);
+    });
+    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('tug'); };
+  }, [mp, started, finished]);
 
   useEffect(() => {
     if (!finished) return;
@@ -350,6 +365,42 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
     return () => window.removeEventListener('keydown', d);
   }, [started, finished, dropping]);
 
+  // Per-phone hook swinging. Each remote player has their own x / dir; tap = drop.
+  const phoneHooks = useRef({}); // { [rid]: { x, dir } }
+  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  useEffect(() => {
+    if (!mp || !mp.onInput) return;
+    players.forEach((p, i) => {
+      if (p.remoteId) phoneHooks.current[p.remoteId] = { x: 200 + i * 160, dir: 1 };
+    });
+    mp.broadcastMinigameStart && mp.broadcastMinigameStart('fishing', 'TAP TO DROP YOUR HOOK!', 'tap');
+    const off = mp.onInput(({ id, kind }) => {
+      if (kind !== 'tap') return;
+      if (dropping) return;
+      const pi = players.findIndex(pp => pp.remoteId === id);
+      if (pi < 0) return;
+      const ph = phoneHooks.current[id];
+      const x = ph ? ph.x : POND_W/2;
+      setDropping({ player: pi, x, startT: performance.now() });
+    });
+    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('fishing'); };
+  }, [mp, started, finished, dropping, players]);
+
+  // Swing each phone hook independently
+  useRaf((dt) => {
+    if (!started || finished) return;
+    Object.keys(phoneHooks.current).forEach(rid => {
+      if (dropping && dropping.player != null) {
+        const pi = players.findIndex(pp => pp.remoteId === rid);
+        if (pi === dropping.player) return; // frozen while dropping
+      }
+      const h = phoneHooks.current[rid];
+      h.x += h.dir * 260 * dt;
+      if (h.x > POND_W - 120) { h.x = POND_W - 120; h.dir = -1; }
+      if (h.x < 120)          { h.x = 120;           h.dir = 1;  }
+    });
+  }, started && !finished);
+
   useEffect(() => {
     if (!finished) return;
     const ranked = scores.map((s,i)=>({i,s})).sort((a,b)=>b.s-a.s);
@@ -446,6 +497,20 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
             <path d="M 25 50 Q 18 58 22 66 Q 30 66 28 58" fill="none" stroke="#888" strokeWidth="3" strokeLinecap="round"/>
           </svg>
         )}
+
+        {/* Phone players' swinging hooks (when not mid-drop) */}
+        {started && !finished && players.map((p, pi) => {
+          if (!p.remoteId) return null;
+          if (dropping && dropping.player === pi) return null;
+          const h = phoneHooks.current[p.remoteId];
+          if (!h) return null;
+          return (
+            <svg key={pi} style={{position:'absolute',top:0,left:h.x - 2,pointerEvents:'none'}} width="50" height="80" viewBox="0 0 50 80">
+              <line x1="25" y1="0" x2="25" y2="50" stroke={p.char.color} strokeWidth="3"/>
+              <path d="M 25 50 Q 18 58 22 66 Q 30 66 28 58" fill="none" stroke="#888" strokeWidth="3" strokeLinecap="round"/>
+            </svg>
+          );
+        })}
 
         {/* Dropping line + hook */}
         {dropping && (
