@@ -209,8 +209,7 @@
       position: fixed; inset: 0; z-index: 30;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      background-color: var(--bg-wood-deep);
-      background-image: var(--bg-wood-plank);
+      /* Phase 57a — transparent so body > #bg shows through. */
     }
     #lobby.hidden { display: none; }
     /* Phase 10d — painterly cosmic tent backdrop behind title stack */
@@ -256,6 +255,7 @@
   </style>
 </head>
 <body>
+  <div id="bg"></div>
   <canvas id="game-canvas"></canvas>
   <div id="vignette"></div>
   <!-- Phase 49 — painted 3-plaque HUD. -->

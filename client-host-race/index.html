@@ -10,8 +10,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background-color: var(--bg-wood-deep);
-      background-image: var(--bg-wood-plank);
+      /* Phase 57a — transparent so body > #bg carnival backdrop shows through. */
       overflow: hidden;
       font-family: var(--font-ui);
       color: var(--text-cream);
@@ -249,6 +248,7 @@
   </style>
 </head>
 <body>
+  <div id="bg"></div>
   <canvas id="game-canvas"></canvas>
   <!-- Phase 50 — painted 3-plaque HUD. -->
   <div id="hud" style="display:none">

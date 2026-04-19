@@ -724,8 +724,15 @@
   animation: slotPop 0.35s var(--ease-out);
 }
 .player-slot.empty {
-  --slot-rim: rgba(120, 90, 50, 0.55);
-  opacity: 0.55;
+  --slot-rim: rgba(140, 100, 50, 0.65);
+  /* Phase 57b — empty slots no longer paint a dark rectangle
+     onto the scene. The frame is visible only when a player
+     joins; the empty state reads as a floating contender
+     placeholder (ball + name) over the painted arch so the
+     commissioned wood/vine art stays visible. */
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
   animation: none;
 }
 @keyframes slotPop {
@@ -746,6 +753,33 @@
   font-size: 34px;
   color: rgba(255, 240, 210, 0.35);
   margin: 2px 0 8px;
+}
+/* Phase 57c — empty-slot avatar flips from CG plastic sphere to
+   a painted brass medallion: warm red-velvet interior, two-layer
+   dark-inset + muted-gold rim, soft outer glow so it reads like
+   a vacant seat in the pit under the stage. The cream "?" sits
+   centered at low opacity — present but not demanding attention. */
+.player-slot.empty .slot-avatar {
+  background:
+    radial-gradient(circle at 50% 40%,
+      rgba(95, 34, 22, 0.85) 0%,
+      rgba(48, 16, 10, 0.95) 70%,
+      rgba(30, 10, 6, 1) 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 220, 180, 0.12),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.55),
+    0 0 0 2px rgba(20, 10, 5, 0.9),
+    0 0 0 4px var(--slot-rim, rgba(140, 100, 50, 0.65)),
+    0 0 14px rgba(255, 200, 120, 0.18);
+  color: rgba(255, 225, 170, 0.5);
+  font-size: 28px;
+  letter-spacing: 0;
+}
+.player-slot.empty .slot-name {
+  color: rgba(255, 225, 170, 0.62);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.5px;
+  font-size: 12px;
 }
 .player-slot .slot-avatar img {
   width: 100%; height: 100%; object-fit: cover;
@@ -876,4 +910,78 @@
   right: -6px; top: -14px;
   font-size: 22px;
   filter: drop-shadow(0 0 6px rgba(255, 221, 107, 0.8));
+}
+
+/* ============================================================
+   Phase 57a — shared full-viewport painted backdrop for the
+   per-game lobbies. Mirrors main lobby's `#bg` so escape / race
+   / hill / meteor inherit the commissioned carnival daylight
+   scene instead of falling back to the dark wood-plank void.
+   During gameplay the per-game <canvas> paints opaquely on top,
+   so this layer is only visible in the lobby / pre-countdown
+   state where it belongs. Sits at z-index 0 under #vignette and
+   the painted lobby-backdrop arch.
+   Per-game HTML includes `<div id="bg"></div>` as first child
+   of <body>; one rule drives all 4 surfaces.
+   ============================================================ */
+body > #bg {
+  position: fixed; inset: 0;
+  z-index: 0;
+  background-color: var(--bg-wood-deep, #3d2817);
+  pointer-events: none;
+  /* Phase 57a — theatrical stage atmosphere in pure CSS. bg.png
+     carries the main-lobby's own title + CTAs baked in; dropping
+     it behind per-game arches created two competing compositions.
+     Instead we paint: deep red-velvet curtains on left and right
+     edges, a carved-wood stage floor at the bottom, and a warm
+     radial spotlight where the painted proscenium arch sits.
+     Layer order (top → bottom in stack): spotlight halo, left
+     curtain, right curtain, wood floor, dark carnival-hall
+     gradient. The arch's own lighting + dim surroundings read
+     as "lit stage inside a dark sideshow tent". */
+  background-image:
+    /* Warm spotlight halo centered on the arch */
+    radial-gradient(ellipse 700px 500px at 50% 48%,
+      rgba(255, 204, 120, 0.14) 0%,
+      rgba(120, 70, 30, 0.05) 45%,
+      rgba(0, 0, 0, 0) 70%),
+    /* Left red-velvet curtain, vertical folds */
+    linear-gradient(90deg,
+      rgba(110, 18, 18, 0.95) 0%,
+      rgba(78, 10, 10, 0.92) 5%,
+      rgba(110, 18, 18, 0.88) 10%,
+      rgba(70, 10, 10, 0.78) 16%,
+      rgba(50, 8, 8, 0.5) 22%,
+      rgba(0, 0, 0, 0) 30%),
+    /* Right red-velvet curtain */
+    linear-gradient(-90deg,
+      rgba(110, 18, 18, 0.95) 0%,
+      rgba(78, 10, 10, 0.92) 5%,
+      rgba(110, 18, 18, 0.88) 10%,
+      rgba(70, 10, 10, 0.78) 16%,
+      rgba(50, 8, 8, 0.5) 22%,
+      rgba(0, 0, 0, 0) 30%),
+    /* Carved-wood stage floor at bottom */
+    linear-gradient(0deg,
+      rgba(85, 52, 25, 0.95) 0%,
+      rgba(70, 42, 20, 0.8) 6%,
+      rgba(55, 32, 15, 0.5) 11%,
+      rgba(0, 0, 0, 0) 17%),
+    /* Dark carnival-hall base gradient */
+    radial-gradient(ellipse at 50% 60%,
+      rgba(52, 28, 14, 1) 0%,
+      rgba(30, 16, 8, 1) 60%,
+      rgba(14, 7, 3, 1) 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: center, left, right, bottom, center;
+  background-repeat: no-repeat;
+}
+/* Phase 57a — hide the per-game gameplay canvas while the lobby
+   overlay is visible. Without this the canvas's opaque idle render
+   (night sky, stars, hills, walking fox for escape) paints ON TOP
+   of #bg and hides the carnival daylight scene. When #lobby gains
+   the .hidden class (countdown → gameplay), :has() stops matching
+   and the canvas re-appears naturally. */
+body:has(#lobby:not(.hidden)) > canvas {
+  display: none;
 }
