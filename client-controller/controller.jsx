@@ -169,9 +169,8 @@ function App() {
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div className="player-strip">
-        <div className="pill">P{players.findIndex(p => p.id === playerId) + 1 || '?'}</div>
-        <div className="pill">{name}</div>
-        <div className="pill">{CRITTERS.find(c=>c.id===critter)?.name || '—'}</div>
+        <div className="pill pill-id">P{players.findIndex(p => p.id === playerId) + 1 || '?'}</div>
+        <div className="pill pill-name">{name} <span className="pill-sub">· {CRITTERS.find(c=>c.id===critter)?.name || '—'}</span></div>
       </div>
       {minigame
         ? <MinigameInput game={minigame} send={send}/>

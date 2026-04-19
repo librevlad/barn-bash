@@ -62,8 +62,8 @@
   .btn.blue { background:var(--blue); }
   .btn[disabled] { filter:grayscale(.6) brightness(.8); cursor:not-allowed; }
 
-  .statusbar { position:fixed; top:8px; right:12px; font-size:11px; font-weight:700; letter-spacing:.5px; color:var(--ink); opacity:.7; display:flex; align-items:center; gap:6px; }
-  .statusbar .dot { width:8px; height:8px; border-radius:50%; background:var(--red); box-shadow:0 0 6px currentColor; }
+  .statusbar { position:fixed; bottom:max(6px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); font-size:10px; font-weight:700; letter-spacing:.5px; color:var(--ink); opacity:.55; display:flex; align-items:center; gap:6px; pointer-events:none; }
+  .statusbar .dot { width:7px; height:7px; border-radius:50%; background:var(--red); box-shadow:0 0 4px currentColor; }
   .statusbar.connected .dot { background:var(--green); }
 
   .tap-pad { flex:1; border:5px solid var(--ink); border-radius:24px;
@@ -101,9 +101,12 @@
   }
   .hole-btn:active, .hole-btn.hit { transform:translateY(4px); box-shadow:inset 0 6px 20px rgba(0,0,0,.6), 0 2px 0 var(--ink); }
 
-  .screen-hint { text-align:center; font-weight:600; margin:6px 0 0; font-size:15px; }
-  .player-strip { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .player-strip .pill { background:#fff; border:3px solid var(--ink); border-radius:999px; padding:6px 12px; font-weight:700; font-size:13px; box-shadow:0 3px 0 var(--ink); }
+  .screen-hint { text-align:center; font-weight:700; margin:8px 4px 0; font-size:14px; line-height:1.2; text-transform:uppercase; letter-spacing:.3px; }
+  .player-strip { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .player-strip .pill { background:#fff; border:3px solid var(--ink); border-radius:999px; padding:5px 12px; font-weight:700; font-size:13px; box-shadow:0 3px 0 var(--ink); white-space:nowrap; }
+  .player-strip .pill-id { background:var(--yellow); flex:0 0 auto; }
+  .player-strip .pill-name { flex:1; text-align:center; overflow:hidden; text-overflow:ellipsis; }
+  .player-strip .pill-sub { opacity:.55; font-weight:600; font-size:11px; }
   .center { text-align:center; }
   @keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
   .pulse { animation:bounce 1.1s ease-in-out infinite; }

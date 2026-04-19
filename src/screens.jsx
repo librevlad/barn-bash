@@ -232,13 +232,19 @@ function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
       transition:'transform .2s ease, box-shadow .2s ease'
     }}>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)'}}>
-        <span>P{idx+1} {slot.displayName && !slot.isCPU ? '📱' : (isYou ? '(YOU)' : '')}</span>
-        {!isYou && !slot.displayName && (
+        <span>P{idx+1}{isYou && !slot.displayName ? ' (YOU)' : ''}</span>
+        {slot.displayName && !slot.isCPU ? (
+          <span style={{
+            background:'var(--green)', color:'#fff', border:'2px solid var(--ink)',
+            borderRadius:8, padding:'2px 8px', fontFamily:"'Luckiest Guy'", fontSize:12,
+            letterSpacing:1, boxShadow:'0 2px 0 var(--ink)', display:'inline-flex', gap:4, alignItems:'center'
+          }}>📱 PHONE</span>
+        ) : (!isYou && (
           <button onClick={()=>toggleCPU(idx)} style={{
             background: slot.isCPU ? 'var(--blue)' : 'var(--grass)', color:'#fff', border:'2px solid var(--ink)',
             borderRadius:8, padding:'2px 8px', fontFamily:"'Luckiest Guy'", fontSize:12, cursor:'pointer'
           }}>{slot.isCPU ? 'CPU' : 'HUMAN'}</button>
-        )}
+        ))}
       </div>
 
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:8}}>
@@ -247,11 +253,11 @@ function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
         <button onClick={()=>!slot.isCPU && !slot.displayName && cycle(idx, 1)} disabled={slot.isCPU || !!slot.displayName} style={arrowBtn}>▶</button>
       </div>
 
-      <div style={{textAlign:'center', fontFamily:"'Luckiest Guy'", fontSize:22, color:'var(--ink)', marginTop:4}}>
+      <div style={{textAlign:'center', fontFamily:"'Luckiest Guy'", fontSize:22, color:'var(--ink)', marginTop:4, lineHeight:1.1}}>
         {nameLabel}
       </div>
-      <div style={{textAlign:'center', fontSize:12, color:'var(--ink-soft)', fontStyle:'italic', marginBottom:8}}>
-        {showAsCritter ? `as ${slot.char.name}` : `"${slot.char.tag}"`}
+      <div style={{textAlign:'center', fontFamily:"'Luckiest Guy'", fontSize:13, color:'var(--wood-dk)', letterSpacing:.5, marginTop:2, marginBottom:8}}>
+        {showAsCritter ? `AS ${slot.char.name.toUpperCase()}` : `"${slot.char.tag}"`}
       </div>
 
       <button onClick={()=>!slot.isCPU && toggleReady(idx)} disabled={slot.isCPU} style={{
@@ -378,9 +384,10 @@ function BoardScreen({ state, onPick, onTweaks }) {
         </div>
       )}
 
-      {/* Minigame cards grid */}
-      <div style={{position:'absolute', top: 330, left:0, right:0, display:'grid',
-        gridTemplateColumns:'repeat(3, 280px)', gap:26, justifyContent:'center'}}>
+      {/* Minigame cards grid — 4×2 keeps all eight tiles visible on a
+          1600×900 viewport without forcing a scroll. */}
+      <div style={{position:'absolute', top: 320, left:0, right:0, display:'grid',
+        gridTemplateColumns:'repeat(4, 300px)', gap:22, justifyContent:'center'}}>
         {MINIGAMES.map(mg => (
           <MiniCard key={mg.id} mg={mg} onPick={() => mg.ready && onPick(mg.id)}
                     voters={(votes[mg.id] || []).map(pi => players[pi]).filter(Boolean)}/>
