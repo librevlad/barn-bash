@@ -142,8 +142,12 @@ function EggPass({ state, onFinish, onQuit }) {
   // phone tap from the current holder passes the egg
   const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
   useEffect(() => {
+    if (!mp || !mp.broadcastMinigameStart) return;
+    mp.broadcastMinigameStart('egg', 'TAP WHEN YOU HAVE THE EGG!', 'tap');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('egg'); };
+  }, [mp]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
-    mp.broadcastMinigameStart && mp.broadcastMinigameStart('egg', 'TAP WHEN YOU HAVE THE EGG!', 'tap');
     const off = mp.onInput(({ id, kind }) => {
       if (kind !== 'tap') return;
       if (passing || finished || !started) return;
@@ -152,7 +156,7 @@ function EggPass({ state, onFinish, onQuit }) {
       if (!alive[holder]) return;
       passEgg();
     });
-    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('egg'); };
+    return () => { try { off && off(); } catch (_) {} };
   }, [mp, holder, passing, started, finished, alive]);
 
   const pct = Math.max(0, timeLeft / baseTime);
@@ -381,11 +385,17 @@ function MudDash({ state, onFinish, onQuit }) {
   const remoteControls = useRef({}); // { [rid]: { lane, jumpPending } }
   const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
   useEffect(() => {
+    if (!mp || !mp.broadcastMinigameStart) return;
+    mp.broadcastMinigameStart('muddash', '◀ ▶ LANE · ▲ JUMP', 'steer');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('muddash'); };
+  }, [mp]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
-    players.forEach((p, i) => {
-      if (p.remoteId) remoteControls.current[p.remoteId] = { lane: 1, jumpPending: false };
+    players.forEach((p) => {
+      if (p.remoteId && !remoteControls.current[p.remoteId]) {
+        remoteControls.current[p.remoteId] = { lane: 1, jumpPending: false };
+      }
     });
-    mp.broadcastMinigameStart && mp.broadcastMinigameStart('muddash', '◀ ▶ LANE · ▲ JUMP', 'steer');
     const off = mp.onInput(({ id, kind, data }) => {
       if (kind !== 'steer' || !data) return;
       const rc = remoteControls.current[id];
@@ -394,7 +404,7 @@ function MudDash({ state, onFinish, onQuit }) {
       if (data.dir === 'right' && data.down) rc.lane = Math.min(LANES-1, rc.lane + 1);
       if (data.dir === 'jump'  && data.down) rc.jumpPending = true;
     });
-    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('muddash'); };
+    return () => { try { off && off(); } catch (_) {} };
   }, [mp, players]);
 
   useEffect(() => {

@@ -112,9 +112,13 @@ wss.on('connection', (ws, req) => {
   const role = urlParams.get('role') || 'controller';
 
   if (role === 'host') {
-    // Replace any prior host connection (reload / reconnect).
+    // Replace any prior host connection (reload / reconnect). A fresh host
+    // means fresh game state, so drop any cached screen / minigame so new
+    // phones don't get replayed stale events.
     if (host && host.readyState === 1) { try { host.close(4001, 'replaced'); } catch (_) {} }
     host = ws;
+    lastScreen = null;
+    lastMinigame = null;
     safeSend(ws, { type: 'hello', role: 'host', players: snapshotPlayers() });
     ws.on('message', (raw) => {
       let msg; try { msg = JSON.parse(raw.toString()); } catch (_) { return; }
@@ -136,9 +140,26 @@ wss.on('connection', (ws, req) => {
   }
 
   // --- controller role ---
-  const playerId = nextPlayerId++;
-  const entry = { ws, name: null, character: null, color: null, clientId: urlParams.get('clientId') || null };
-  controllers.set(playerId, entry);
+  // Reuse playerId for reconnects of the same clientId so the host's
+  // gameState.players[*].remoteId mapping survives phone/browser blips.
+  const clientId = urlParams.get('clientId') || null;
+  let playerId = null;
+  if (clientId) {
+    for (const [id, c] of controllers.entries()) {
+      if (c.clientId === clientId) {
+        playerId = id;
+        try { c.ws && c.ws.readyState === 1 && c.ws.close(4002, 'replaced'); } catch (_) {}
+        c.ws = ws;
+        break;
+      }
+    }
+  }
+  const isReconnect = playerId != null;
+  if (!isReconnect) playerId = nextPlayerId++;
+  const entry = isReconnect
+    ? controllers.get(playerId)
+    : { ws, name: null, character: null, color: null, clientId };
+  if (!isReconnect) controllers.set(playerId, entry);
   safeSend(ws, { type: 'hello', role: 'controller', playerId });
   // Tell host a player is in the room (even before name/char are picked).
   safeSend(host, { type: 'playerJoin', id: playerId });
@@ -166,6 +187,11 @@ wss.on('connection', (ws, req) => {
   });
 
   ws.on('close', () => {
+    // Only drop the entry if this ws is still the active socket. A reconnect
+    // may have already swapped in a fresh ws under the same playerId; in that
+    // case the stale close should NOT evict the player.
+    const c = controllers.get(playerId);
+    if (!c || c.ws !== ws) return;
     controllers.delete(playerId);
     safeSend(host, { type: 'playerLeave', id: playerId });
     broadcastToControllers({ type: 'playerList', players: snapshotPlayers() });

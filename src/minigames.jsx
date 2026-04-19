@@ -39,11 +39,14 @@ function PigSprint({ state, onFinish, onQuit }) {
   // works, and CPUs still auto-tick in the RAF loop below.
   const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
   useEffect(() => {
+    if (!mp || !mp.broadcastMinigameStart) return;
+    mp.broadcastMinigameStart('sprint', 'TAP AS FAST AS YOU CAN!', 'tap');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('sprint'); };
+  }, [mp]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
-    mp.broadcastMinigameStart && mp.broadcastMinigameStart('sprint', 'TAP AS FAST AS YOU CAN!', 'tap');
     const off = mp.onInput(({ id, kind }) => {
       if (kind !== 'tap' || !started || finished) return;
-      // Match controller playerId → positions[] index
       const idx = players.findIndex(p => p.remoteId === id);
       if (idx < 0) return;
       setPositions(prev => {
@@ -52,10 +55,7 @@ function PigSprint({ state, onFinish, onQuit }) {
         return next;
       });
     });
-    return () => {
-      try { off && off(); } catch (_) {}
-      mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('sprint');
-    };
+    return () => { try { off && off(); } catch (_) {} };
   }, [mp, started, finished, players]);
 
   // clock
@@ -253,8 +253,12 @@ function HayPanic({ state, onFinish, onQuit }) {
   const remoteSteer = useRef({});
   const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
   useEffect(() => {
+    if (!mp || !mp.broadcastMinigameStart) return;
+    mp.broadcastMinigameStart('haypanic', '◀ ▶ TO DODGE BALES!', 'steer');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('haypanic'); };
+  }, [mp]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
-    mp.broadcastMinigameStart && mp.broadcastMinigameStart('haypanic', '◀ ▶ TO DODGE BALES!', 'steer');
     const off = mp.onInput(({ id, kind, data }) => {
       if (kind !== 'steer' || !data) return;
       const s = remoteSteer.current[id] || { left:false, right:false };
@@ -262,7 +266,7 @@ function HayPanic({ state, onFinish, onQuit }) {
       if (data.dir === 'right') s.right = !!data.down;
       remoteSteer.current[id] = s;
     });
-    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('haypanic'); };
+    return () => { try { off && off(); } catch (_) {} };
   }, [mp]);
 
   useRaf((dt) => {

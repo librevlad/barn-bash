@@ -89,15 +89,19 @@ function TugOWar({ state, onFinish, onQuit }) {
   // phone tap mash — each phone player pulls their own team
   const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
   useEffect(() => {
+    if (!mp || !mp.broadcastMinigameStart) return;
+    mp.broadcastMinigameStart('tug', 'MASH TAP TO PULL!', 'tap');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('tug'); };
+  }, [mp]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
-    mp.broadcastMinigameStart && mp.broadcastMinigameStart('tug', 'MASH TAP TO PULL!', 'tap');
     const off = mp.onInput(({ id, kind }) => {
       if (kind !== 'tap') return;
       const pi = players.findIndex(pp => pp.remoteId === id);
       if (pi < 0) return;
       doTapFor(pi);
     });
-    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('tug'); };
+    return () => { try { off && off(); } catch (_) {} };
   }, [mp, started, finished]);
 
   useEffect(() => {
@@ -369,11 +373,17 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
   const phoneHooks = useRef({}); // { [rid]: { x, dir } }
   const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
   useEffect(() => {
+    if (!mp || !mp.broadcastMinigameStart) return;
+    mp.broadcastMinigameStart('fishing', 'TAP TO DROP YOUR HOOK!', 'tap');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('fishing'); };
+  }, [mp]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
     players.forEach((p, i) => {
-      if (p.remoteId) phoneHooks.current[p.remoteId] = { x: 200 + i * 160, dir: 1 };
+      if (p.remoteId && !phoneHooks.current[p.remoteId]) {
+        phoneHooks.current[p.remoteId] = { x: 200 + i * 160, dir: 1 };
+      }
     });
-    mp.broadcastMinigameStart && mp.broadcastMinigameStart('fishing', 'TAP TO DROP YOUR HOOK!', 'tap');
     const off = mp.onInput(({ id, kind }) => {
       if (kind !== 'tap') return;
       if (dropping) return;
@@ -383,7 +393,7 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
       const x = ph ? ph.x : POND_W/2;
       setDropping({ player: pi, x, startT: performance.now() });
     });
-    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('fishing'); };
+    return () => { try { off && off(); } catch (_) {} };
   }, [mp, started, finished, dropping, players]);
 
   // Swing each phone hook independently

@@ -114,7 +114,15 @@ function AppleAim({ state, onFinish, onQuit }) {
     return () => clearTimeout(t);
   }, [floatTexts]);
 
-  const fire = (ang = angle, pow = power) => {
+  // Refs mirror the fast-oscillating angle/power so fire() can read the
+  // latest values even when called from an effect closure that predates the
+  // most recent RAF tick (phone tap → stale `power` → arrow dribbles).
+  const angleRef = useRef(angle);
+  const powerRef = useRef(power);
+  useEffect(() => { angleRef.current = angle; }, [angle]);
+  useEffect(() => { powerRef.current = power; }, [power]);
+
+  const fire = (ang = angleRef.current, pow = powerRef.current) => {
     const rad = ang * Math.PI / 180;
     const speed = 300 + pow * 8;
     setArrow({ x: archerX + 30, y: archerY, vx: Math.cos(rad) * speed, vy: -Math.sin(rad) * speed, rot: -ang });
@@ -136,18 +144,25 @@ function AppleAim({ state, onFinish, onQuit }) {
     return () => window.removeEventListener('keydown', d);
   }, [phase, started, finished, currentPlayer]);
 
-  // phone tap from the current shooter advances the phase
+  // phone tap from the current shooter advances the phase.
+  // Broadcast lifecycle is pinned to [mp] so we don't whipsaw the phone UI
+  // with minigameEnd/Start every time `phase` or `currentPlayer` changes;
+  // only the listener re-subscribes as those deps move.
   const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
   useEffect(() => {
+    if (!mp || !mp.broadcastMinigameStart) return;
+    mp.broadcastMinigameStart('appleaim', 'TAP TO LOCK ANGLE, POWER, FIRE', 'tap');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('appleaim'); };
+  }, [mp]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
-    mp.broadcastMinigameStart && mp.broadcastMinigameStart('appleaim', 'TAP TO LOCK ANGLE, POWER, FIRE', 'tap');
     const off = mp.onInput(({ id, kind }) => {
       if (kind !== 'tap') return;
       if (!currentPlayer || currentPlayer.remoteId !== id) return;
       if (phase === 'angle') setPhase('power');
       else if (phase === 'power') fire();
     });
-    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('appleaim'); };
+    return () => { try { off && off(); } catch (_) {} };
   }, [mp, phase, currentPlayer, started, finished]);
 
   // finish
@@ -419,8 +434,12 @@ function WhackAGopher({ state, onFinish, onQuit }) {
   // phone holes contract — each remote player's hole tap maps to their index
   const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
   useEffect(() => {
+    if (!mp || !mp.broadcastMinigameStart) return;
+    mp.broadcastMinigameStart('whack', 'BOP GOPHERS • SKIP BUNNIES', 'holes');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('whack'); };
+  }, [mp]);
+  useEffect(() => {
     if (!mp || !mp.onInput) return;
-    mp.broadcastMinigameStart && mp.broadcastMinigameStart('whack', 'BOP GOPHERS • SKIP BUNNIES', 'holes');
     const off = mp.onInput(({ id, kind, data }) => {
       if (kind !== 'holes' || !data) return;
       const h = data.h;
@@ -429,7 +448,7 @@ function WhackAGopher({ state, onFinish, onQuit }) {
       if (pi < 0) return;
       whackFor(pi, h);
     });
-    return () => { try { off && off(); } catch (_) {} mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('whack'); };
+    return () => { try { off && off(); } catch (_) {} };
   }, [mp, started, finished]);
 
   useEffect(() => {
