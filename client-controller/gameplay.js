@@ -285,7 +285,8 @@ window.Gameplay = (function () {
         // replaces the generic landscape gameover-hall.png
         // on the phone. Clean asset, no checker-strip needed.
         { el: els.goBackdrop,   key: 'gameover-hall-mobile-hero', src: '/assets/gameover-hall-mobile-hero.png', clean: true },
-        { el: els.elimBackdrop, key: 'elim-shadow',           src: '/assets/elim-shadow.png' },
+        // Phase 60b — painted mobile-portrait elim hero.
+        { el: els.elimBackdrop, key: 'elim-shadow-hero',      src: '/assets/elim-shadow-hero.png', clean: true },
       ];
       swaps.forEach(function (s) {
         if (!s.el) return;
@@ -306,8 +307,8 @@ window.Gameplay = (function () {
     // ELIMINATED + GM quip composition.
     els.elim = el('div', 'gp-eliminated-overlay');
     els.elimBackdrop = document.createElement('img');
-    els.elimBackdrop.className = 'gp-elim-backdrop';
-    els.elimBackdrop.src = '/assets/elim-shadow.png';
+    els.elimBackdrop.className = 'gp-elim-backdrop hero';
+    els.elimBackdrop.src = '/assets/elim-shadow-hero.png';
     els.elimBackdrop.alt = '';
     els.elimBackdrop.onerror = function () { this.remove(); };
     els.elimAvatar = el('div', 'gp-elim-avatar', { text: ANIMAL_EMOJI[o.character] || '\u2753' });
