@@ -114,7 +114,13 @@ const Render2D = (() => {
     if (typeof Visual !== 'undefined') Visual.init(W, H);
     if (typeof Transitions !== 'undefined') Transitions.fadeIn(600);
 
-    // Setup scene layers (all screen-space for this side-scroller)
+    // Setup scene layers (all screen-space for this side-scroller).
+    // Phase 62a — `painted-scene` layer sits under everything. It
+    // draws /assets/gameplay-escape-scene.png cover-fit as the
+    // atmospheric backdrop so procedural sky + hills + trees read
+    // as biome-tinted overlay on top of Hearthstone-tier painted
+    // horizon + moon + distant pines.
+    scene.createLayer('painted-scene', -1);
     scene.createLayer('sky', 0);
     scene.createLayer('clouds', 2);
     scene.createLayer('hills', 4);
@@ -129,6 +135,7 @@ const Render2D = (() => {
     scene.createLayer('ui', 40);
 
     // Register render functions per layer
+    scene.getLayer('painted-scene').addFn(drawPaintedScene);
     scene.getLayer('sky').addFn(drawSky);
     scene.getLayer('clouds').addFn(drawClouds);
     scene.getLayer('hills').addFn(drawHills);
@@ -224,18 +231,54 @@ const Render2D = (() => {
   }
 
   // ============================================================
+  // LAYER: PAINTED SCENE (Phase 62a)
+  // ============================================================
+  // Commissioned painted dusk-forest horizon + moon + distant pines
+  // + dark ground texture. Rendered as the bottom canvas layer so
+  // every procedural / sprite render composites over it. Biome
+  // tint is applied as a semi-transparent wash in drawSky (which
+  // runs on the next layer up).
+  const paintedScene = new Image();
+  paintedScene.src = '/assets/gameplay-escape-scene.png';
+  let paintedSceneReady = false;
+  paintedScene.onload = () => { paintedSceneReady = true; };
+  paintedScene.onerror = () => { paintedSceneReady = false; };
+  function drawPaintedScene(ctx) {
+    if (!paintedSceneReady) return;
+    // Cover-fit: scale to fill canvas, preserve aspect, center-anchor
+    const iw = paintedScene.naturalWidth, ih = paintedScene.naturalHeight;
+    if (!iw || !ih) return;
+    const scale = Math.max(W / iw, H / ih);
+    const dw = iw * scale, dh = ih * scale;
+    const dx = (W - dw) / 2, dy = (H - dh) / 2;
+    ctx.drawImage(paintedScene, dx, dy, dw, dh);
+  }
+
+  // ============================================================
   // LAYER: SKY
   // ============================================================
+  // Phase 62a — when the painted scene loads, the biome gradient
+  // becomes a low-alpha wash overlaying the painted dusk sky so
+  // biome transitions (forest → cave → snow → volcano) still
+  // read but don't obscure the commissioned art. Stars + moon
+  // are gated off (painted scene has its own moon + stars).
   function drawSky(ctx) {
     const clock = renderLoop ? renderLoop.getClock() : 0;
     const bc = getBiomeColors();
     const grad = ctx.createLinearGradient(0, 0, 0, H * 0.65);
     grad.addColorStop(0, bc.sky1);
     grad.addColorStop(1, bc.sky2);
+    ctx.save();
+    // Low-alpha biome tint wash over painted scene; raw paint if
+    // the asset didn't load.
+    ctx.globalAlpha = paintedSceneReady ? 0.35 : 1;
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H * 0.65);
+    ctx.restore();
 
-    // Stars
+    if (paintedSceneReady) return;
+
+    // Stars (fallback only — painted scene has its own)
     for (const s of stars) {
       const twinkle = 0.3 + Math.sin(clock * 2 + s.b * 10) * 0.3;
       ctx.fillStyle = `rgba(255,255,255,${twinkle})`;
@@ -244,7 +287,7 @@ const Render2D = (() => {
       ctx.fill();
     }
 
-    // Moon
+    // Moon (fallback only)
     ctx.fillStyle = 'rgba(255,240,200,0.15)';
     ctx.beginPath();
     ctx.arc(W * 0.8, H * 0.12, 35, 0, Math.PI * 2);
