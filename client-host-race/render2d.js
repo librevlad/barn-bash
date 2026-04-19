@@ -76,7 +76,10 @@ const Render2D = (() => {
       .then(() => { spritesReady = true; console.log('Race sprites loaded'); })
       .catch(e => { console.warn('Sprite load failed, falling back to procedural:', e); spritesReady = false; });
 
-    // Setup scene layers
+    // Setup scene layers. Phase 62b — `painted-scene` layer at
+    // z=-1 renders the painted grandstands + distant hills +
+    // daylight sky + bunting behind all procedural rendering.
+    scene.createLayer('painted-scene', -1);
     scene.createLayer('grass', 0);
     scene.createLayer('gravel', 2);
     scene.createLayer('track', 5);
@@ -88,6 +91,7 @@ const Render2D = (() => {
     scene.createLayer('ui', 40);
 
     // Register render functions per layer
+    scene.getLayer('painted-scene').addFn(drawPaintedScene);
     scene.getLayer('grass').addFn(drawGrass);
     scene.getLayer('gravel').addFn(drawGravelTraps);
     scene.getLayer('track').addFn(drawTrack);
@@ -170,13 +174,40 @@ const Render2D = (() => {
   // ============================================================
   // LAYER: GRASS
   // ============================================================
+  // ============================================================
+  // LAYER: PAINTED SCENE (Phase 62b)
+  // ============================================================
+  const paintedScene = new Image();
+  paintedScene.src = '/assets/gameplay-race-scene.png';
+  let paintedSceneReady = false;
+  paintedScene.onload = () => { paintedSceneReady = true; };
+  paintedScene.onerror = () => { paintedSceneReady = false; };
+  function drawPaintedScene(ctx) {
+    if (!paintedSceneReady) return;
+    const iw = paintedScene.naturalWidth, ih = paintedScene.naturalHeight;
+    if (!iw || !ih) return;
+    const scale = Math.max(W / iw, H / ih);
+    const dw = iw * scale, dh = ih * scale;
+    const dx = (W - dw) / 2, dy = (H - dh) / 2;
+    ctx.drawImage(paintedScene, dx, dy, dw, dh);
+  }
+
   function drawGrass(ctx) {
+    // Phase 62b — when painted scene is ready, grass radial is
+    // reduced to a low-alpha tint so the painted grandstands +
+    // distant hills + sky show through. Procedural gravel +
+    // track + sprites still composite on top.
+    if (paintedSceneReady) {
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+    }
     const grassGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.75);
     grassGrad.addColorStop(0, '#2a6a2a');
     grassGrad.addColorStop(0.6, '#1e5520');
     grassGrad.addColorStop(1, '#133a12');
     ctx.fillStyle = grassGrad;
     ctx.fillRect(0, 0, W, H);
+    if (paintedSceneReady) { ctx.restore(); return; }
 
     const clock = renderLoop ? renderLoop.getClock() : 0;
     for (let i = 0; i < 35; i++) {
