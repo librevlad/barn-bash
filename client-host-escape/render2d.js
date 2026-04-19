@@ -668,6 +668,15 @@ const Render2D = (() => {
   // ============================================================
   // LAYER: FOX
   // ============================================================
+  // Phase 63a — painted predator fox sprite. Eager load; flips
+  // ready flag on load, falls back to the procedural CharDraw.fox
+  // if asset 404s.
+  const foxSprite = new Image();
+  foxSprite.src = '/assets/fox-predator.png';
+  let foxSpriteReady = false;
+  foxSprite.onload = () => { foxSpriteReady = true; };
+  foxSprite.onerror = () => { foxSpriteReady = false; };
+
   function drawFox(ctx) {
     const clock = renderLoop ? renderLoop.getClock() : 0;
     const groundY = H * 0.62;
@@ -675,9 +684,48 @@ const Render2D = (() => {
     const foxX = W * 0.45 - relDist;
     if (foxX < -60 || foxX > W + 60) return;
     const foxY = groundY - 22;
+
+    if (foxSpriteReady) {
+      // Painted fox PNG — ~80px render size, 3/4 top-down view,
+      // center-anchored on (foxX, foxY).
+      const size = 96;
+      const iw = foxSprite.naturalWidth, ih = foxSprite.naturalHeight;
+      const dh = size;
+      const dw = size * (iw / ih);
+      // Subtle idle bob so the fox reads alive even when static.
+      const bob = Math.sin(clock * 4) * 1.5;
+      ctx.save();
+      // Warm gold rim glow intensifies with proximity (same beat
+      // as the procedural version — player feels watched).
+      if (foxProx > 0.25) {
+        const goldHot = (typeof Palette !== 'undefined' ? Palette.accentGoldHot : '#ffdd6b');
+        ctx.shadowColor = goldHot;
+        ctx.shadowBlur = 12 + foxProx * 18;
+      }
+      ctx.drawImage(foxSprite, foxX - dw / 2, foxY - dh / 2 + bob, dw, dh);
+      ctx.restore();
+      // Eye glare dots overlaid at sprite eye positions; the
+      // painted eyes are already warm but the pulsing highlight
+      // keeps the "glowing predator eye" carnival beat.
+      if (foxProx > 0.25) {
+        const goldHot = (typeof Palette !== 'undefined' ? Palette.accentGoldHot : '#ffdd6b');
+        const pulse = 0.35 + Math.sin(clock * 8) * 0.25;
+        ctx.save();
+        ctx.translate(foxX, foxY + bob);
+        ctx.fillStyle = `rgba(255, 250, 210, ${pulse * foxProx})`;
+        ctx.shadowColor = goldHot;
+        ctx.shadowBlur = 6 + foxProx * 8;
+        // Painted fox eye positions: ~18% from centre, slightly
+        // above midline. Calibrated to this hero PNG.
+        ctx.beginPath(); ctx.arc(-dw * 0.12, -dh * 0.10, 1.6, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc( dw * 0.10, -dh * 0.10, 1.6, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+      return;
+    }
+
+    // Fallback — procedural fox drawing when painted asset missing.
     CharDraw.fox(ctx, foxX, foxY, 24, clock);
-    // Gold-eye glare — intensifies with proximity; carnival signature
-    // beat so even when you can't see the fox clearly, you feel watched.
     if (foxProx > 0.25) {
       const goldHot = (typeof Palette !== 'undefined' ? Palette.accentGoldHot : '#ffdd6b');
       const pulse = 0.55 + Math.sin(clock * 8) * 0.35;
@@ -686,7 +734,6 @@ const Render2D = (() => {
       ctx.fillStyle = `rgba(255,248,200,${pulse * foxProx})`;
       ctx.shadowColor = goldHot;
       ctx.shadowBlur = 8 + foxProx * 10;
-      // Two eye dots, mirroring CharDraw.fox eye positions
       ctx.beginPath(); ctx.arc(-3, -5, 1.8, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.arc( 3, -5, 1.8, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
