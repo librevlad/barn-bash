@@ -255,10 +255,12 @@ const arrowBtn = {
 const MINIGAMES = [
   { id:'tap', name:'Pig Sprint', blurb:'Smash to run! First to the finish line wins.', icon:'🏁', ready:true, tint:'#ffc93c' },
   { id:'hay', name:'Hay Panic', blurb:'Dodge falling bales. Last animal standing.', icon:'🌾', ready:true, tint:'#8acb4a' },
-  { id:'egg', name:'Egg Pass', blurb:'Tap the right moment. Don\'t drop the egg!', icon:'🥚', ready:false, tint:'#f08a3a' },
+  { id:'egg', name:'Egg Pass', blurb:'Hot-potato egg. Don\'t let it pop in your hand.', icon:'🥚', ready:true, tint:'#fff5e4' },
   { id:'aim', name:'Apple Aim', blurb:'Archery with apples. Most bullseyes wins.', icon:'🎯', ready:true, tint:'#e04b3b' },
-  { id:'mud', name:'Mud Dash', blurb:'Sloshy slippery obstacle race.', icon:'💧', ready:false, tint:'#4aa3e0' },
+  { id:'mud', name:'Mud Dash', blurb:'Sloshy slippery obstacle race.', icon:'💧', ready:true, tint:'#4aa3e0' },
   { id:'gopher', name:'Whack-a-Gopher', blurb:'Bop the gopher. Don\'t bop the bunny.', icon:'🔨', ready:true, tint:'#a36bd1' },
+  { id:'tug', name:'Tug-o-War', blurb:'Team mash-off. Red vs Blue, pull the ribbon across.', icon:'🪢', ready:true, tint:'#c18040' },
+  { id:'fish', name:'Fishing Frenzy', blurb:'Swing and drop. Catch fish, avoid boots.', icon:'🎣', ready:true, tint:'#4aa3e0' },
 ];
 
 function BoardScreen({ state, onPick, onTweaks }) {
@@ -313,7 +315,7 @@ function BoardScreen({ state, onPick, onTweaks }) {
         <div style={{position:'absolute', top:220, left:'50%', transform:'translateX(-50%) rotate(-2deg)'}}>
           <Card style={{background:'#ffd8a0', borderColor:'var(--ink)', padding:'12px 24px'}}>
             <div style={{fontFamily:"'Luckiest Guy'",fontSize:14,color:'#a8291a'}}>⚡ ROUND TWIST</div>
-            <div style={{fontFamily:"'Luckiest Guy'",fontSize:22,color:'var(--ink)'}}>{modifier.toUpperCase()}</div>
+            <div style={{fontFamily:"'Luckiest Guy'",fontSize:22,color:'var(--ink)'}}>{modifier.emoji || '⚡'} {(modifier.text || modifier).toUpperCase()}</div>
           </Card>
         </div>
       )}
@@ -368,47 +370,72 @@ function MiniCard({ mg, onPick }) {
 
 /* ==========  SCOREBOARD  ========== */
 function Scoreboard({ players, scores, earned, onContinue, minigameName, round, totalRounds }) {
+  const ranked = [...players].map((p,i)=>({p,i,s:scores[i],e:earned[i]})).sort((a,b)=>b.e - a.e);
+  const leaderboard = [...players].map((p,i)=>({p,i,total: scores[i] + earned[i]})).sort((a,b)=>b.total - a.total);
   return (
     <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #1a4b7a 0%, #2d6fa0 50%, #4aa3e0 100%)'}}>
       {/* scanlines */}
       <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, transparent 2px 6px)'}}/>
+      {/* sparkle stars */}
+      {[...Array(30)].map((_,i)=>{
+        const x = (i*137)%1600, y = (i*83)%360;
+        return <div key={i} className="pop-in" style={{position:'absolute',left:x,top:y,width:4,height:4,background:'#fff',borderRadius:'50%',boxShadow:'0 0 8px #fff', animationDelay:(i*0.02)+'s', opacity:.7}}/>;
+      })}
 
-      <div style={{position:'absolute',top:50,left:0,right:0,textAlign:'center'}}>
-        <div className="plank" style={{display:'inline-block', padding:'14px 40px', borderRadius:24}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:32}}>ROUND {round} RESULTS · {minigameName.toUpperCase()}</span>
+      <div style={{position:'absolute',top:40,left:0,right:0,textAlign:'center'}}>
+        <div className="plank" style={{display:'inline-block', padding:'14px 40px', borderRadius:24, whiteSpace:'nowrap'}}>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:32}}>ROUND {round} · {minigameName.toUpperCase()}</span>
         </div>
+        <div style={{marginTop:10,fontFamily:"'Luckiest Guy'",fontSize:18,color:'var(--cream-2)',letterSpacing:2}}>RESULTS</div>
       </div>
 
-      <div style={{position:'absolute',top:180,left:0,right:0,display:'flex',justifyContent:'center',gap:30}}>
-        {[...players].map((p,i)=>({p,i,s:scores[i],e:earned[i]}))
-          .sort((a,b)=>b.e - a.e)
-          .map((r, rank) => (
+      {/* Round card reveal */}
+      <div style={{position:'absolute',top:180,left:0,right:0,display:'flex',justifyContent:'center',gap:30,flexWrap:'wrap',padding:'0 40px'}}>
+        {ranked.map((r, rank) => (
           <div key={r.i} className="pop-in" style={{
             background:'#fff', border:'5px solid var(--ink)', borderRadius:20,
-            boxShadow:'0 10px 0 var(--ink)', padding:18, width:220, textAlign:'center',
-            transform: rank === 0 ? 'translateY(-10px)' : 'none',
-            position:'relative', animationDelay: (rank*0.15)+'s'
+            boxShadow:'0 10px 0 var(--ink)', padding:18, width:200, textAlign:'center',
+            transform: rank === 0 ? 'translateY(-10px) rotate(-1deg)' : (rank === ranked.length-1 ? 'rotate(1deg)' : 'none'),
+            position:'relative', animationDelay: (rank*0.2)+'s'
           }}>
             {rank === 0 && (
-              <div style={{position:'absolute', top:-30, left:'50%', transform:'translateX(-50%)', fontSize:42}}>👑</div>
+              <div style={{position:'absolute', top:-34, left:'50%', transform:'translateX(-50%)', fontSize:44, animation:'bob 1.5s ease-in-out infinite'}}>👑</div>
+            )}
+            {rank === 0 && (
+              <div style={{position:'absolute',top:-12,left:-12,background:'var(--yellow)',border:'3px solid var(--ink)',borderRadius:10,padding:'2px 8px',fontFamily:"'Luckiest Guy'",fontSize:14,transform:'rotate(-8deg)'}}>WINNER!</div>
             )}
             <div style={{fontFamily:"'Luckiest Guy'", fontSize:36, color:rank===0?'#d99312':'var(--ink)'}}>#{rank+1}</div>
-            <Avatar char={r.p.char} size={110} bob={rank===0}/>
-            <div style={{fontFamily:"'Luckiest Guy'", fontSize:20, color:'var(--ink)'}}>{r.p.char.name.toUpperCase()}</div>
-            <div style={{display:'flex', justifyContent:'center', gap:6, alignItems:'center', marginTop:4}}>
-              <Coin size={22}/>
-              <span style={{fontFamily:"'Luckiest Guy'", fontSize:26, color:'#3e8a29'}}>+{r.e}</span>
+            <Avatar char={r.p.char} size={100} bob={rank===0}/>
+            <div style={{fontFamily:"'Luckiest Guy'", fontSize:18, color:'var(--ink)'}}>{r.p.char.name.toUpperCase()}</div>
+            <div style={{display:'flex', justifyContent:'center', gap:6, alignItems:'center', marginTop:6,
+              background: r.e > 0 ? 'var(--yellow)' : '#eee', border:'3px solid var(--ink)', borderRadius:10, padding:'4px 10px'
+            }}>
+              <Coin size={20}/>
+              <span style={{fontFamily:"'Luckiest Guy'", fontSize:24, color:r.e>0?'var(--ink)':'#888'}}>+{r.e}</span>
             </div>
-            <div style={{marginTop:6, fontFamily:"'Luckiest Guy'", fontSize:14, color:'var(--ink-soft)'}}>
-              TOTAL: {r.s + r.e}
+            <div style={{marginTop:8, fontFamily:"'Luckiest Guy'", fontSize:13, color:'var(--ink-soft)', opacity:.7}}>
+              TOTAL
             </div>
+            <div style={{fontFamily:"'Luckiest Guy'", fontSize:20, color:'var(--ink)'}}>{r.s + r.e}</div>
           </div>
         ))}
       </div>
 
-      <div style={{position:'absolute',bottom:60,left:0,right:0,textAlign:'center'}}>
+      {/* Running standings ribbon */}
+      <div style={{position:'absolute',bottom:170,left:'50%',transform:'translateX(-50%)',background:'rgba(0,0,0,.3)',border:'3px solid var(--cream)',borderRadius:16,padding:'10px 20px',display:'flex',gap:20,alignItems:'center',backdropFilter:'blur(4px)'}}>
+        <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream-2)',fontSize:16,letterSpacing:1}}>OVERALL ▸</span>
+        {leaderboard.map((L, i) => (
+          <div key={L.i} style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontFamily:"'Luckiest Guy'",color:i===0?'var(--yellow)':'var(--cream)',fontSize:18}}>{i+1}.</span>
+            <Avatar char={L.p.char} size={28}/>
+            <span style={{fontFamily:"'Luckiest Guy'",color:'#fff',fontSize:18}}>{L.total}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{position:'absolute',bottom:50,left:0,right:0,textAlign:'center'}}>
         <Btn variant="green" size="xl" onClick={onContinue} className="pulse">
-          {round >= totalRounds ? 'FINAL PODIUM! 🏆' : 'NEXT ROUND ▶'}
+          {round >= totalRounds ? 'FINAL PODIUM! 🏆' : `ROUND ${round+1} ▶`}
         </Btn>
       </div>
     </div>
@@ -418,29 +445,55 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
 /* ==========  PODIUM  ========== */
 function Podium({ players, scores, onPlayAgain, onQuit }) {
   const ranked = players.map((p,i)=>({p,i,s:scores[i]})).sort((a,b)=>b.s-a.s);
+  const champion = ranked[0];
   return (
-    <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at top, #ffe49a 0%, #f2b04a 60%, #a86d1e 100%)'}}>
-      <Confetti count={60}/>
-      <div style={{position:'absolute',top:40,left:0,right:0,textAlign:'center'}}>
+    <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at top, #ffe49a 0%, #f2b04a 60%, #a86d1e 100%)', overflow:'hidden'}}>
+      {/* radial rays */}
+      <div style={{position:'absolute',inset:0,backgroundImage:'conic-gradient(from 0deg, transparent 0deg 8deg, rgba(255,255,255,.08) 8deg 16deg, transparent 16deg 24deg)',mixBlendMode:'overlay',animation:'sparkle-spin 40s linear infinite',transformOrigin:'center'}}/>
+      {/* fireworks */}
+      {[...Array(8)].map((_,i)=>{
+        const x = 100 + (i*180)%1500;
+        const y = 100 + (i*63)%260;
+        const colors = ['#e04b3b','#4aa3e0','#6cc24a','#ffc93c','#a36bd1','#f28bbd'];
+        const c = colors[i % colors.length];
+        return (
+          <div key={i} style={{position:'absolute',left:x,top:y,pointerEvents:'none', animation:`pop-in .7s ease ${i*0.3}s both`}}>
+            {[...Array(10)].map((_,j)=>{
+              const angle = (j/10)*Math.PI*2;
+              const r = 40;
+              return <div key={j} style={{position:'absolute',width:8,height:8,borderRadius:'50%',background:c,border:'2px solid #2a1a10',transform:`translate(${Math.cos(angle)*r}px,${Math.sin(angle)*r}px)`,boxShadow:`0 0 12px ${c}`}}/>;
+            })}
+            <div style={{position:'absolute',width:16,height:16,borderRadius:'50%',background:'#fff',transform:'translate(-8px,-8px)',boxShadow:`0 0 20px #fff`}}/>
+          </div>
+        );
+      })}
+      <Confetti count={120}/>
+
+      <div style={{position:'absolute',top:30,left:0,right:0,textAlign:'center'}}>
         <div style={{display:'flex', gap:14, justifyContent:'center'}}>
-          <TitleWord text="BARN BASH" color="var(--red)" size={80}/>
-          <TitleWord text="CHAMPION!" color="var(--yellow)" size={80}/>
+          <TitleWord text="CHAMPION!" color="var(--yellow)" size={72}/>
         </div>
+        {champion && (
+          <div className="pop-in" style={{marginTop:10,display:'inline-flex',alignItems:'center',gap:10,background:'rgba(0,0,0,.35)',border:'4px solid #fff',borderRadius:16,padding:'8px 22px',animationDelay:'.4s'}}>
+            <Avatar char={champion.p.char} size={42}/>
+            <span style={{fontFamily:"'Luckiest Guy'",color:'#fff',fontSize:28,letterSpacing:2}}>{champion.p.char.name.toUpperCase()} WINS!</span>
+          </div>
+        )}
       </div>
 
       {/* Podium bars */}
-      <div style={{position:'absolute', bottom:80, left:0, right:0, display:'flex', justifyContent:'center', alignItems:'flex-end', gap:8}}>
+      <div style={{position:'absolute', bottom:100, left:0, right:0, display:'flex', justifyContent:'center', alignItems:'flex-end', gap:12}}>
         {[1,0,2,3].map((rankIdx, i) => {
           const r = ranked[rankIdx]; if (!r) return null;
-          const heights = {0:320, 1:220, 2:160, 3:120};
+          const heights = {0:340, 1:230, 2:170, 3:130};
           const colors = {0:'var(--yellow)', 1:'#c9c9c9', 2:'#cd7f32', 3:'#8a8680'};
           const medals = {0:'🥇',1:'🥈',2:'🥉',3:'4️⃣'};
           return (
             <div key={r.i} style={{display:'flex', flexDirection:'column', alignItems:'center', width:200}}>
-              <div className="pop-in" style={{animationDelay:(i*0.25)+'s'}}>
-                <div style={{fontSize:48, textAlign:'center'}}>{medals[rankIdx]}</div>
-                <Avatar char={r.p.char} size={rankIdx === 0 ? 160 : 120} bob={rankIdx===0}/>
-                <div style={{textAlign:'center',fontFamily:"'Luckiest Guy'",fontSize:22, color:'var(--ink)'}}>{r.p.char.name.toUpperCase()}</div>
+              <div className="pop-in" style={{animationDelay:(i*0.3 + 0.6)+'s'}}>
+                <div style={{fontSize:52, textAlign:'center', filter:rankIdx===0?'drop-shadow(0 0 12px #fff8c0)':''}}>{medals[rankIdx]}</div>
+                <Avatar char={r.p.char} size={rankIdx === 0 ? 170 : 120} bob={rankIdx===0}/>
+                <div style={{textAlign:'center',fontFamily:"'Luckiest Guy'",fontSize:22, color:'var(--ink)',marginTop:4}}>{r.p.char.name.toUpperCase()}</div>
                 <div style={{textAlign:'center',display:'flex',justifyContent:'center',gap:4,alignItems:'center'}}>
                   <Coin size={22}/>
                   <span style={{fontFamily:"'Luckiest Guy'",fontSize:26, color:'var(--wood-dk)'}}>{r.s}</span>
@@ -450,10 +503,13 @@ function Podium({ players, scores, onPlayAgain, onQuit }) {
                 width:180, height:heights[rankIdx],
                 background:colors[rankIdx], border:'5px solid var(--ink)',
                 borderRadius:'12px 12px 0 0', marginTop:10,
-                boxShadow:'inset 0 6px 0 rgba(255,255,255,.3), inset 0 -6px 0 rgba(0,0,0,.15)',
-                display:'flex', alignItems:'flex-start', justifyContent:'center', paddingTop:16
+                boxShadow:'inset 0 6px 0 rgba(255,255,255,.3), inset 0 -6px 0 rgba(0,0,0,.15), 0 8px 0 var(--ink)',
+                display:'flex', alignItems:'flex-start', justifyContent:'center', paddingTop:16,
+                position:'relative', overflow:'hidden'
               }}>
-                <div style={{fontFamily:"'Luckiest Guy'",fontSize:64, color:'var(--ink)'}}>{rankIdx+1}</div>
+                <div style={{fontFamily:"'Luckiest Guy'",fontSize:72, color:'var(--ink)', lineHeight:1}}>{rankIdx+1}</div>
+                {/* shine sweep */}
+                <div style={{position:'absolute',top:0,bottom:0,width:40,background:'linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent)',animation:`shine-sweep 3s ease-in-out ${i*0.5}s infinite`}}/>
               </div>
             </div>
           );

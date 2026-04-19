@@ -11,14 +11,19 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 }/*EDITMODE-END*/;
 
 const TWISTS = [
-  'Gravity is wild',
-  'Upside-down controls',
-  'Double coins!',
-  'Bears only (just kidding)',
-  'Mud makes things slippery',
-  'Winner takes ALL',
-  'Hay bales are HUGE',
-  'Sudden death: one hit out'
+  { id:'gravity', text:'Gravity is wild', emoji:'🌀' },
+  { id:'flip', text:'Upside-down controls', emoji:'🔄' },
+  { id:'double', text:'Double coins!', emoji:'💰' },
+  { id:'mud', text:'Mud makes things slippery', emoji:'💧' },
+  { id:'takeall', text:'Winner takes ALL', emoji:'👑' },
+  { id:'huge', text:'Hay bales are HUGE', emoji:'🌾' },
+  { id:'sudden', text:'Sudden death: one hit out', emoji:'💥' },
+  { id:'fast', text:'Everything is 50% faster', emoji:'⚡' },
+  { id:'fog', text:'Foggy fields · low vis', emoji:'🌫️' },
+  { id:'wind', text:'Gusty wind · arrows curve', emoji:'💨' },
+  { id:'night', text:'Midnight mode · barn owls watching', emoji:'🌙' },
+  { id:'rain', text:'Rainy day · slippy slidey', emoji:'🌧️' },
+  { id:'tiny', text:'Shrink ray · tiny critters', emoji:'🔍' },
 ];
 
 function App() {
@@ -40,7 +45,7 @@ function App() {
   const [screen, setScreen] = useState$(() => {
     const s = localStorage.getItem('barnyard-screen') || 'title';
     // if restoring into an in-game screen but players haven't been built yet, reset
-    const inGame = ['select','board','sprint','panic','aim','gopher','scoreboard','podium'].includes(s);
+    const inGame = ['select','board','sprint','panic','aim','gopher','egg','mud','tug','fish','scoreboard','podium'].includes(s);
     return inGame ? 'title' : s;
   });
   useEffect$(() => { localStorage.setItem('barnyard-screen', screen); }, [screen]);
@@ -83,6 +88,10 @@ function App() {
     else if (id === 'hay') setScreen('panic');
     else if (id === 'aim') setScreen('aim');
     else if (id === 'gopher') setScreen('gopher');
+    else if (id === 'egg') setScreen('egg');
+    else if (id === 'mud') setScreen('mud');
+    else if (id === 'tug') setScreen('tug');
+    else if (id === 'fish') setScreen('fish');
   };
 
   const finishMinigame = (earned, name) => {
@@ -214,6 +223,34 @@ function App() {
             <WhackAGopher
               state={gameState}
               onFinish={(earned)=>finishMinigame(earned, 'Whack-a-Gopher')}
+              onQuit={()=>setScreen('board')}
+            />
+          )}
+          {screen === 'egg' && gameState.players.length > 0 && (
+            <EggPass
+              state={gameState}
+              onFinish={(earned)=>finishMinigame(earned, 'Egg Pass')}
+              onQuit={()=>setScreen('board')}
+            />
+          )}
+          {screen === 'mud' && gameState.players.length > 0 && (
+            <MudDash
+              state={gameState}
+              onFinish={(earned)=>finishMinigame(earned, 'Mud Dash')}
+              onQuit={()=>setScreen('board')}
+            />
+          )}
+          {screen === 'tug' && gameState.players.length > 0 && (
+            <TugOWar
+              state={gameState}
+              onFinish={(earned)=>finishMinigame(earned, 'Tug-o-War')}
+              onQuit={()=>setScreen('board')}
+            />
+          )}
+          {screen === 'fish' && gameState.players.length > 0 && (
+            <FishingFrenzy
+              state={gameState}
+              onFinish={(earned)=>finishMinigame(earned, 'Fishing Frenzy')}
               onQuit={()=>setScreen('board')}
             />
           )}
