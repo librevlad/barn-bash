@@ -74,20 +74,39 @@ function App() {
   }));
 
   const startGame = () => {
-    // build players: you + CPUs, no duplicates
-    const you = CHARACTERS.find(c => c.id === tweaks.youChar) || CHARACTERS[0];
-    const pool = CHARACTERS.filter(c => c.id !== you.id).sort(()=>Math.random()-.5);
-    const players = [{ char: you, isCPU: false }];
-    for (let i = 1; i < tweaks.playerCount; i++) players.push({ char: pool[i-1], isCPU: true });
+    // Phase mp/Stage 2 — build players from phone controllers when
+    // any are connected; fall back to the single-player-vs-CPU flow
+    // so dev on the desktop still works even when no phone joined.
+    const connected = (mp.remotePlayers || []).filter(p => p.character);
+    let players;
+    if (connected.length > 0) {
+      const used = new Set();
+      players = connected.map(p => {
+        const char = CHARACTERS.find(c => c.id === p.character) || CHARACTERS[0];
+        used.add(char.id);
+        return { char, isCPU: false, remoteId: p.id, displayName: p.name || char.name };
+      });
+      // Optionally pad to minimum 2 players with CPUs for solo testing.
+      const pool = CHARACTERS.filter(c => !used.has(c.id)).sort(() => Math.random() - .5);
+      while (players.length < 2 && pool.length > 0) {
+        players.push({ char: pool.shift(), isCPU: true });
+      }
+    } else {
+      const you = CHARACTERS.find(c => c.id === tweaks.youChar) || CHARACTERS[0];
+      const pool = CHARACTERS.filter(c => c.id !== you.id).sort(()=>Math.random()-.5);
+      players = [{ char: you, isCPU: false }];
+      for (let i = 1; i < tweaks.playerCount; i++) players.push({ char: pool[i-1], isCPU: true });
+    }
+    const playerCount = players.length;
     setGameState(s => ({
       ...s,
       round: 1,
       totalRounds: tweaks.totalRounds,
-      scores: Array(tweaks.playerCount).fill(0),
+      scores: Array(playerCount).fill(0),
       players,
       modifier: tweaks.twists ? pick(TWISTS) : null,
       difficulty: tweaks.difficulty,
-      lastEarned: Array(tweaks.playerCount).fill(0),
+      lastEarned: Array(playerCount).fill(0),
     }));
     setScreen('select');
   };
@@ -205,6 +224,7 @@ function App() {
               onBack={goTitle}
               onStart={confirmCharacters}
               playerCount={tweaks.playerCount}
+              remotePlayers={gameState.players}
             />
           )}
           {screen === 'board' && (

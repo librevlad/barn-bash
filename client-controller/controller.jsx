@@ -4,18 +4,18 @@
 
 const { useState, useEffect, useRef } = React;
 
-// Keep this list in sync with src/characters.jsx on the host.
+// Must match src/characters.jsx CHARACTERS ids on the host.
 const CRITTERS = [
-  { id: 'pig',      name: 'Pinky',     color: '#f28bbd' },
-  { id: 'fox',      name: 'Ember',     color: '#f08a3a' },
-  { id: 'bear',     name: 'Biggs',     color: '#a0723f' },
-  { id: 'bunny',    name: 'Hopper',    color: '#e5e5e5' },
-  { id: 'chicken',  name: 'Clucks',    color: '#fffbd0' },
-  { id: 'panda',    name: 'Bramble',   color: '#2a2a2a' },
-  { id: 'cat',      name: 'Marmalade', color: '#f4a85f' },
-  { id: 'owl',      name: 'Professor', color: '#9c6a3a' },
-  { id: 'sheep',    name: 'Woolly',    color: '#f4eede' },
-  { id: 'frog',     name: 'Ribbit',    color: '#6cc24a' },
+  { id: 'pig',     name: 'Pinky',     color: '#f4a8c0' },
+  { id: 'fox',     name: 'Ember',     color: '#f08a3a' },
+  { id: 'bear',    name: 'Biggs',     color: '#a0723f' },
+  { id: 'rabbit',  name: 'Hopper',    color: '#e8dcc0' },
+  { id: 'chicken', name: 'Clucks',    color: '#fff8ea' },
+  { id: 'badger',  name: 'Bramble',   color: '#c7c2b5' },
+  { id: 'cat',     name: 'Marmalade', color: '#e8b866' },
+  { id: 'owl',     name: 'Professor', color: '#9b7653' },
+  { id: 'sheep',   name: 'Woolly',    color: '#fff8ea' },
+  { id: 'frog',    name: 'Ribbit',    color: '#6cc24a' },
 ];
 
 const CLIENT_ID_KEY = 'barn-bash-controller-clientId';

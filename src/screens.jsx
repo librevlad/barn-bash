@@ -102,16 +102,38 @@ function TitleScreen({ onPlay, onCustomize, onSettings }) {
 }
 
 /* ==========  CHARACTER SELECT  ========== */
-function CharacterSelect({ onBack, onStart, playerCount=4 }) {
-  const [slots, setSlots] = useState(() => {
-    // slot 0 = you, others = CPU
+function CharacterSelect({ onBack, onStart, playerCount=4, remotePlayers=null }) {
+  // Phase mp/Stage 2 — when `remotePlayers` is a non-empty array (set by
+  // App.startGame once phones joined), mirror it into `slots` so real
+  // phones drive the display. Phones auto-ready since their critter is
+  // already baked into gameState.players.
+  const initialSlots = () => {
+    if (Array.isArray(remotePlayers) && remotePlayers.length > 0) {
+      return remotePlayers.map(p => ({
+        isCPU: !!p.isCPU,
+        char: p.char,
+        ready: true,
+        displayName: p.displayName,
+      }));
+    }
     const shuffled = [...CHARACTERS].sort(()=>Math.random()-.5);
     return Array.from({ length: playerCount }, (_, i) => ({
       isCPU: i !== 0,
       char: shuffled[i],
-      ready: i !== 0, // CPUs auto-ready
+      ready: i !== 0,
     }));
-  });
+  };
+  const [slots, setSlots] = useState(initialSlots);
+
+  // If remotePlayers changes mid-screen (new phone joined after entering
+  // select), re-sync. Only when we're in remote mode.
+  useEffect(() => {
+    if (Array.isArray(remotePlayers) && remotePlayers.length > 0) {
+      setSlots(remotePlayers.map(p => ({
+        isCPU: !!p.isCPU, char: p.char, ready: true, displayName: p.displayName,
+      })));
+    }
+  }, [remotePlayers]);
 
   const allReady = slots.every(s => s.ready);
   const usedIds = slots.map(s => s.char.id);

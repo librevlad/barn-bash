@@ -33,6 +33,31 @@ function PigSprint({ state, onFinish, onQuit }) {
   const cpuRateByDiff = { easy: 4.2, medium: 5.6, hard: 7.2 };
   const cpuRate = cpuRateByDiff[difficulty] || 5.6;
 
+  // Phase mp/Stage 3 — subscribe phone-driven players to their own tap
+  // events. Players with `remoteId` advance when that phone emits a
+  // `tap` input. Purely additive — keyboard slot-0 tap path below still
+  // works, and CPUs still auto-tick in the RAF loop below.
+  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  useEffect(() => {
+    if (!mp || !mp.onInput) return;
+    mp.broadcastMinigameStart && mp.broadcastMinigameStart('sprint', 'TAP AS FAST AS YOU CAN!', 'tap');
+    const off = mp.onInput(({ id, kind }) => {
+      if (kind !== 'tap' || !started || finished) return;
+      // Match controller playerId → positions[] index
+      const idx = players.findIndex(p => p.remoteId === id);
+      if (idx < 0) return;
+      setPositions(prev => {
+        const next = prev.slice();
+        next[idx] = Math.min(FINISH, next[idx] + 22);
+        return next;
+      });
+    });
+    return () => {
+      try { off && off(); } catch (_) {}
+      mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('sprint');
+    };
+  }, [mp, started, finished, players]);
+
   // clock
   const [time, setTime] = useState(0);
 

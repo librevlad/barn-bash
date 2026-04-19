@@ -78,11 +78,17 @@ function useMultiplayer() {
     return () => __inputListeners.delete(fn);
   }, []);
 
-  return useMPMemo(() => ({
+  const api = useMPMemo(() => ({
     connected, remotePlayers,
     broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd,
     onInput, send,
   }), [connected, remotePlayers, broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, onInput, send]);
+
+  // Pin the API onto the window so minigame components (deep in the
+  // tree) can grab it without prop drilling through App → Minigame.
+  useMPEffect(() => { window.__BarnBashMPRT = api; }, [api]);
+
+  return api;
 }
 
 // QR overlay for the title screen. Renders the phone-join URL using a
