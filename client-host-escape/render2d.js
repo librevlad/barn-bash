@@ -686,37 +686,70 @@ const Render2D = (() => {
     const foxY = groundY - 22;
 
     if (foxSpriteReady) {
-      // Painted fox PNG — ~80px render size, 3/4 top-down view,
-      // center-anchored on (foxX, foxY).
+      // Painted fox PNG rendered with gallop-pose transforms
+      // mirroring the CharSprite 'move' pattern — one static
+      // sprite, motion driven by canvas transforms on the
+      // render-loop clock. Cadence tuned higher than a walk
+      // (fox gallops): 12 rad/s vs the CharSprite walk's 7.
       const size = 96;
       const iw = foxSprite.naturalWidth, ih = foxSprite.naturalHeight;
       const dh = size;
       const dw = size * (iw / ih);
-      // Subtle idle bob so the fox reads alive even when static.
-      const bob = Math.sin(clock * 4) * 1.5;
+
+      const cadence = clock * 12;
+      const bob = Math.sin(cadence) * 3;           // suspension apex
+      const squash = Math.cos(cadence * 2) * 0.08; // Y-axis squash-stretch
+      const roll = Math.sin(cadence) * 0.06;       // ±3.4° gait roll
+      const sx = 1 + squash;
+      const sy = 1 - squash;
+
       ctx.save();
-      // Warm gold rim glow intensifies with proximity (same beat
-      // as the procedural version — player feels watched).
+      ctx.translate(foxX, foxY + bob);
+      ctx.rotate(roll);
+      ctx.scale(sx, sy);
+      // Warm gold rim glow intensifies with proximity.
       if (foxProx > 0.25) {
         const goldHot = (typeof Palette !== 'undefined' ? Palette.accentGoldHot : '#ffdd6b');
         ctx.shadowColor = goldHot;
         ctx.shadowBlur = 12 + foxProx * 18;
       }
-      ctx.drawImage(foxSprite, foxX - dw / 2, foxY - dh / 2 + bob, dw, dh);
+      ctx.drawImage(foxSprite, -dw / 2, -dh / 2, dw, dh);
       ctx.restore();
-      // Eye glare dots overlaid at sprite eye positions; the
-      // painted eyes are already warm but the pulsing highlight
-      // keeps the "glowing predator eye" carnival beat.
+
+      // Dust puff trail — procedural particles spawned near the
+      // fox feet on each gallop impact (bottom of bob cycle). Two
+      // alternating puffs per gait cycle (one per paw landing).
+      const phase = (cadence % (Math.PI * 2)) / (Math.PI * 2);
+      const puffStages = [0.24, 0.74];
+      for (const stage of puffStages) {
+        const diff = Math.abs(phase - stage);
+        if (diff < 0.08) {
+          const t = 1 - (diff / 0.08); // 1 at peak, 0 at edge
+          const pX = foxX + (Math.random() - 0.5) * 10;
+          const pY = foxY + dh * 0.35 + Math.random() * 3;
+          const puffR = 4 + t * 5;
+          ctx.save();
+          ctx.fillStyle = `rgba(180, 150, 110, ${0.18 * t})`;
+          ctx.beginPath();
+          ctx.arc(pX, pY, puffR, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // Eye glare — painted eyes are already warm; pulsing
+      // highlight preserves the carnival "glowing predator eye"
+      // beat. Eye positions calibrated to the sprite.
       if (foxProx > 0.25) {
         const goldHot = (typeof Palette !== 'undefined' ? Palette.accentGoldHot : '#ffdd6b');
         const pulse = 0.35 + Math.sin(clock * 8) * 0.25;
         ctx.save();
         ctx.translate(foxX, foxY + bob);
+        ctx.rotate(roll);
+        ctx.scale(sx, sy);
         ctx.fillStyle = `rgba(255, 250, 210, ${pulse * foxProx})`;
         ctx.shadowColor = goldHot;
         ctx.shadowBlur = 6 + foxProx * 8;
-        // Painted fox eye positions: ~18% from centre, slightly
-        // above midline. Calibrated to this hero PNG.
         ctx.beginPath(); ctx.arc(-dw * 0.12, -dh * 0.10, 1.6, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc( dw * 0.10, -dh * 0.10, 1.6, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
