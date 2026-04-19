@@ -709,6 +709,63 @@
   z-index: 0;
   pointer-events: none;
 }
+/* Phase 60c — hero variant covers the whole overlay viewport
+   (painted audience-balcony scene is full-frame). Legacy
+   standings-scroll.png stays centered under the spec list. */
+.gameplay-root .gp-spec-backdrop.hero {
+  top: 0; left: 0;
+  transform: none;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  opacity: 1;
+}
+/* Phase 60c — hero mode repositions HTML overlays onto painted
+   anchors. Painted composition:
+     y 0-18%   bunting + curtain tops
+     y 18-50%  distant proscenium + stage (warm-lit)
+     y 50-65%  silhouetted audience chairs + balcony
+     y 65-78%  painted ornate balcony rail
+     y 78-88%  painted cream canvas banner pinned to rail
+     y 88-100% open dark space
+   Title goes on the painted banner, spectator list in dark
+   space below, quip over the painted stage region. */
+.gameplay-root.phase-spectating:has(.gp-spec-backdrop.hero) .gp-spec-title {
+  position: fixed;
+  top: 72%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(55, 28, 14, 0.92);
+  text-shadow: 0 1px 0 rgba(255, 230, 170, 0.35);
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 4px;
+  z-index: 2;
+}
+.gameplay-root.phase-spectating:has(.gp-spec-backdrop.hero) .gp-spec-list {
+  position: fixed;
+  top: 88%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(280px, 75%);
+  margin: 0;
+  z-index: 2;
+  color: rgba(255, 225, 170, 0.82);
+}
+.gameplay-root.phase-spectating:has(.gp-spec-backdrop.hero) .gp-spec-quip {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(320px, 82%);
+  text-align: center;
+  color: rgba(255, 230, 180, 0.88);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.6);
+  font-size: 13px;
+  margin: 0;
+  z-index: 2;
+}
 .gameplay-root .gp-spectate-block > :not(.gp-spec-backdrop) {
   position: relative; z-index: 1;
 }

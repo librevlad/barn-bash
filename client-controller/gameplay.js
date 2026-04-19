@@ -257,8 +257,8 @@ window.Gameplay = (function () {
     // cream column; text color flips to --text-on-gold per Phase 12a.
     els.spectate = el('div', 'gp-spectate-block');
     els.specBackdrop = document.createElement('img');
-    els.specBackdrop.className = 'gp-spec-backdrop';
-    els.specBackdrop.src = '/assets/standings-scroll.png';
+    els.specBackdrop.className = 'gp-spec-backdrop hero';
+    els.specBackdrop.src = '/assets/gp-spec-backdrop-hero.png';
     els.specBackdrop.alt = '';
     els.specBackdrop.onerror = function () { this.remove(); };
     var specTitle = el('div', 'gp-spec-title', { text: 'SPECTATING' });
@@ -280,7 +280,8 @@ window.Gameplay = (function () {
     setTimeout(function () {
       if (typeof SpriteLoader === 'undefined') return;
       var swaps = [
-        { el: els.specBackdrop, key: 'standings-scroll-spec', src: '/assets/standings-scroll.png' },
+        // Phase 60c — painted audience-balcony spectate hero.
+        { el: els.specBackdrop, key: 'gp-spec-backdrop-hero', src: '/assets/gp-spec-backdrop-hero.png', clean: true },
         // Phase 60a — painted mobile-portrait winner hero
         // replaces the generic landscape gameover-hall.png
         // on the phone. Clean asset, no checker-strip needed.
