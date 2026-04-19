@@ -52,7 +52,12 @@ const Render2D = (() => {
     camera.setPosition(0, 0);
     camera.setZoom(Math.min(W, H) / 12);
 
-    // Setup scene layers
+    // Setup scene layers. Phase 62d — `painted-scene` layer at
+    // z=-1 renders the commissioned cosmic meteor battlefield
+    // (night sky + constellations + meteor streaks + village
+    // silhouette + scorched ember-cracked platform) beneath
+    // procedural background / arena / impact rendering.
+    scene.createLayer('painted-scene', -1);
     scene.createLayer('background', 0);
     scene.createLayer('arena', 5);
     scene.createLayer('danger_overlay', 10);
@@ -63,6 +68,7 @@ const Render2D = (() => {
     scene.createLayer('ui', 40);
 
     // Register render functions per layer
+    scene.getLayer('painted-scene').addFn(drawPaintedScene);
     scene.getLayer('background').addFn(drawEmbers);
     scene.getLayer('arena').addFn(drawArena);
     scene.getLayer('danger_overlay').addFn(drawDangerOverlay);
@@ -131,6 +137,24 @@ const Render2D = (() => {
       vignetteColor: subPhase === 'warning' ? '180,30,0' : '0,0,0',
       grain: 0.02,
     });
+  }
+
+  // ============================================================
+  // LAYER: PAINTED SCENE (Phase 62d)
+  // ============================================================
+  const paintedScene = new Image();
+  paintedScene.src = '/assets/gameplay-meteor-scene.png';
+  let paintedSceneReady = false;
+  paintedScene.onload = () => { paintedSceneReady = true; };
+  paintedScene.onerror = () => { paintedSceneReady = false; };
+  function drawPaintedScene(ctx) {
+    if (!paintedSceneReady) return;
+    const iw = paintedScene.naturalWidth, ih = paintedScene.naturalHeight;
+    if (!iw || !ih) return;
+    const scale = Math.max(W / iw, H / ih);
+    const dw = iw * scale, dh = ih * scale;
+    const dx = (W - dw) / 2, dy = (H - dh) / 2;
+    ctx.drawImage(paintedScene, dx, dy, dw, dh);
   }
 
   // ============================================================
