@@ -2930,6 +2930,97 @@ consistency — could be retired where heros replace them).
       flips from cream-on-dark to dark-brown-ink-on-cream,
       reading as hand-written on parchment.
 
+62. **Phase 62** (shipped 2026-04-19): painted hero treatment
+    extended into the **gameplay canvas itself**. Before
+    Phase 62 the register switched at round-intro → gameplay
+    transition from Hearthstone-tier painted poster to
+    procedural sky + code-drawn stars + sprite obstacles.
+    Four painted scene backdrops (1376×768 PNG each, ~1.4-
+    1.75 MB) land as the first canvas render layer per game,
+    with procedural game logic compositing on top.
+
+    * **62a — gameplay-escape-scene.png.** Painted dusk pine
+      forest horizon with painted moon rising + scattered
+      stars, warm sunset-to-dusk sky, distant hill
+      silhouettes, dark forest ground texture with moss and
+      pine-needle detail. New `painted-scene` layer at z=-1
+      in escape render2d. `drawSky()` biome gradient drops
+      from 1.0 to 0.35 alpha when painted scene loads so
+      biome transitions (forest / cave / snow / volcano)
+      tint the commissioned sky rather than replace it.
+      Procedural stars + moon gated off as fallback only.
+
+    * **62b — gameplay-race-scene.png.** Painted grandstands
+      on both edges receding in perspective with tiny
+      silhouetted audience + gold-trim signage + checkered
+      bunting arcing the top quarter, distant hills behind,
+      daylight blue-cream sky, painted asphalt track surface
+      in the lower 60% with subtle tire-marks. Central
+      column (x 380-995) kept clear so procedural track
+      stripe + car sprites have space. `drawGrass()` radial
+      gradient drops to 0.18 alpha when painted scene loads.
+
+    * **62c — gameplay-hill-scene.png.** Painted distant
+      mountain range in dusk haze, golden-hour sky with sun
+      sinking on horizon right and radial warm rays, painted
+      distant castle silhouette on a far peak with tiny
+      royal-red pennant, painted rocky plateau with moss in
+      the lower 50%. Central plateau stays flat cover-
+      texture so procedural arena + crest + king + player
+      sprites render on top. New `painted-scene` layer at
+      z=-1; procedural arena `drawArena()` unchanged (warm-
+      glow + wood-disc still renders on top of painted
+      plateau).
+
+    * **62d — gameplay-meteor-scene.png.** Painted cosmic
+      night sky with constellations + stars + three
+      diagonal meteor streaks, painted ringed planet with
+      cool blue-white glow, distant village silhouette with
+      warm amber window lights contrasting the cold sky,
+      painted scorched rocky platform with glowing ember
+      cracks in the lower 40%. Central platform flat so
+      procedural meteor warnings + impact craters + safe
+      zones + player sprites render on top. New `painted-
+      scene` layer at z=-1.
+
+    * **Integration pattern shared across 4 games.** Each
+      `render2d.js` adds a new scene layer at z=-1 named
+      `painted-scene`. `drawPaintedScene()` function loads
+      the commissioned PNG via `new Image()` eagerly on
+      module init, flips `paintedSceneReady` on load, and
+      cover-fits via `ctx.drawImage` at `Math.max(W/iw,
+      H/ih)` scale with center anchor. The existing
+      procedural sky / grass / terrain draw functions drop
+      to low-alpha overlay mode (0.18-0.35) when painted
+      scene is ready so biome / track / arena tints still
+      read without obscuring the commissioned art. Missing
+      asset falls back cleanly to full-alpha procedural
+      rendering.
+
+**Hearthstone-tier painted register now covers every
+surface in the product** — from main lobby entry (Phase 1
+bg.png) through per-game painted lobby heros (Phase 58),
+tournament overlays (round-intro / standings / champion,
+Phase 55 + 59), post-game painted halls (Phase 59c), winner-
+portrait discs (Phase 54 + 55), controller mobile overlays
+(Phase 60), narrator carved plaque (Phase 61), and finally
+the gameplay canvas itself (Phase 62). Procedural game
+logic continues to compose on top; painted scene is an
+atmosphere layer, never a gameplay obstruction.
+
+**Deferred from Phase 62 scope (speculative Phase 63+):**
+  - Painted character sprite pass — replace pixel-art race
+    cars / procedural fox / procedural king figures with
+    commissioned painted sprites. Significant multi-asset
+    commission.
+  - Biome-specific escape scenes — single scene covers all
+    4 biomes; biome tint overlay handles color shift. If
+    snow biome reads too warm against the dusk scene, could
+    commission snow-specific scene variant.
+  - Audio register pass matching the Phase 58+ painted
+    vocabulary (narrator voice, ambient stage sound,
+    tournament fanfare arrangement).
+
 **Deferred polish (Phase 62+):**
   - Hintbar-stage PNG refresh — current `hintbar-stage.png`
     (Phase 19b) is a flat wooden shelf that action-card pills
