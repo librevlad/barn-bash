@@ -2906,6 +2906,54 @@ ornament-corner overlays (replaced by painted frame on
 hero screens; still in place on non-hero screens for
 consistency — could be retired where heros replace them).
 
+61. **Phase 61** (shipped 2026-04-19): narrator overlay
+    chrome upgraded from flat rgba rounded-pill to painted
+    carved parchment plaque via pure CSS (no new
+    commission). Narrator is the highest-frequency painted
+    surface in a session — every elimination / round / near-
+    miss beat shows the Game Master with a quip — and
+    against the Phase 58-60 painted heros behind it, the
+    original flat pill read as "web UI on top of painting."
+
+    * **61a — painted narrator plaque.** Layered background:
+      warm cream parchment gradient on top, wood backing
+      below, carved-edge box-shadow (inset dark stroke +
+      gold rim + parchment highlight + ink shadow) + outer
+      drop shadow with warm gold halo. Four brass rivets
+      pinned at corners (.narrator-rivet-{tl,tr,bl,br}) so
+      the plaque reads as "parchment pinned to wood" rather
+      than a modern card. Portrait medallion gains the Phase
+      54/55 carved-disc treatment (radial interior, dark-
+      inner + gold-outer rim). "GAME MASTER" label flips to
+      Alfa Slab display letterpress in deep-red with cream
+      highlight — carved ink, not UI caption. Quip text
+      flips from cream-on-dark to dark-brown-ink-on-cream,
+      reading as hand-written on parchment.
+
+**Deferred polish (Phase 62+):**
+  - Hintbar-stage PNG refresh — current `hintbar-stage.png`
+    (Phase 19b) is a flat wooden shelf that action-card pills
+    sit on during gameplay. Still reads OK but is lower-tier
+    commissioned art compared to Phase 58-60 painted heros.
+    Could be refreshed with a matching painted register, but
+    it's small and appears during high-attention gameplay
+    moments — quality gap is narrow.
+  - Main-lobby `bg.png` register shift — current Barnyard
+    Bedlam daylight storybook is beautiful but different
+    register from the Phase 58+ dark theatrical sideshow.
+    Full-page commission to convert main lobby to dark-
+    sideshow register would be a significant stylistic
+    shift. Kept as-is: main lobby is the ENTRY point where
+    the daylight storybook says "this is a game for
+    everyone"; once inside a tournament the sideshow
+    register takes over.
+  - Ornament overlay cleanup — `ornament-bunting.png` +
+    `ornament-corner.png` overlay layers are hidden by the
+    Phase 58-60 hero CSS :has() rules but remain in the
+    DOM. Could be retired where heros subsume them (pure
+    deletion) but the current hidden state works. Low
+    priority.
+
 After Phase 21 the painted surfaces breathe AND drift AND
 catch moving light. After Phase 22 hero titles EMBOSS with
 theatrical weight and bloom flanking gold flourishes. After
