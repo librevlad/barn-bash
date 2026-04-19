@@ -244,6 +244,20 @@ const Render2D = (() => {
     ctx.drawImage(paintedScene, dx, dy, dw, dh);
   }
 
+  // ============================================================
+  // PAINTED ARENA DISC (Phase 63d)
+  // ============================================================
+  // Commissioned circular wood-disc + brass rim + rivets. Replaces
+  // the procedural wood radial + grain rings + scuff + vignette +
+  // rim + rivets with one cover-anchored drawImage. Warm ambient
+  // halo + red danger-pulse stroke stay procedural (they key off
+  // game state — arena shrinking / danger threshold).
+  const arenaDisc = new Image();
+  arenaDisc.src = '/assets/hill-arena-disc.png';
+  let arenaDiscReady = false;
+  arenaDisc.onload = () => { arenaDiscReady = true; };
+  arenaDisc.onerror = () => { arenaDiscReady = false; };
+
   function drawArena(ctx) {
     const SCALE = camera.getZoom();
     const r = renderPlatR * SCALE;
@@ -260,70 +274,74 @@ const Render2D = (() => {
     ctx.fillStyle = glow;
     ctx.beginPath(); ctx.arc(ax, ay, r * 1.55, 0, Math.PI * 2); ctx.fill();
 
-    // Wood disc — warm honey-to-walnut gradient
-    const wood = ctx.createRadialGradient(ax - r * 0.18, ay - r * 0.18, 0, ax, ay, r);
-    wood.addColorStop(0,    '#a6733d');
-    wood.addColorStop(0.45, '#7a4e24');
-    wood.addColorStop(0.82, '#4e2f17');
-    wood.addColorStop(1,    '#3a200f');
-    ctx.fillStyle = wood;
-    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
+    if (arenaDiscReady) {
+      // Phase 63d — painted wood-disc + brass rim + rivets shipped
+      // as one PNG. Cover-anchored at (ax, ay) with diameter 2r+8
+      // so the painted brass rim extends just past the procedural
+      // `r` (gameplay collision radius) — matches the legacy
+      // procedural rim at `r + 3`.
+      const size = (r + 4) * 2;
+      ctx.drawImage(arenaDisc, ax - size / 2, ay - size / 2, size, size);
+    } else {
+      // Procedural fallback — wood disc + grain rings + scuff +
+      // vignette + brass rim + rivets.
+      const wood = ctx.createRadialGradient(ax - r * 0.18, ay - r * 0.18, 0, ax, ay, r);
+      wood.addColorStop(0,    '#a6733d');
+      wood.addColorStop(0.45, '#7a4e24');
+      wood.addColorStop(0.82, '#4e2f17');
+      wood.addColorStop(1,    '#3a200f');
+      ctx.fillStyle = wood;
+      ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
 
-    // Clip further rendering to the disc so grain + cracks never
-    // escape the arena outline.
-    ctx.save();
-    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.clip();
+      ctx.save();
+      ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.clip();
 
-    // Wood-grain rings — variable thickness, slightly warped
-    ctx.strokeStyle = 'rgba(30, 18, 10, 0.38)';
-    for (const ring of woodRings) {
-      ctx.lineWidth = ring.thick;
-      ctx.strokeStyle = `rgba(${Math.floor(40 * ring.tone)}, ${Math.floor(24 * ring.tone)}, ${Math.floor(12 * ring.tone)}, 0.38)`;
-      ctx.beginPath();
-      ctx.arc(ax + ring.warp * r, ay + ring.warp * r * 0.7, r * ring.t, 0, Math.PI * 2);
-      ctx.stroke();
-    }
+      ctx.strokeStyle = 'rgba(30, 18, 10, 0.38)';
+      for (const ring of woodRings) {
+        ctx.lineWidth = ring.thick;
+        ctx.strokeStyle = `rgba(${Math.floor(40 * ring.tone)}, ${Math.floor(24 * ring.tone)}, ${Math.floor(12 * ring.tone)}, 0.38)`;
+        ctx.beginPath();
+        ctx.arc(ax + ring.warp * r, ay + ring.warp * r * 0.7, r * ring.t, 0, Math.PI * 2);
+        ctx.stroke();
+      }
 
-    // Radial scuff streaks — hand-painted look
-    ctx.strokeStyle = 'rgba(30, 18, 10, 0.15)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 14; i++) {
-      const a = (i / 14) * Math.PI * 2;
-      const r1 = r * (0.3 + Math.sin(i * 12.9) * 0.2);
-      const r2 = r * (0.7 + Math.cos(i * 7.3) * 0.15);
-      ctx.beginPath();
-      ctx.moveTo(ax + Math.cos(a) * r1, ay + Math.sin(a) * r1);
-      ctx.lineTo(ax + Math.cos(a) * r2, ay + Math.sin(a) * r2);
-      ctx.stroke();
-    }
+      ctx.strokeStyle = 'rgba(30, 18, 10, 0.15)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * Math.PI * 2;
+        const r1 = r * (0.3 + Math.sin(i * 12.9) * 0.2);
+        const r2 = r * (0.7 + Math.cos(i * 7.3) * 0.15);
+        ctx.beginPath();
+        ctx.moveTo(ax + Math.cos(a) * r1, ay + Math.sin(a) * r1);
+        ctx.lineTo(ax + Math.cos(a) * r2, ay + Math.sin(a) * r2);
+        ctx.stroke();
+      }
 
-    // Soft vignette inside the disc — recessed-stage feel
-    const inner = ctx.createRadialGradient(ax, ay, r * 0.6, ax, ay, r);
-    inner.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    inner.addColorStop(1, 'rgba(0, 0, 0, 0.35)');
-    ctx.fillStyle = inner;
-    ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
+      const inner = ctx.createRadialGradient(ax, ay, r * 0.6, ax, ay, r);
+      inner.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      inner.addColorStop(1, 'rgba(0, 0, 0, 0.35)');
+      ctx.fillStyle = inner;
+      ctx.beginPath(); ctx.arc(ax, ay, r, 0, Math.PI * 2); ctx.fill();
 
-    ctx.restore(); // unclip
+      ctx.restore();
 
-    // Brass rim — double-ring carnival signature
-    ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldEdge : 'rgba(138,103,24,0.85)');
-    ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.arc(ax, ay, r + 3, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldDim : 'rgba(176,133,28,0.8)');
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(ax, ay, r + 1, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255, 221, 107, 0.55)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(ax, ay, r - 2, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldEdge : 'rgba(138,103,24,0.85)');
+      ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(ax, ay, r + 3, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = (typeof Palette !== 'undefined' ? Palette.accentGoldDim : 'rgba(176,133,28,0.8)');
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(ax, ay, r + 1, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 221, 107, 0.55)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(ax, ay, r - 2, 0, Math.PI * 2); ctx.stroke();
 
-    // Brass rivets — 12 studs around the rim
-    ctx.fillStyle = 'rgba(255, 221, 107, 0.85)';
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2;
-      const rx = ax + Math.cos(a) * (r + 1);
-      const ry = ay + Math.sin(a) * (r + 1);
-      ctx.beginPath(); ctx.arc(rx, ry, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255, 221, 107, 0.85)';
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2;
+        const rx = ax + Math.cos(a) * (r + 1);
+        const ry = ay + Math.sin(a) * (r + 1);
+        ctx.beginPath(); ctx.arc(rx, ry, 2.4, 0, Math.PI * 2); ctx.fill();
+      }
     }
 
     // Pulsing danger edge
