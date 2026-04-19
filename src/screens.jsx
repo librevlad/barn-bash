@@ -48,7 +48,7 @@ function TitleScreen({ onPlay, onCustomize, onSettings }) {
           </div>
         </div>
         <div style={{marginTop:10,background:'#fff',border:'4px solid var(--ink)',padding:'6px 20px',borderRadius:30,fontFamily:'Luckiest Guy',letterSpacing:2,fontSize:22,color:'var(--ink-soft)',boxShadow:'0 6px 0 var(--ink)'}}>
-          A FARMYARD PARTY BRAWL &nbsp;•&nbsp; 2–6 PLAYERS &nbsp;•&nbsp; 12 MINI&#8209;GAMES
+          A FARMYARD PARTY BRAWL &nbsp;•&nbsp; 2–6 PLAYERS &nbsp;•&nbsp; 8 MINI&#8209;GAMES
         </div>
         </div>
       </div>
@@ -95,7 +95,7 @@ function TitleScreen({ onPlay, onCustomize, onSettings }) {
 
       {/* PRESS START blinker */}
       <div style={{position:'absolute',bottom:18,left:'50%',transform:'translateX(-50%)',fontFamily:'Luckiest Guy',color:'#fff',fontSize:16,textShadow:'0 2px 0 #000',opacity:.85}}>
-        v1.0 • local couch party • 2–8 players
+        v1.0 • couch + phones • 2–6 players
       </div>
     </div>
   );

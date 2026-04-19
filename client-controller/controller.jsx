@@ -306,18 +306,19 @@ function BoardVoteScreen({ send }) {
 }
 
 function LobbyScreen({ hostScreen, players }) {
+  // Phone sees these screens solo, so the copy talks to the single player
+  // holding this device, not the whole room.
   const label = ({
-    title: 'waiting for host to press PLAY',
-    select: 'everyone join the roster',
-    board: 'pick a minigame!',
-    scoreboard: 'round over — see the board',
-    podium: 'champion crowned 👑',
+    title:      "you're in! waiting for host to press play",
+    select:     "you're locked in — waiting for the others",
+    scoreboard: 'round over — check the big screen',
+    podium:     'champion crowned!',
   })[hostScreen] || 'get ready…';
   return (
     <div className="card pulse" style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
-      <div style={{fontFamily:"'Luckiest Guy'",fontSize:32,color:'var(--ink)',textAlign:'center',lineHeight:1.1}}>{label}</div>
+      <div style={{fontFamily:"'Luckiest Guy'",fontSize:28,color:'var(--ink)',textAlign:'center',lineHeight:1.15}}>{label}</div>
       <div style={{fontSize:14,fontWeight:600,color:'var(--wood-dk)',textAlign:'center'}}>
-        {players.length} player{players.length === 1 ? '' : 's'} connected
+        {players.length} player{players.length === 1 ? '' : 's'} in the room
       </div>
     </div>
   );
@@ -339,6 +340,7 @@ function MinigameInput({ game, send, score }) {
 
 function ScoreStrip({ score }) {
   const leading = score.leader > 0 && score.mine >= score.leader;
+  const unit = score.label ? ` ${score.label}` : '';
   return (
     <div style={{
       display:'flex', gap:8, justifyContent:'center', marginTop:4, marginBottom:2
@@ -349,14 +351,14 @@ function ScoreStrip({ score }) {
         fontFamily:"'Luckiest Guy',cursive", fontSize:14, letterSpacing:.5,
         boxShadow:'0 3px 0 var(--ink)'
       }}>
-        YOU: {score.mine}
+        YOU: {score.mine}{unit}
       </div>
       <div style={{
         background:'#fff', border:'3px solid var(--ink)', borderRadius:999, padding:'4px 12px',
         fontFamily:"'Luckiest Guy',cursive", fontSize:14, letterSpacing:.5,
         boxShadow:'0 3px 0 var(--ink)', opacity:.75
       }}>
-        LEAD: {score.leader}
+        LEAD: {score.leader}{unit}
       </div>
     </div>
   );
