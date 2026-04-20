@@ -1,39 +1,34 @@
 // src/engine/GameDomainAPI.js
-// Game Domain API — a semantic, game-concept-shaped wrapper over the
-// transport-level `api` (raw scores / turns / inputs) plus MinigameHost
-// lifecycle context (onFinish / onQuit). Minigames receive the product
-// of this factory as a single `game` prop:
+// Game Domain API — semantic wrapper over the transport-level `api` plus
+// MinigameHost lifecycle context. Mini-games get a single `game` prop:
 //
-//   game.score.update(byId, meta?)     publish a per-phone score map
-//   game.turn.set(activeId, options?)  publish whose turn it is
-//   game.input.onTap(cb)               subscribe to phone tap events
-//   game.input.onSteer(cb)             subscribe to phone steer events
-//   game.input.onHoles(cb)             subscribe to phone holes events
-//   game.game.finish(earned)           end the round, bubble earned[]
-//   game.game.quit()                   bail without scoring
-//
-// Two deliberate pieces of sugar vs the raw transport `api`:
-//
-//   - score.update auto-computes `leader` as max(byId values) when the
-//     caller doesn't pass meta.leader explicitly. Games that include
-//     CPU-only lanes in the leader (historical behaviour) pass meta.leader.
-//   - input.on<Kind> replaces the stringly-typed api.inputs.on(kind, cb)
-//     with semantic methods so a game says what it listens to, not how.
-//
-// The factory is intentionally functional (no classes), stateless
-// (takes api + context each time), and pure wrt. transport — it forwards,
-// renames, and occasionally defaults. All game rules stay in the games.
+//   game.score.update(byId, meta?)       update leaderboard + broadcast
+//   game.turn.set(activeId, options?)    publish whose turn it is
+//   game.input.onTap / onSteer / onHoles subscribe to phone inputs
+//   game.game.finish(earned)             end the round
+//   game.game.quit()                     bail without scoring
+//   game.leaderboard.{subscribe,on,getState}  read-only live standings
 
 (function(BB) {
+  // TOP LEVEL, singleton — one LeaderboardSystem shared across every
+  // mini-game mount. Survives MinigameHost unmounts between rounds.
+  const leaderboard = BB.engine.createLeaderboardSystem();
+
+  // Debug trace — surfaces lead swaps to the console for now; AI Host
+  // and Chaos Engine will subscribe here later.
+  leaderboard.on('leaderChanged', ({ prevId, nextId }) => {
+    console.log('LEADER CHANGED:', prevId, '→', nextId);
+  });
+
   function createGameDomainAPI(api, context) {
     return {
       score: {
         update(byId, meta = {}) {
-          const fallback = Math.max(0, ...Object.values(byId || {}));
+          leaderboard.update(byId);
           api.publishScores({
             byId,
-            leader: meta.leader != null ? meta.leader : fallback,
-            label: meta.label,
+            leader: leaderboard.getState().leaderId,
+            ...meta,
           });
         },
       },
@@ -53,6 +48,12 @@
       game: {
         finish(result) { context.onFinish(result); },
         quit()         { context.onQuit(); },
+      },
+
+      leaderboard: {
+        subscribe: leaderboard.subscribe,
+        on:        leaderboard.on,
+        getState:  leaderboard.getState,
       },
     };
   }

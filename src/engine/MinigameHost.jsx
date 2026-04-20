@@ -57,7 +57,12 @@
     );
 
     const G = def.component;
-    return <G state={state} onFinish={onFinish} onQuit={onQuit} game={game}/>;
+    return (
+      <>
+        <G state={state} onFinish={onFinish} onQuit={onQuit} game={game}/>
+        <LeaderboardOverlay game={game} />
+      </>
+    );
   }
 
   BB.engine = Object.assign(BB.engine || {}, { MinigameHost });
