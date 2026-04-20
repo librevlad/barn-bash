@@ -44,9 +44,11 @@
       case Screen.Minigame: {
         const def = state.currentGameId ? BB.games.get(state.currentGameId) : null;
         if (!def) return null;
-        const G = def.component;
+        // Games render through MinigameHost so each one stays pure; the
+        // host owns start/end broadcast + supplies a narrow api prop.
         return (
-          <G
+          <BB.engine.MinigameHost
+            def={def}
             state={state}
             onFinish={(earned) => dispatch({ type: 'FINISH_MINIGAME', earned, name: def.name })}
             onQuit={() => dispatch({ type: 'QUIT_MINIGAME' })}

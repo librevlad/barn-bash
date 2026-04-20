@@ -6,7 +6,7 @@
    5 holes; gophers pop up (+1) and bunnies sometimes (−1). You have limited time.
    You = whacker, controls by clicking a hole. CPUs auto-whack nearby pops.
 */
-function WhackAGopher({ state, onFinish, onQuit }) {
+function WhackAGopher({ state, onFinish, onQuit, api }) {
   const players = state.players;
   const HOLES = 6;
   const GAME_SEC = 25;
@@ -100,15 +100,8 @@ function WhackAGopher({ state, onFinish, onQuit }) {
   };
   const whack = (h) => whackFor(0, h);
 
-  // phone holes contract — each remote player's hole tap maps to their index
-  const mp = window.BB.mp.useMultiplayer();
+  // Phone holes contract — each remote player's hole tap maps to their slot.
   useEffect(() => {
-    if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('gopher', 'BOP GOPHERS • SKIP BUNNIES', 'holes');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('whack'); };
-  }, [mp]);
-  useEffect(() => {
-    if (!mp || !mp.broadcastScores) return;
     const byId = {};
     let leader = 0;
     players.forEach((p, i) => {
@@ -116,12 +109,11 @@ function WhackAGopher({ state, onFinish, onQuit }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    mp.broadcastScores({ byId, leader, label: 'bops' });
-  }, [mp, scores, players]);
+    api.publishScores({ byId, leader, label: 'bops' });
+  }, [api, scores, players]);
   useEffect(() => {
-    if (!mp || !mp.onInput) return;
-    const off = mp.onInput(({ id, kind, data }) => {
-      if (kind !== 'holes' || !data) return;
+    const off = api.inputs.on('holes', (id, data) => {
+      if (!data) return;
       const h = data.h;
       if (typeof h !== 'number' || h < 0 || h >= HOLES) return;
       const pi = players.findIndex(pp => pp.remoteId === id);
@@ -129,7 +121,7 @@ function WhackAGopher({ state, onFinish, onQuit }) {
       whackFor(pi, h);
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [mp, started, finished]);
+  }, [api, started, finished]);
 
   useEffect(() => {
     if (!finished) return;

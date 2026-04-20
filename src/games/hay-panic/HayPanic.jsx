@@ -3,7 +3,7 @@
 // HayBale SVG helper that renders each falling tile.
 
 /* ==========  GAME 2: HAY PANIC (dodge falling bales)  ========== */
-function HayPanic({ state, onFinish, onQuit }) {
+function HayPanic({ state, onFinish, onQuit, api }) {
   const players = state.players;
   const FIELD_W = 1400, FIELD_H = 540;
   const [started, setStarted] = useState(false);
@@ -45,23 +45,16 @@ function HayPanic({ state, onFinish, onQuit }) {
   // Remote phone steering: per-remoteId { left, right } hold state. Used for
   // both P0 (if phone-assigned) and CPUs (if remoteId present overrides wander).
   const remoteSteer = useRef({});
-  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
-    if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('hay', '◀ ▶ TO DODGE BALES!', 'steer');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('haypanic'); };
-  }, [mp]);
-  useEffect(() => {
-    if (!mp || !mp.onInput) return;
-    const off = mp.onInput(({ id, kind, data }) => {
-      if (kind !== 'steer' || !data) return;
+    const off = api.inputs.on('steer', (id, data) => {
+      if (!data) return;
       const s = remoteSteer.current[id] || { left:false, right:false };
       if (data.dir === 'left')  s.left  = !!data.down;
       if (data.dir === 'right') s.right = !!data.down;
       remoteSteer.current[id] = s;
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [mp]);
+  }, [api]);
 
   useRaf((dt) => {
     if (!started || finished) return;

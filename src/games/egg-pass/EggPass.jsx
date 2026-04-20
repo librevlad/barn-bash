@@ -5,7 +5,7 @@
    A "hot potato" — a ticking egg moves around the ring. Each player has a window to tap
    SPACE to shove it to the next player. If time runs out in your hand — egg breaks, you're out.
 */
-function EggPass({ state, onFinish, onQuit }) {
+function EggPass({ state, onFinish, onQuit, api }) {
   const players = state.players;
   const N = players.length;
   const [started, setStarted] = useState(false);
@@ -140,27 +140,18 @@ function EggPass({ state, onFinish, onQuit }) {
     return () => window.removeEventListener('keydown', d);
   }, [holder, passing, alive, started]);
 
-  // phone tap from the current holder passes the egg
-  const mp = window.BB.mp.useMultiplayer();
+  // Phone tap from the current holder passes the egg. Broadcast whose
+  // hands the egg is in so only the holder's phone lights up.
   useEffect(() => {
-    if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('egg', 'TAP WHEN YOU HAVE THE EGG!', 'tap');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('egg'); };
-  }, [mp]);
-  // Broadcast whose hands the egg is in so only the holder's phone lights up.
-  useEffect(() => {
-    if (!mp || !mp.broadcastTurn) return;
     const cur = players[holder];
     if (!cur) return;
-    mp.broadcastTurn({
+    api.publishTurn({
       activeId: cur.remoteId || null,
       activeName: playerLabel(cur),
     });
-  }, [mp, holder, players]);
+  }, [api, holder, players]);
   useEffect(() => {
-    if (!mp || !mp.onInput) return;
-    const off = mp.onInput(({ id, kind }) => {
-      if (kind !== 'tap') return;
+    const off = api.inputs.on('tap', (id) => {
       if (passing || finished || !started) return;
       const cur = players[holder];
       if (!cur || cur.remoteId !== id) return;
@@ -168,7 +159,7 @@ function EggPass({ state, onFinish, onQuit }) {
       passEgg();
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [mp, holder, passing, started, finished, alive]);
+  }, [api, holder, passing, started, finished, alive]);
 
   const pct = Math.max(0, timeLeft / baseTime);
 

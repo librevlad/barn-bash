@@ -9,22 +9,13 @@
 // (whichever comes first). Demonstrates that a new mini-game is just
 // a folder + a registry call — no switch statement anywhere.
 
-function BarnJump({ state, onFinish, onQuit }) {
+function BarnJump({ state, onFinish, onQuit, api }) {
   const players = state.players;
   const [phase, setPhase] = useState('wait'); // wait | go | done
   const [signalAt, setSignalAt] = useState(null);
   const [reactions, setReactions] = useState(() => players.map(() => null)); // ms | 'early' | null
-  const mp = window.BB.mp.useMultiplayer();
 
   const cpuWindow = { easy: [700, 1400], medium: [400, 900], hard: [250, 550] }[state.difficulty] || [400, 900];
-
-  // Host → phone handshake. Lifecycle is pinned to [mp] so the listener
-  // doesn't whipsaw the phone UI on every React re-render.
-  useEffect(() => {
-    if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('jump', 'TAP WHEN THE BARN TURNS GREEN!', 'tap');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('jump'); };
-  }, [mp]);
 
   // Random 2-5s wait before the JUMP signal. Once it fires, record the
   // exact performance.now() so reaction times measure from signal, not mount.
@@ -58,15 +49,13 @@ function BarnJump({ state, onFinish, onQuit }) {
 
   // Phone tap input (any remoteId) — maps to that player's slot.
   useEffect(() => {
-    if (!mp || !mp.onInput) return;
-    const off = mp.onInput(({ id, kind }) => {
-      if (kind !== 'tap') return;
+    const off = api.inputs.on('tap', (id) => {
       const idx = players.findIndex(p => p.remoteId === id);
       if (idx < 0) return;
       record(idx);
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [mp, phase, signalAt, players]);
+  }, [api, phase, signalAt, players]);
 
   // Keyboard space = local-you (slot 0 only when it's a non-CPU non-phone).
   useEffect(() => {

@@ -2,7 +2,7 @@
 // Swing-and-drop timing: catch fish, avoid boots. FishSVG renders each
 // tile of the reel.
 
-function FishingFrenzy({ state, onFinish, onQuit }) {
+function FishingFrenzy({ state, onFinish, onQuit, api }) {
   const players = state.players;
   const N = players.length;
   const GAME_SEC = 30;
@@ -123,14 +123,7 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
 
   // Per-phone hook swinging. Each remote player has their own x / dir; tap = drop.
   const phoneHooks = useRef({}); // { [rid]: { x, dir } }
-  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
-    if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('fish', 'TAP TO DROP YOUR HOOK!', 'tap');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('fishing'); };
-  }, [mp]);
-  useEffect(() => {
-    if (!mp || !mp.broadcastScores) return;
     const byId = {};
     let leader = 0;
     players.forEach((p, i) => {
@@ -138,17 +131,15 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    mp.broadcastScores({ byId, leader, label: 'catch' });
-  }, [mp, scores, players]);
+    api.publishScores({ byId, leader, label: 'catch' });
+  }, [api, scores, players]);
   useEffect(() => {
-    if (!mp || !mp.onInput) return;
     players.forEach((p, i) => {
       if (p.remoteId && !phoneHooks.current[p.remoteId]) {
         phoneHooks.current[p.remoteId] = { x: 200 + i * 160, dir: 1 };
       }
     });
-    const off = mp.onInput(({ id, kind }) => {
-      if (kind !== 'tap') return;
+    const off = api.inputs.on('tap', (id) => {
       if (dropping) return;
       const pi = players.findIndex(pp => pp.remoteId === id);
       if (pi < 0) return;
@@ -157,7 +148,7 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
       setDropping({ player: pi, x, startT: performance.now() });
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [mp, started, finished, dropping, players]);
+  }, [api, started, finished, dropping, players]);
 
   // Swing each phone hook independently
   useRaf((dt) => {

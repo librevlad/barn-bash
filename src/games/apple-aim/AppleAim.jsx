@@ -3,7 +3,7 @@
 // locks, then the arrow flies with gravity. Ring hit = 1-5 points.
 
 /* ==========  GAME 3: APPLE AIM (archery)  ========== */
-function AppleAim({ state, onFinish, onQuit }) {
+function AppleAim({ state, onFinish, onQuit, api }) {
   const players = state.players;
   const FIELD_W = 1400, FIELD_H = 520;
   const [started, setStarted] = useState(false);
@@ -146,28 +146,16 @@ function AppleAim({ state, onFinish, onQuit }) {
     return () => window.removeEventListener('keydown', d);
   }, [phase, started, finished, currentPlayer]);
 
-  // phone tap from the current shooter advances the phase.
-  // Broadcast lifecycle is pinned to [mp] so we don't whipsaw the phone UI
-  // with minigameEnd/Start every time `phase` or `currentPlayer` changes;
-  // only the listener re-subscribes as those deps move.
-  const mp = window.BB.mp.useMultiplayer();
+  // Phone tap from the current shooter advances the phase.
   useEffect(() => {
-    if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('aim', 'TAP TO LOCK ANGLE, POWER, FIRE', 'tap');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('appleaim'); };
-  }, [mp]);
-  useEffect(() => {
-    if (!mp || !mp.onInput) return;
-    const off = mp.onInput(({ id, kind }) => {
-      if (kind !== 'tap') return;
+    const off = api.inputs.on('tap', (id) => {
       if (!currentPlayer || currentPlayer.remoteId !== id) return;
       if (phase === 'angle') setPhase('power');
       else if (phase === 'power') fire();
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [mp, phase, currentPlayer, started, finished]);
+  }, [api, phase, currentPlayer, started, finished]);
   useEffect(() => {
-    if (!mp || !mp.broadcastScores) return;
     const byId = {};
     let leader = 0;
     players.forEach((p, i) => {
@@ -175,19 +163,18 @@ function AppleAim({ state, onFinish, onQuit }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    mp.broadcastScores({ byId, leader, label: 'rings' });
-  }, [mp, scores, players]);
+    api.publishScores({ byId, leader, label: 'rings' });
+  }, [api, scores, players]);
   // Turn-based: tell phones whose turn it is so the non-active shooter
   // doesn't stare at a TAP pad wondering why nothing happens.
   useEffect(() => {
-    if (!mp || !mp.broadcastTurn) return;
     if (!currentPlayer) return;
-    mp.broadcastTurn({
+    api.publishTurn({
       activeId: currentPlayer.remoteId || null,
       activeName: playerLabel(currentPlayer),
       phase,
     });
-  }, [mp, turn, currentPlayer, phase]);
+  }, [api, turn, currentPlayer, phase]);
 
   // finish
   useEffect(() => {

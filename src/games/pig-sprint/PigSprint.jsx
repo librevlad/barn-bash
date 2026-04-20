@@ -3,7 +3,7 @@
 // down a lane. First past the finish wins +5 coins; podium gets +3, +1, 0.
 
 /* ==========  GAME 1: PIG SPRINT (tap race)  ========== */
-function PigSprint({ state, onFinish, onQuit }) {
+function PigSprint({ state, onFinish, onQuit, api }) {
   const players = state.players;
   const FINISH = 1300;
   const [started, setStarted] = useState(false);
@@ -15,19 +15,8 @@ function PigSprint({ state, onFinish, onQuit }) {
   const cpuRateByDiff = { easy: 4.2, medium: 5.6, hard: 7.2 };
   const cpuRate = cpuRateByDiff[difficulty] || 5.6;
 
-  // Phase mp/Stage 3 — subscribe phone-driven players to their own tap
-  // events. Players with `remoteId` advance when that phone emits a
-  // `tap` input. Purely additive — keyboard slot-0 tap path below still
-  // works, and CPUs still auto-tick in the RAF loop below.
-  const mp = window.BB.mp.useMultiplayer();
+  // Broadcast live progress (0..FINISH) so phones can see their own lane.
   useEffect(() => {
-    if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('tap', 'TAP AS FAST AS YOU CAN!', 'tap');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('tap'); };
-  }, [mp]);
-  // broadcast live progress (0..FINISH) so phones can see their own lane
-  useEffect(() => {
-    if (!mp || !mp.broadcastScores) return;
     const byId = {};
     let leader = 0;
     players.forEach((p, i) => {
@@ -35,12 +24,11 @@ function PigSprint({ state, onFinish, onQuit }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    mp.broadcastScores({ byId, leader, label: 'yards' });
-  }, [mp, positions, players]);
+    api.publishScores({ byId, leader, label: 'yards' });
+  }, [api, positions, players]);
   useEffect(() => {
-    if (!mp || !mp.onInput) return;
-    const off = mp.onInput(({ id, kind }) => {
-      if (kind !== 'tap' || !started || finished) return;
+    const off = api.inputs.on('tap', (id) => {
+      if (!started || finished) return;
       const idx = players.findIndex(p => p.remoteId === id);
       if (idx < 0) return;
       setPositions(prev => {
@@ -50,7 +38,7 @@ function PigSprint({ state, onFinish, onQuit }) {
       });
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [mp, started, finished, players]);
+  }, [api, started, finished, players]);
 
   // clock
   const [time, setTime] = useState(0);

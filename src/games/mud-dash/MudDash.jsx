@@ -2,7 +2,7 @@
 // Endless runner through a slippery mud obstacle course. Three lanes,
 // left/right + jump phone contract.
 
-function MudDash({ state, onFinish, onQuit }) {
+function MudDash({ state, onFinish, onQuit, api }) {
   const players = state.players;
   const N = players.length;
   const LANES = 3;
@@ -106,14 +106,7 @@ function MudDash({ state, onFinish, onQuit }) {
 
   // phone steer contract: left/right = lane ±1, jump = trigger hop
   const remoteControls = useRef({}); // { [rid]: { lane, jumpPending } }
-  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
-    if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('mud', '◀ ▶ LANE · ▲ JUMP', 'steer');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('muddash'); };
-  }, [mp]);
-  useEffect(() => {
-    if (!mp || !mp.broadcastScores) return;
     const byId = {};
     let leader = 0;
     players.forEach((p, i) => {
@@ -121,17 +114,16 @@ function MudDash({ state, onFinish, onQuit }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    mp.broadcastScores({ byId, leader, label: 'meters' });
-  }, [mp, pstate, players]);
+    api.publishScores({ byId, leader, label: 'meters' });
+  }, [api, pstate, players]);
   useEffect(() => {
-    if (!mp || !mp.onInput) return;
     players.forEach((p) => {
       if (p.remoteId && !remoteControls.current[p.remoteId]) {
         remoteControls.current[p.remoteId] = { lane: 1, jumpPending: false };
       }
     });
-    const off = mp.onInput(({ id, kind, data }) => {
-      if (kind !== 'steer' || !data) return;
+    const off = api.inputs.on('steer', (id, data) => {
+      if (!data) return;
       const rc = remoteControls.current[id];
       if (!rc) return;
       if (data.dir === 'left'  && data.down) rc.lane = Math.max(0, rc.lane - 1);
@@ -139,7 +131,7 @@ function MudDash({ state, onFinish, onQuit }) {
       if (data.dir === 'jump'  && data.down) rc.jumpPending = true;
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [mp, players]);
+  }, [api, players]);
 
   useEffect(() => {
     if (!finished) return;

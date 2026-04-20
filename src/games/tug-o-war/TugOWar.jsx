@@ -5,7 +5,7 @@
    Teams split evenly (red vs blue). You (index 0) join red team. Mash SPACE to pull.
    Rope has a center ribbon. First team to pull ribbon over their side wins.
 */
-function TugOWar({ state, onFinish, onQuit }) {
+function TugOWar({ state, onFinish, onQuit, api }) {
   const players = state.players;
   const N = players.length;
   // Balanced team split — you are always on Red. Blue gets ceil(N/2), Red gets floor... wait, balance:
@@ -87,15 +87,8 @@ function TugOWar({ state, onFinish, onQuit }) {
     return () => window.removeEventListener('keydown', d);
   }, [started, finished]);
 
-  // phone tap mash — each phone player pulls their own team
-  const mp = window.BB.mp.useMultiplayer();
+  // Phone tap mash — each phone player pulls their own team.
   useEffect(() => {
-    if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('tug', 'MASH TAP TO PULL!', 'tap');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('tug'); };
-  }, [mp]);
-  useEffect(() => {
-    if (!mp || !mp.broadcastScores) return;
     const byId = {};
     let leader = 0;
     players.forEach((p, i) => {
@@ -103,18 +96,16 @@ function TugOWar({ state, onFinish, onQuit }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    mp.broadcastScores({ byId, leader, label: 'taps' });
-  }, [mp, tapCounts, players]);
+    api.publishScores({ byId, leader, label: 'taps' });
+  }, [api, tapCounts, players]);
   useEffect(() => {
-    if (!mp || !mp.onInput) return;
-    const off = mp.onInput(({ id, kind }) => {
-      if (kind !== 'tap') return;
+    const off = api.inputs.on('tap', (id) => {
       const pi = players.findIndex(pp => pp.remoteId === id);
       if (pi < 0) return;
       doTapFor(pi);
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [mp, started, finished]);
+  }, [api, started, finished]);
 
   useEffect(() => {
     if (!finished) return;
