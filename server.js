@@ -61,6 +61,15 @@ function resolvePath(url) {
 
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0].split('#')[0];
+  // Trailing slash canonicalisation: the controller HTML loads its scripts
+  // with relative paths (lib/*, screens/*, …) which only resolve correctly
+  // when the browser URL already ends in `/`. A bare /controller from a QR
+  // scan or typed URL would 404 every sub-script; redirect it.
+  if (url === '/controller' || url === '/host') {
+    res.writeHead(301, { Location: url + '/' });
+    res.end();
+    return;
+  }
   const filePath = resolvePath(url);
   if (!filePath) { res.writeHead(404); res.end('Not found'); return; }
   fs.readFile(filePath, (err, data) => {
