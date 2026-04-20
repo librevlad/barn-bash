@@ -144,6 +144,27 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
+<!-- Load order: constants + helpers first, then React-hook destructure
+     in statusbar.js, then contracts and widgets, then screens (which
+     reference them), then App with the WS + routing, and finally
+     controller.jsx which mounts it. Every file registers to window. -->
+<script type="text/babel" src="lib/critters.js"></script>
+<script type="text/babel" src="lib/boardTiles.js"></script>
+<script type="text/babel" src="lib/vibrate.js"></script>
+<script type="text/babel" src="lib/clientId.js"></script>
+<script type="text/babel" src="lib/statusbar.js"></script>
+<script type="text/babel" src="contracts/TapContract.jsx"></script>
+<script type="text/babel" src="contracts/SteerContract.jsx"></script>
+<script type="text/babel" src="contracts/HolesContract.jsx"></script>
+<script type="text/babel" src="widgets/CritterSwap.jsx"></script>
+<script type="text/babel" src="widgets/ReactionBar.jsx"></script>
+<script type="text/babel" src="screens/JoinScreen.jsx"></script>
+<script type="text/babel" src="screens/LobbyScreen.jsx"></script>
+<script type="text/babel" src="screens/BoardVoteScreen.jsx"></script>
+<script type="text/babel" src="screens/RoundSummary.jsx"></script>
+<script type="text/babel" src="screens/FinaleScreen.jsx"></script>
+<script type="text/babel" src="screens/MinigameInput.jsx"></script>
+<script type="text/babel" src="App.jsx"></script>
 <script type="text/babel" src="controller.jsx"></script>
 </body>
 </html>
