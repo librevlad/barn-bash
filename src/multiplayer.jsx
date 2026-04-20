@@ -93,21 +93,35 @@ function useMultiplayerImpl() {
   const broadcastMinigameStart = useMPCallback((id, prompt, contract) => send({ type: 'minigameStart', id, prompt, contract }), [send]);
   const broadcastMinigameEnd = useMPCallback((id) => send({ type: 'minigameEnd', id }), [send]);
   // Mid-game scoreboard: { byId: {playerId: score}, leader: maxScore, label? }.
-  // Mini-games can call this on every RAF tick — we throttle to ~6Hz so phones
-  // aren't flooded with 60 messages/sec.
+  // Mini-games call this on every RAF tick. Two-stage filter so phones feel
+  // fresh over a high-RTT tunnel without drowning the link:
+  //   1. throttle — at most one send per 80 ms (~12 Hz, up from 6.6 Hz)
+  //   2. dedup    — drop sends whose serialised payload matches the last
+  //                 one we actually put on the wire. Skips zero-value idle
+  //                 ticks during countdowns and stalled Pig Sprint runs.
   const lastScoreSentRef = useMPRef(0);
+  const lastScoreSerRef  = useMPRef('');
   const broadcastScores = useMPCallback((payload) => {
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    if (now - lastScoreSentRef.current < 150) return;
+    if (now - lastScoreSentRef.current < 80) return;
+    const ser = JSON.stringify(payload);
+    if (ser === lastScoreSerRef.current) return;
     lastScoreSentRef.current = now;
+    lastScoreSerRef.current = ser;
     send({ type: 'scoreUpdate', ...payload });
   }, [send]);
   // Turn indicator for turn-based games (Apple Aim, Egg Pass). Payload:
   //   { activeId: remoteIdOrNull, activeName: 'VLAD' | 'HOPPER', phase?: 'angle' }
-  // Sent only when the turn actually changes, so phones can render a big
-  // 'YOUR TURN' / 'VLAD TO SHOOT' pill instead of staring at a TAP pad
-  // wondering if anything's listening.
-  const broadcastTurn = useMPCallback((payload) => send({ type: 'turnUpdate', ...payload }), [send]);
+  // Sent only when the turn actually changes — dedup check skips the
+  // duplicate fires from React effects that retrigger on unrelated deps
+  // (phase-less re-renders, player list shuffles, etc.).
+  const lastTurnSerRef = useMPRef('');
+  const broadcastTurn = useMPCallback((payload) => {
+    const ser = JSON.stringify(payload);
+    if (ser === lastTurnSerRef.current) return;
+    lastTurnSerRef.current = ser;
+    send({ type: 'turnUpdate', ...payload });
+  }, [send]);
   // Round-end per-player summary. Payload:
   //   { minigame: 'Pig Sprint', byId: { [playerId]: { rank, earned, total } } }
   // Sent once from finishMinigame(); phone renders a personal celebration

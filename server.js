@@ -88,7 +88,20 @@ const server = http.createServer((req, res) => {
 
 // --- WebSocket relay ----------------------------------------------------
 
-const wss = new WebSocketServer({ server });
+// perMessageDeflate shaves ~30-50% off repeat JSON payloads (screen /
+// playerList / scoreUpdate broadcasts through a tunnel). threshold=512
+// keeps tiny frames uncompressed so CPU stays cheap; concurrencyLimit
+// caps parallel compression jobs so a burst can't starve the event loop.
+const wss = new WebSocketServer({
+  server,
+  perMessageDeflate: {
+    zlibDeflateOptions: { level: 1, memLevel: 7 },
+    threshold: 512,
+    concurrencyLimit: 10,
+    serverNoContextTakeover: false,
+    clientNoContextTakeover: false,
+  },
+});
 
 // One host at a time. Controllers are indexed by server-assigned playerId.
 // playerId is a small integer (1, 2, 3, ...) stable for a session; reused
@@ -120,6 +133,16 @@ function snapshotPlayers() {
 }
 
 wss.on('connection', (ws, req) => {
+  // Disable Nagle on the underlying TCP socket so a 20-byte tap / vote
+  // frame isn't held for ~40ms waiting for a companion packet. Adds a
+  // handful of extra small packets per second but collapses small-frame
+  // latency to the network RTT floor.
+  try { ws._socket && ws._socket.setNoDelay && ws._socket.setNoDelay(true); } catch (_) {}
+
+  // Mark alive for the heartbeat sweep below.
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+
   const urlParams = new URL(req.url, 'http://_').searchParams;
   const role = urlParams.get('role') || 'controller';
 
@@ -233,6 +256,19 @@ setInterval(() => {
     }
   }
 }, 15000);
+
+// WebSocket heartbeat. Pings every open socket every 10s; any socket
+// that didn't pong back since the previous sweep gets terminated. Keeps
+// Cloudflare Tunnel from silently dropping idle connections after its
+// ~100s inactivity timeout, and prunes zombie sockets on LAN too. Cost
+// is two control frames per client every 10s — irrelevant.
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) { try { ws.terminate(); } catch (_) {} return; }
+    ws.isAlive = false;
+    try { ws.ping(); } catch (_) {}
+  });
+}, 10000);
 
 // --- Listen + LAN IP announce -------------------------------------------
 
