@@ -15,6 +15,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 const { WebSocketServer } = require('ws');
 const os = require('os');
 
@@ -282,8 +283,64 @@ function firstLanIp() {
   return 'localhost';
 }
 
+// Pinggy SSH reverse-tunnel auto-start. Max's first live test failed
+// because LAN wasn't reachable from his phone (likely Windows firewall
+// blocking inbound 3000). We spawn a pinggy ssh tunnel on boot and parse
+// the public URL out of its output so the host doesn't need to juggle a
+// second terminal. Set NO_TUNNEL=1 to skip (LAN-only).
+// Free tier: 60 min sessions. Restart the server to roll a fresh URL.
+function startTunnel() {
+  if (process.env.NO_TUNNEL === '1') {
+    console.log('  Tunnel disabled (NO_TUNNEL=1). LAN only.\n');
+    return;
+  }
+  const args = [
+    '-o', 'StrictHostKeyChecking=no',
+    '-o', 'UserKnownHostsFile=/dev/null',
+    '-o', 'ServerAliveInterval=30',
+    '-o', 'ExitOnForwardFailure=yes',
+    '-p', '443',
+    '-R', `0:localhost:${PORT}`,
+    '-T',
+    'a.pinggy.io',
+  ];
+  let ssh;
+  try {
+    ssh = spawn('ssh', args, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+  } catch (err) {
+    console.log(`  Tunnel unavailable (spawn failed): ${err.message}\n  Run ssh command manually or use LAN URL above.\n`);
+    return;
+  }
+  let url = null;
+  const collect = (chunk) => {
+    const s = chunk.toString();
+    const m = s.match(/https:\/\/[a-z0-9-]+\.(?:a\.pinggy\.link|free\.pinggy\.link|pinggy\.io)/i);
+    if (m && !url) {
+      url = m[0];
+      console.log('\n  ╔══════════════════════════════════════════════════════════╗');
+      console.log(`  ║ 🌍 TUNNEL URL  ${url}/controller/`);
+      console.log('  ║ Share with phones. Free tier = 60 min. Restart to refresh.');
+      console.log('  ╚══════════════════════════════════════════════════════════╝\n');
+    }
+  };
+  ssh.stdout.on('data', collect);
+  ssh.stderr.on('data', collect);
+  ssh.on('error', (err) => {
+    console.log(`  Tunnel error: ${err.message}\n  Use LAN URL above.\n`);
+  });
+  ssh.on('exit', (code) => {
+    if (url) console.log(`\n  Tunnel closed (ssh exit ${code}). Restart server for a fresh URL.`);
+    else console.log(`\n  Tunnel failed to open (ssh exit ${code}). Use LAN URL above.`);
+  });
+  process.on('exit', () => { try { ssh.kill(); } catch (_) {} });
+  process.on('SIGINT',  () => { try { ssh.kill(); } catch (_) {} process.exit(0); });
+  process.on('SIGTERM', () => { try { ssh.kill(); } catch (_) {} process.exit(0); });
+}
+
 server.listen(PORT, () => {
   const ip = firstLanIp();
   console.log(`\n  Barn Bash host   http://localhost:${PORT}/`);
-  console.log(`  Phone join URL   http://${ip}:${PORT}/controller/\n`);
+  console.log(`  Phone (LAN)      http://${ip}:${PORT}/controller/`);
+  console.log('  (LAN not working? Windows firewall may block inbound on 3000. Tunnel below is always public.)');
+  startTunnel();
 });
