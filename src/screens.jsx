@@ -400,22 +400,13 @@ const arrowBtn = {
 };
 
 /* ==========  GAME BOARD (mini-game select)  ========== */
-const MINIGAMES = [
-  { id:'tap', name:'Pig Sprint', blurb:'Smash to run! First to the finish line wins.', icon:'🏁', ready:true, tint:'#ffc93c' },
-  { id:'hay', name:'Hay Panic', blurb:'Dodge falling bales. Last animal standing.', icon:'🌾', ready:true, tint:'#8acb4a' },
-  { id:'egg', name:'Egg Pass', blurb:'Hot-potato egg. Don\'t let it pop in your hand.', icon:'🥚', ready:true, tint:'#fff5e4' },
-  { id:'aim', name:'Apple Aim', blurb:'Archery with apples. Most bullseyes wins.', icon:'🎯', ready:true, tint:'#e04b3b' },
-  { id:'mud', name:'Mud Dash', blurb:'Sloshy slippery obstacle race.', icon:'💧', ready:true, tint:'#4aa3e0' },
-  { id:'gopher', name:'Whack-a-Gopher', blurb:'Bop the gopher. Don\'t bop the bunny.', icon:'🔨', ready:true, tint:'#a36bd1' },
-  { id:'tug', name:'Tug-o-War', blurb:'Team mash-off. Red vs Blue, pull the ribbon across.', icon:'🪢', ready:true, tint:'#c18040' },
-  { id:'fish', name:'Fishing Frenzy', blurb:'Swing and drop. Catch fish, avoid boots.', icon:'🎣', ready:true, tint:'#4aa3e0' },
-];
 
 function BoardScreen({ state, onPick, onTweaks }) {
   const { round, totalRounds, scores, players, coins, modifier } = state;
   const [votes, setVotes] = useState({}); // { [id]: [pi, pi, ...] }
   const pickedRef = useRef(false);
   const { onInput } = window.BB.mp.useMultiplayer();
+  const games = window.BB.games.list();
 
   // Phone voting — first mini-game to receive a vote (or majority when all
   // connected phones vote) gets auto-picked. Host tile clicks still work too.
@@ -426,7 +417,7 @@ function BoardScreen({ state, onPick, onTweaks }) {
       const pi = players.findIndex(p => p.remoteId === id);
       if (pi < 0) return;
       const choice = data.id;
-      if (!MINIGAMES.find(m => m.id === choice && m.ready)) return;
+      if (!window.BB.games.get(choice)) return;
       setVotes(prev => {
         const next = {};
         // player votes only once — remove any prior slot
@@ -505,8 +496,8 @@ function BoardScreen({ state, onPick, onTweaks }) {
           1600×900 viewport without forcing a scroll. */}
       <div style={{position:'absolute', top: 320, left:0, right:0, display:'grid',
         gridTemplateColumns:'repeat(4, 300px)', gap:22, justifyContent:'center'}}>
-        {MINIGAMES.map(mg => (
-          <MiniCard key={mg.id} mg={mg} onPick={() => mg.ready && onPick(mg.id)}
+        {games.map(mg => (
+          <MiniCard key={mg.id} mg={mg} onPick={() => onPick(mg.id)}
                     voters={(votes[mg.id] || []).map(pi => players[pi]).filter(Boolean)}/>
         ))}
       </div>
@@ -522,12 +513,11 @@ function MiniCard({ mg, onPick, voters = [] }) {
       onClick={onPick}
       style={{
         background: mg.tint, border:'5px solid var(--ink)', borderRadius:20,
-        boxShadow: hover && mg.ready ? '0 14px 0 var(--ink)' : voters.length ? '0 10px 0 var(--ink)' : '0 8px 0 var(--ink)',
-        transform: hover && mg.ready ? 'translateY(-6px) rotate(-1deg)' : voters.length ? 'translateY(-3px)' : 'none',
+        boxShadow: hover ? '0 14px 0 var(--ink)' : voters.length ? '0 10px 0 var(--ink)' : '0 8px 0 var(--ink)',
+        transform: hover ? 'translateY(-6px) rotate(-1deg)' : voters.length ? 'translateY(-3px)' : 'none',
         transition: 'all .15s ease',
-        cursor: mg.ready ? 'pointer' : 'not-allowed',
+        cursor: 'pointer',
         padding:18, position:'relative',
-        filter: mg.ready ? 'none' : 'grayscale(.5) brightness(.85)'
       }}>
       {voters.length > 0 && (
         <div style={{
@@ -555,10 +545,10 @@ function MiniCard({ mg, onPick, voters = [] }) {
           <Coin size={18}/> +5 / WIN
         </div>
         <div style={{
-          background: mg.ready ? 'var(--ink)' : '#7a6a55', color:'#fff',
+          background: 'var(--ink)', color:'#fff',
           borderRadius:10, padding:'4px 10px', fontFamily:"'Luckiest Guy'", fontSize:14, letterSpacing:1
         }}>
-          {mg.ready ? 'READY' : 'SOON'}
+          READY
         </div>
       </div>
     </div>
@@ -818,4 +808,4 @@ function Podium({ players, scores, onPlayAgain, onQuit }) {
   );
 }
 
-Object.assign(window, { TitleScreen, CharacterSelect, BoardScreen, Scoreboard, Podium, MINIGAMES });
+Object.assign(window, { TitleScreen, CharacterSelect, BoardScreen, Scoreboard, Podium });

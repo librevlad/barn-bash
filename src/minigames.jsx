@@ -40,8 +40,8 @@ function PigSprint({ state, onFinish, onQuit }) {
   const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('sprint', 'TAP AS FAST AS YOU CAN!', 'tap');
-    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('sprint'); };
+    mp.broadcastMinigameStart('tap', 'TAP AS FAST AS YOU CAN!', 'tap');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('tap'); };
   }, [mp]);
   // broadcast live progress (0..FINISH) so phones can see their own lane
   useEffect(() => {
@@ -273,7 +273,7 @@ function HayPanic({ state, onFinish, onQuit }) {
   const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('haypanic', '◀ ▶ TO DODGE BALES!', 'steer');
+    mp.broadcastMinigameStart('hay', '◀ ▶ TO DODGE BALES!', 'steer');
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('haypanic'); };
   }, [mp]);
   useEffect(() => {
@@ -518,3 +518,24 @@ function HayBale({ x, y, rot }) {
 }
 
 Object.assign(window, { PigSprint, HayPanic, Countdown });
+
+window.BB.games.register({
+  id: 'tap',
+  name: 'Pig Sprint',
+  blurb: 'Smash to run! First to the finish line wins.',
+  icon: '🏁',
+  tint: '#ffc93c',
+  phoneContract: 'tap',
+  phonePrompt: 'TAP AS FAST AS YOU CAN!',
+  component: PigSprint,
+});
+window.BB.games.register({
+  id: 'hay',
+  name: 'Hay Panic',
+  blurb: 'Dodge falling bales. Last animal standing.',
+  icon: '🌾',
+  tint: '#8acb4a',
+  phoneContract: 'steer',
+  phonePrompt: '◀ ▶ TO DODGE BALES!',
+  component: HayPanic,
+});

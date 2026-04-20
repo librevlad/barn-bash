@@ -151,7 +151,7 @@ function AppleAim({ state, onFinish, onQuit }) {
   const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('appleaim', 'TAP TO LOCK ANGLE, POWER, FIRE', 'tap');
+    mp.broadcastMinigameStart('aim', 'TAP TO LOCK ANGLE, POWER, FIRE', 'tap');
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('appleaim'); };
   }, [mp]);
   useEffect(() => {
@@ -457,7 +457,7 @@ function WhackAGopher({ state, onFinish, onQuit }) {
   const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('whack', 'BOP GOPHERS • SKIP BUNNIES', 'holes');
+    mp.broadcastMinigameStart('gopher', 'BOP GOPHERS • SKIP BUNNIES', 'holes');
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('whack'); };
   }, [mp]);
   useEffect(() => {
@@ -659,3 +659,24 @@ function BunnyFace() {
 }
 
 Object.assign(window, { AppleAim, WhackAGopher });
+
+window.BB.games.register({
+  id: 'aim',
+  name: 'Apple Aim',
+  blurb: 'Archery with apples. Most bullseyes wins.',
+  icon: '🎯',
+  tint: '#e04b3b',
+  phoneContract: 'tap',
+  phonePrompt: 'TAP TO LOCK ANGLE, POWER, FIRE',
+  component: AppleAim,
+});
+window.BB.games.register({
+  id: 'gopher',
+  name: 'Whack-a-Gopher',
+  blurb: 'Bop the gopher. Don\'t bop the bunny.',
+  icon: '🔨',
+  tint: '#a36bd1',
+  phoneContract: 'holes',
+  phonePrompt: 'BOP GOPHERS • SKIP BUNNIES',
+  component: WhackAGopher,
+});

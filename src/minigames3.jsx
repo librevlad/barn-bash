@@ -397,7 +397,7 @@ function MudDash({ state, onFinish, onQuit }) {
   const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('muddash', '◀ ▶ LANE · ▲ JUMP', 'steer');
+    mp.broadcastMinigameStart('mud', '◀ ▶ LANE · ▲ JUMP', 'steer');
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('muddash'); };
   }, [mp]);
   useEffect(() => {
@@ -663,3 +663,24 @@ function MudDash({ state, onFinish, onQuit }) {
 }
 
 Object.assign(window, { EggPass, MudDash });
+
+window.BB.games.register({
+  id: 'egg',
+  name: 'Egg Pass',
+  blurb: 'Hot-potato egg. Don\'t let it pop in your hand.',
+  icon: '🥚',
+  tint: '#fff5e4',
+  phoneContract: 'tap',
+  phonePrompt: 'TAP WHEN YOU HAVE THE EGG!',
+  component: EggPass,
+});
+window.BB.games.register({
+  id: 'mud',
+  name: 'Mud Dash',
+  blurb: 'Sloshy slippery obstacle race.',
+  icon: '💧',
+  tint: '#4aa3e0',
+  phoneContract: 'steer',
+  phonePrompt: '◀ ▶ LANE · ▲ JUMP',
+  component: MudDash,
+});

@@ -385,7 +385,7 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
   const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
-    mp.broadcastMinigameStart('fishing', 'TAP TO DROP YOUR HOOK!', 'tap');
+    mp.broadcastMinigameStart('fish', 'TAP TO DROP YOUR HOOK!', 'tap');
     return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('fishing'); };
   }, [mp]);
   useEffect(() => {
@@ -633,3 +633,24 @@ function FishSVG({ kind }) {
 }
 
 Object.assign(window, { TugOWar, FishingFrenzy });
+
+window.BB.games.register({
+  id: 'tug',
+  name: 'Tug-o-War',
+  blurb: 'Team mash-off. Red vs Blue, pull the ribbon across.',
+  icon: '🪢',
+  tint: '#c18040',
+  phoneContract: 'tap',
+  phonePrompt: 'MASH TAP TO PULL!',
+  component: TugOWar,
+});
+window.BB.games.register({
+  id: 'fish',
+  name: 'Fishing Frenzy',
+  blurb: 'Swing and drop. Catch fish, avoid boots.',
+  icon: '🎣',
+  tint: '#4aa3e0',
+  phoneContract: 'tap',
+  phonePrompt: 'TAP TO DROP YOUR HOOK!',
+  component: FishingFrenzy,
+});
