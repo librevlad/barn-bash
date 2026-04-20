@@ -1,0 +1,137 @@
+// src/screens/Scoreboard.jsx - post-round recap with rank-up crown
+// and the phone ready-for-next-round auto-advance ribbon.
+
+function CrownSVG({ size = 64 }) {
+  return (
+    <svg width={size} height={size * 0.72} viewBox="0 0 100 72" aria-hidden="true">
+      {/* Body: three peaks */}
+      <path
+        d="M 8 58 L 14 22 L 30 40 L 50 14 L 70 40 L 86 22 L 92 58 Z"
+        fill="#ffc93c" stroke="#2a1a10" strokeWidth="5" strokeLinejoin="round"
+      />
+      {/* Base band */}
+      <rect x="6" y="54" width="88" height="14" rx="3" fill="#e09010" stroke="#2a1a10" strokeWidth="5"/>
+      {/* Highlights along body */}
+      <path d="M 12 52 L 18 30" stroke="#fff7c0" strokeWidth="3" strokeLinecap="round" opacity=".7"/>
+      <path d="M 48 22 L 50 42" stroke="#fff7c0" strokeWidth="3" strokeLinecap="round" opacity=".7"/>
+      <path d="M 82 30 L 88 52" stroke="#fff7c0" strokeWidth="3" strokeLinecap="round" opacity=".7"/>
+      {/* Gems on peaks */}
+      <circle cx="14" cy="22" r="5" fill="#e04b3b" stroke="#2a1a10" strokeWidth="3"/>
+      <circle cx="50" cy="14" r="6" fill="#4aa3e0" stroke="#2a1a10" strokeWidth="3"/>
+      <circle cx="86" cy="22" r="5" fill="#6cc24a" stroke="#2a1a10" strokeWidth="3"/>
+      {/* Gem on base band */}
+      <circle cx="50" cy="61" r="4" fill="#fff" stroke="#2a1a10" strokeWidth="2.5"/>
+    </svg>
+  );
+}
+
+/* ==========  SCOREBOARD  ========== */
+function Scoreboard({ players, scores, earned, onContinue, minigameName, round, totalRounds }) {
+  const ranked = [...players].map((p,i)=>({p,i,s:scores[i],e:earned[i]})).sort((a,b)=>b.e - a.e);
+  const leaderboard = [...players].map((p,i)=>({p,i,total: scores[i] + earned[i]})).sort((a,b)=>b.total - a.total);
+
+  // Ready-up tracking: phones tap READY on their summary overlay. When every
+  // phone-owned slot has confirmed, auto-continue so the host doesn't need
+  // to reach for the keyboard.
+  const [readyIds, setReadyIds] = useState(() => new Set());
+  const remoteCount = players.filter(p => p.remoteId).length;
+  const readyCount = readyIds.size;
+  const { onInput } = window.BB.mp.useMultiplayer();
+  useEffect(() => {
+    const off = onInput(({ id, kind }) => {
+      if (kind !== 'ready') return;
+      setReadyIds(prev => prev.has(id) ? prev : new Set([...prev, id]));
+    });
+    return () => { try { off && off(); } catch (_) {} };
+  }, [onInput]);
+  const pickedRef = useRef(false);
+  useEffect(() => {
+    if (pickedRef.current) return;
+    if (remoteCount > 0 && readyCount >= remoteCount) {
+      pickedRef.current = true;
+      setTimeout(onContinue, 450);
+    }
+  }, [readyCount, remoteCount, onContinue]);
+  return (
+    <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #1a4b7a 0%, #2d6fa0 50%, #4aa3e0 100%)'}}>
+      {/* scanlines */}
+      <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, transparent 2px 6px)'}}/>
+      {/* sparkle stars */}
+      {[...Array(30)].map((_,i)=>{
+        const x = (i*137)%1600, y = (i*83)%360;
+        return <div key={i} className="pop-in" style={{position:'absolute',left:x,top:y,width:4,height:4,background:'#fff',borderRadius:'50%',boxShadow:'0 0 8px #fff', animationDelay:(i*0.02)+'s', opacity:.7}}/>;
+      })}
+
+      <div style={{position:'absolute',top:40,left:0,right:0,textAlign:'center'}}>
+        <div className="plank" style={{display:'inline-block', padding:'14px 40px', borderRadius:24, whiteSpace:'nowrap'}}>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:32}}>ROUND {round} · {minigameName.toUpperCase()}</span>
+        </div>
+        <div style={{marginTop:10,fontFamily:"'Luckiest Guy'",fontSize:18,color:'var(--cream-2)',letterSpacing:2}}>RESULTS</div>
+      </div>
+
+      {/* Round card reveal */}
+      <div style={{position:'absolute',top:180,left:0,right:0,display:'flex',justifyContent:'center',gap:30,flexWrap:'wrap',padding:'0 40px'}}>
+        {ranked.map((r, rank) => (
+          <div key={r.i} className="pop-in" style={{
+            background:'#fff', border:'5px solid var(--ink)', borderRadius:20,
+            boxShadow:'0 10px 0 var(--ink)', padding:18, width:200, textAlign:'center',
+            transform: rank === 0 ? 'translateY(-10px) rotate(-1deg)' : (rank === ranked.length-1 ? 'rotate(1deg)' : 'none'),
+            position:'relative', animationDelay: (rank*0.2)+'s'
+          }}>
+            {rank === 0 && (
+              <div style={{position:'absolute', top:-38, left:'50%', transform:'translateX(-50%)', animation:'bob 1.5s ease-in-out infinite', filter:'drop-shadow(0 4px 0 rgba(0,0,0,.25))'}}>
+                <CrownSVG/>
+              </div>
+            )}
+            {rank === 0 && (
+              <div style={{position:'absolute',top:-12,left:-12,background:'var(--yellow)',border:'3px solid var(--ink)',borderRadius:10,padding:'2px 8px',fontFamily:"'Luckiest Guy'",fontSize:14,transform:'rotate(-8deg)'}}>WINNER!</div>
+            )}
+            <div style={{fontFamily:"'Luckiest Guy'", fontSize:36, color:rank===0?'#d99312':'var(--ink)'}}>#{rank+1}</div>
+            <Avatar char={r.p.char} size={100} bob={rank===0}/>
+            <div style={{fontFamily:"'Luckiest Guy'", fontSize:18, color:'var(--ink)'}}>{playerLabel(r.p)}</div>
+            <div style={{display:'flex', justifyContent:'center', gap:6, alignItems:'center', marginTop:6,
+              background: r.e > 0 ? 'var(--yellow)' : '#eee', border:'3px solid var(--ink)', borderRadius:10, padding:'4px 10px'
+            }}>
+              <Coin size={20}/>
+              <span style={{fontFamily:"'Luckiest Guy'", fontSize:24, color:r.e>0?'var(--ink)':'#888'}}>+{r.e}</span>
+            </div>
+            <div style={{marginTop:8, fontFamily:"'Luckiest Guy'", fontSize:13, color:'var(--ink-soft)', opacity:.7}}>
+              TOTAL
+            </div>
+            <div style={{fontFamily:"'Luckiest Guy'", fontSize:20, color:'var(--ink)'}}>{r.s + r.e}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Running standings ribbon */}
+      <div style={{position:'absolute',bottom:170,left:'50%',transform:'translateX(-50%)',background:'rgba(0,0,0,.3)',border:'3px solid var(--cream)',borderRadius:16,padding:'10px 20px',display:'flex',gap:20,alignItems:'center',backdropFilter:'blur(4px)'}}>
+        <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream-2)',fontSize:16,letterSpacing:1}}>OVERALL ▸</span>
+        {leaderboard.map((L, i) => (
+          <div key={L.i} style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontFamily:"'Luckiest Guy'",color:i===0?'var(--yellow)':'var(--cream)',fontSize:18}}>{i+1}.</span>
+            <Avatar char={L.p.char} size={28}/>
+            <span style={{fontFamily:"'Luckiest Guy'",color:'#fff',fontSize:18}}>{L.total}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{position:'absolute',bottom:50,left:0,right:0,textAlign:'center'}}>
+        {remoteCount > 0 && (
+          <div style={{marginBottom:10, display:'inline-block', background:'rgba(0,0,0,.35)',
+            border:'3px solid var(--cream)', borderRadius:14, padding:'6px 16px',
+            fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--cream)', letterSpacing:1}}>
+            {readyCount}/{remoteCount} READY
+          </div>
+        )}
+        <div>
+          <Btn variant="green" size="xl" onClick={onContinue} className="pulse">
+            {round >= totalRounds ? 'FINAL PODIUM! 🏆' : `ROUND ${round+1} ▶`}
+          </Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+Object.assign(window, { Scoreboard });
