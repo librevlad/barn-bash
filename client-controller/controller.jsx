@@ -244,7 +244,7 @@ function App() {
         />
       )}
       {finale
-        ? <FinaleScreen finale={finale}/>
+        ? <FinaleScreen finale={finale} send={send}/>
         : minigame
           ? <MinigameInput game={minigame} send={send} score={score} turn={turn} myId={playerId}/>
           : summary
@@ -265,10 +265,17 @@ const FINALE_TAGS = {
   2: { title:'SILVER',     color:'#d4d4d4',       emoji:'🥈', sub:'So close. One more round next time.' },
   3: { title:'BRONZE',     color:'#cd7f32',       emoji:'🥉', sub:'Podium finish. Not bad.' },
 };
-function FinaleScreen({ finale }) {
+function FinaleScreen({ finale, send }) {
   const tag = FINALE_TAGS[finale.rank] || {
     title:`#${finale.rank}`, color:'#888', emoji:'🎯',
     sub:'Rematch? There\'s always a rematch.'
+  };
+  const [ready, setReady] = useState(false);
+  const onReady = () => {
+    if (ready) return;
+    setReady(true);
+    vibrate(25);
+    send({ type: 'input', kind: 'ready' });
   };
   return (
     <div className="card pulse" style={{
@@ -292,6 +299,12 @@ function FinaleScreen({ finale }) {
       <div style={{fontSize:13, fontWeight:600, color:'var(--wood-dk)', maxWidth:240, lineHeight:1.3}}>
         {tag.sub}
       </div>
+      <button className={`btn ${ready ? 'green' : ''}`}
+              disabled={ready}
+              onClick={onReady}
+              style={{marginTop:4, maxWidth:280}}>
+        {ready ? '✓ READY' : 'TAP FOR REMATCH'}
+      </button>
     </div>
   );
 }

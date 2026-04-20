@@ -588,6 +588,31 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
 function Podium({ players, scores, onPlayAgain, onQuit }) {
   const ranked = players.map((p,i)=>({p,i,s:scores[i]})).sort((a,b)=>b.s-a.s);
   const champion = ranked[0];
+
+  // Rematch ready-up: phones tap TAP FOR REMATCH on their finale splash.
+  // When every phone-owned slot has confirmed, auto-invoke onPlayAgain so
+  // no one has to reach for the host keyboard between games.
+  const [readyIds, setReadyIds] = useState(() => new Set());
+  const remoteCount = players.filter(p => p.remoteId).length;
+  const readyCount = readyIds.size;
+  useEffect(() => {
+    const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+    if (!mp || !mp.onInput) return;
+    const off = mp.onInput(({ id, kind }) => {
+      if (kind !== 'ready') return;
+      setReadyIds(prev => prev.has(id) ? prev : new Set([...prev, id]));
+    });
+    return () => { try { off && off(); } catch (_) {} };
+  }, []);
+  const pickedRef = useRef(false);
+  useEffect(() => {
+    if (pickedRef.current) return;
+    if (remoteCount > 0 && readyCount >= remoteCount) {
+      pickedRef.current = true;
+      setTimeout(onPlayAgain, 450);
+    }
+  }, [readyCount, remoteCount, onPlayAgain]);
+
   return (
     <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at top, #ffe49a 0%, #f2b04a 60%, #a86d1e 100%)', overflow:'hidden'}}>
       {/* radial rays */}
@@ -658,9 +683,21 @@ function Podium({ players, scores, onPlayAgain, onQuit }) {
         })}
       </div>
 
-      <div style={{position:'absolute',bottom:14,left:0,right:0,display:'flex',justifyContent:'center',gap:16}}>
-        <Btn variant="green" size="xl" onClick={onPlayAgain}>PLAY AGAIN ↻</Btn>
-        <Btn variant="red" size="xl" onClick={onQuit}>MAIN MENU</Btn>
+      <div style={{position:'absolute',bottom:14,left:0,right:0,textAlign:'center'}}>
+        {remoteCount > 0 && (
+          <div style={{
+            marginBottom:10, display:'inline-block', background:'rgba(0,0,0,.45)',
+            border:'3px solid #fff', borderRadius:14, padding:'6px 18px',
+            fontFamily:"'Luckiest Guy'", fontSize:18, color:'#fff', letterSpacing:1.5,
+            boxShadow:'0 4px 0 rgba(0,0,0,.3)'
+          }}>
+            {readyCount}/{remoteCount} READY FOR REMATCH
+          </div>
+        )}
+        <div style={{display:'flex', justifyContent:'center', gap:16}}>
+          <Btn variant="green" size="xl" onClick={onPlayAgain}>PLAY AGAIN ↻</Btn>
+          <Btn variant="red" size="xl" onClick={onQuit}>MAIN MENU</Btn>
+        </div>
       </div>
     </div>
   );
