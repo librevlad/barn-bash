@@ -1,19 +1,7 @@
-// Shared UI widgets + helpers
-
-const { useState, useEffect, useRef, useMemo, useCallback } = React;
-
-function randBetween(a, b) { return a + Math.random() * (b - a); }
-function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-// Preferred display label: a real phone-owned slot keeps its entered name
-// even if isCPU is temporarily true (phone is mid-reconnect and AI is
-// standing in). Pure CPU slots fall back to the critter name.
-function playerLabel(p) {
-  if (!p) return '';
-  if (p.displayName) return p.displayName.toUpperCase();
-  return (p.char && p.char.name ? p.char.name : '').toUpperCase();
-}
+// src/ui/widgets.jsx
+// Shared drawing widgets — clouds, coin, confetti, sparkle, wood sign,
+// card, title word, button, background painting, grass. Each is a pure
+// render component; timing hooks live next door in timing.jsx.
 
 // Cloud decorations drifting in the sky
 function Clouds({ count = 4 }) {
@@ -132,33 +120,6 @@ function Btn({ children, onClick, variant='yellow', size='md', disabled=false, s
   );
 }
 
-// Useful for timers
-function useInterval(fn, ms, active = true) {
-  useEffect(() => {
-    if (!active) return;
-    const id = setInterval(fn, ms);
-    return () => clearInterval(id);
-  }, [fn, ms, active]);
-}
-
-// Animation frame loop
-function useRaf(fn, active = true) {
-  const savedFn = useRef(fn);
-  useEffect(() => { savedFn.current = fn; }, [fn]);
-  useEffect(() => {
-    if (!active) return;
-    let raf, last = performance.now();
-    const tick = (t) => {
-      const dt = Math.min(.06, (t - last) / 1000);
-      last = t;
-      savedFn.current(dt, t);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active]);
-}
-
 // The background painting (bg.png) as a subtle scene. Pass opacity.
 function SceneBG({ opacity = 1, blur = 0, scale = 1 }) {
   return (
@@ -186,6 +147,5 @@ function Grass({ h = 120 }) {
 }
 
 Object.assign(window, {
-  randBetween, clamp, pick, useInterval, useRaf,
-  Clouds, WoodSign, Sparkle, Coin, Confetti, Card, TitleWord, Btn, SceneBG, Grass
+  Clouds, WoodSign, Sparkle, Coin, Confetti, Card, TitleWord, Btn, SceneBG, Grass,
 });

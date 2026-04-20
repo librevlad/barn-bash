@@ -172,17 +172,29 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-<!-- Load order: multiplayer + core primitives first (BB.mp, BB.Screen,
-     BB.core, BB.games), then shared React helpers (characters, common,
-     Countdown), then screens + per-folder mini-games that self-register,
-     the scene manager that wires them, and finally app.jsx which boots
-     everything inside <MultiplayerProvider>. -->
+<!-- Load order:
+     1. Multiplayer provider (exposes BB.mp).
+     2. Core primitives — Screen enum, reducer, math helpers, player label,
+        score payloads. Pure JS, attach to BB.core / window globals.
+     3. Games registry (BB.games) before the mini-games self-register.
+     4. Character SVG art + ui widgets (React hooks destructured here for
+        the rest of the scripts to pick up).
+     5. UI timing hooks (useRaf / useInterval) used by mini-games.
+     6. Countdown overlay, then screens and per-folder mini-games.
+     7. Tweaks panel, SceneManager, and finally app.jsx which boots
+        everything inside <MultiplayerProvider>. -->
 <script type="text/babel" src="src/multiplayer.jsx"></script>
 <script type="text/babel" src="src/core/screens.js"></script>
+<script type="text/babel" src="src/core/math.js"></script>
+<script type="text/babel" src="src/core/players.js"></script>
 <script type="text/babel" src="src/core/gameReducer.js"></script>
+<script type="text/babel" src="src/core/score.js"></script>
+<script type="text/babel" src="src/config/twists.js"></script>
 <script type="text/babel" src="src/games/registry.js"></script>
 <script type="text/babel" src="src/characters.jsx"></script>
-<script type="text/babel" src="src/common.jsx"></script>
+<script type="text/babel" src="src/core/lineup.js"></script>
+<script type="text/babel" src="src/ui/timing.jsx"></script>
+<script type="text/babel" src="src/ui/widgets.jsx"></script>
 <script type="text/babel" src="src/ui/Countdown.jsx"></script>
 <script type="text/babel" src="src/screens/TitleScreen.jsx"></script>
 <script type="text/babel" src="src/screens/CharacterSelect.jsx"></script>

@@ -15,65 +15,6 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "youChar": "pig"
 }/*EDITMODE-END*/;
 
-const TWISTS = [
-  { id:'gravity', text:'Gravity is wild', emoji:'🌀' },
-  { id:'flip', text:'Upside-down controls', emoji:'🔄' },
-  { id:'double', text:'Double coins!', emoji:'💰' },
-  { id:'mud', text:'Mud makes things slippery', emoji:'💧' },
-  { id:'takeall', text:'Winner takes ALL', emoji:'👑' },
-  { id:'huge', text:'Hay bales are HUGE', emoji:'🌾' },
-  { id:'sudden', text:'Sudden death: one hit out', emoji:'💥' },
-  { id:'fast', text:'Everything is 50% faster', emoji:'⚡' },
-  { id:'fog', text:'Foggy fields · low vis', emoji:'🌫️' },
-  { id:'wind', text:'Gusty wind · arrows curve', emoji:'💨' },
-  { id:'night', text:'Midnight mode · barn owls watching', emoji:'🌙' },
-  { id:'rain', text:'Rainy day · slippy slidey', emoji:'🌧️' },
-  { id:'tiny', text:'Shrink ray · tiny critters', emoji:'🔍' },
-];
-
-// Build a new lineup from the live phone roster + tweaks.playerCount. All
-// joined phones get slots; CPU critters fill the rest up to the target.
-// If more phones are connected than the target, bump the total so nobody
-// who joined gets trimmed. Zero-phone sessions fall back to the classic
-// local-you + CPU solo flow.
-function buildLineup(remotePlayers, tweaks) {
-  const connected = (remotePlayers || []).filter(p => p.character);
-  const phoneCount = Math.min(connected.length, 6);
-  if (phoneCount > 0) {
-    const target = Math.max(Math.min(tweaks.playerCount, 6), phoneCount);
-    const used = new Set();
-    const players = connected.slice(0, 6).map(p => {
-      const char = CHARACTERS.find(c => c.id === p.character) || CHARACTERS[0];
-      used.add(char.id);
-      return { char, isCPU: false, remoteId: p.id, displayName: p.name || char.name };
-    });
-    const pool = CHARACTERS.filter(c => !used.has(c.id)).sort(() => Math.random() - .5);
-    while (players.length < target && pool.length > 0) {
-      players.push({ char: pool.shift(), isCPU: true });
-    }
-    return players;
-  }
-  const you = CHARACTERS.find(c => c.id === tweaks.youChar) || CHARACTERS[0];
-  const pool = CHARACTERS.filter(c => c.id !== you.id).sort(() => Math.random() - .5);
-  const players = [{ char: you, isCPU: false }];
-  for (let i = 1; i < tweaks.playerCount; i++) players.push({ char: pool[i-1], isCPU: true });
-  return players;
-}
-
-// Compute per-player ranks from a numeric signal (earned coins for a round
-// or total score for the finale). Used to build the byId payloads the
-// multiplayer layer broadcasts to phones.
-function rankByValue(players, values) {
-  const sorted = players.map((_, i) => ({ i, v: values[i] || 0 })).sort((a, b) => b.v - a.v);
-  const rankOf = new Array(players.length);
-  let lastV = null, lastRank = 0;
-  sorted.forEach((row, idx) => {
-    if (row.v !== lastV) { lastRank = idx + 1; lastV = row.v; }
-    rankOf[row.i] = lastRank;
-  });
-  return rankOf;
-}
-
 function App() {
   const [tweaks, setTweaks] = useState$(() => {
     try {
@@ -105,31 +46,16 @@ function App() {
 
   // Scoreboard / Podium side-effect: once the reducer lands us on one of
   // these screens, push the personalised byId payload so phones show the
-  // right rank + coins + champion splash.
+  // right rank + coins + champion splash. Payload shapes live in
+  // src/core/score.js.
   useEffect$(() => {
     if (state.screen !== window.BB.Screen.Scoreboard) return;
-    const rankOf = rankByValue(state.players, state.lastEarned);
-    const byId = {};
-    state.players.forEach((p, i) => {
-      if (!p.remoteId) return;
-      byId[p.remoteId] = {
-        rank: rankOf[i],
-        earned: state.lastEarned[i] || 0,
-        total: (state.scores[i] || 0) + (state.lastEarned[i] || 0),
-      };
-    });
-    mp.broadcastRoundEnd && mp.broadcastRoundEnd({ minigame: state.lastMinigame || 'Mini-game', byId });
+    mp.broadcastRoundEnd && mp.broadcastRoundEnd(window.BB.core.buildRoundEndPayload(state));
   }, [state.screen, state.lastMinigame]);
 
   useEffect$(() => {
     if (state.screen !== window.BB.Screen.Podium) return;
-    const rankOf = rankByValue(state.players, state.scores);
-    const byId = {};
-    state.players.forEach((p, i) => {
-      if (!p.remoteId) return;
-      byId[p.remoteId] = { rank: rankOf[i], total: state.scores[i] || 0 };
-    });
-    mp.broadcastGameOver && mp.broadcastGameOver({ byId });
+    mp.broadcastGameOver && mp.broadcastGameOver(window.BB.core.buildGameOverPayload(state));
   }, [state.screen]);
 
   // Handlers that compose multiple sources (remote roster, tweaks). The
@@ -137,7 +63,7 @@ function App() {
   const handleStartGame = () => {
     dispatch({
       type: 'START_GAME',
-      players: buildLineup(mp.remotePlayers, tweaks),
+      players: window.BB.core.buildLineup(mp.remotePlayers, tweaks),
       totalRounds: tweaks.totalRounds,
       modifier: tweaks.twists ? pick(TWISTS) : null,
       difficulty: tweaks.difficulty,
