@@ -79,17 +79,31 @@
       });
     }
 
+    // Effect applier — voteResult from the ChaosVoting engine gets routed
+    // through chaosEffects.apply which re-publishes an antiLeader chaos
+    // event against the vote winner. Overlays + future reactors listen on
+    // the same channel.
+    const chaosEffectsRef = useRef(null);
+    if (!chaosEffectsRef.current) {
+      chaosEffectsRef.current = BB.engine.createChaosEffects({ api: game });
+    }
+
     useEffect(() => {
       chaosRef.current.start();
       return () => chaosRef.current.stop();
     }, []);
 
-    // Host-side chaos listener: log for now, richer handlers hook here
-    // later (AI Host, visual overlays, sound fx).
+    // Host-side chaos listener: log + route voteResult through effects.
     useEffect(() => {
       if (!game.api || !game.api.onChaos) return;
       const off = game.api.onChaos((event) => {
         console.log('CHAOS EVENT RECEIVED:', event);
+        if (event.type === 'voteResult' && event.targetId) {
+          chaosEffectsRef.current.apply({
+            type: 'antiLeader',
+            targetId: event.targetId,
+          });
+        }
       });
       return () => off && off();
     }, [game]);

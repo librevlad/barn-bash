@@ -43,6 +43,7 @@
         onTap(handler)   { return api.inputs.on('tap',   handler); },
         onSteer(handler) { return api.inputs.on('steer', handler); },
         onHoles(handler) { return api.inputs.on('holes', handler); },
+        onVote(handler)  { return api.inputs.on('vote',  handler); },
       },
 
       game: {

@@ -6,6 +6,7 @@
 function LeaderboardOverlay({ game }) {
   const [state, setState] = useState(game.leaderboard.getState());
   const [chaos, setChaos] = useState(null);
+  const [vote, setVote] = useState(null);
 
   useEffect(() => {
     return game.leaderboard.subscribe(setState);
@@ -20,8 +21,32 @@ function LeaderboardOverlay({ game }) {
     return () => off && off();
   }, [game]);
 
+  useEffect(() => {
+    if (!game.api || !game.api.onChaos) return;
+    const off = game.api.onChaos((event) => {
+      if (event.type === 'voteStart') {
+        setVote(event);
+        setTimeout(() => setVote(null), 3000);
+      }
+    });
+    return () => off && off();
+  }, [game]);
+
   return (
     <div style={styles.container}>
+      {vote && (
+        <div style={{
+          background: 'purple',
+          color: 'white',
+          padding: 8,
+          marginBottom: 6,
+        }}>
+          VOTE: Who should be punished?
+          {vote.candidates.map(id => (
+            <div key={id}>{id}</div>
+          ))}
+        </div>
+      )}
       {chaos && (
         <div style={{
           background: 'orange',

@@ -14,6 +14,21 @@
     let timer = null;
     let active = false;
 
+    // Voting engine rides alongside. Spec STEP 2.2 — instance created
+    // immediately, votes flow in via api.input.onVote → receiveVote.
+    const voting = BB.engine.createChaosVoting({ api, leaderboard });
+
+    // Subscribe to phone 'vote' inputs so the voting engine can tally.
+    // Kept inside the Chaos Engine so the whole chaos subsystem cleans
+    // up together on stop().
+    let unsubVote = null;
+    if (api && api.input && typeof api.input.onVote === 'function') {
+      unsubVote = api.input.onVote((playerId, data) => {
+        if (!data || !data.targetId) return;
+        voting.receiveVote(playerId, data.targetId);
+      });
+    }
+
     function start() {
       if (active) return;
       active = true;
@@ -23,6 +38,7 @@
     function stop() {
       active = false;
       if (timer) clearTimeout(timer);
+      if (unsubVote) { try { unsubVote(); } catch (_) {} unsubVote = null; }
     }
 
     function schedule() {
@@ -39,9 +55,13 @@
     function triggerRandomEvent() {
       const roll = Math.random();
 
-      if (roll < 0.33) antiLeader();
-      else if (roll < 0.66) underdogBoost();
-      else chaosSwap();
+      if (roll < 0.4) {
+        voting.startVote();
+      } else if (roll < 0.7) {
+        antiLeader();
+      } else {
+        underdogBoost();
+      }
     }
 
     function antiLeader() {
