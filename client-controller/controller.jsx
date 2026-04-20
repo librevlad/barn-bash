@@ -4,18 +4,20 @@
 
 const { useState, useEffect, useRef } = React;
 
-// Must match src/characters.jsx CHARACTERS ids on the host.
+// Must match src/characters.jsx CHARACTERS ids on the host. The phone
+// controller has no access to the host's SVG art, so we carry an emoji
+// per critter for the join-carousel and the mid-game swap sheet.
 const CRITTERS = [
-  { id: 'pig',     name: 'Pinky',     color: '#f4a8c0' },
-  { id: 'fox',     name: 'Ember',     color: '#f08a3a' },
-  { id: 'bear',    name: 'Biggs',     color: '#a0723f' },
-  { id: 'rabbit',  name: 'Hopper',    color: '#e8dcc0' },
-  { id: 'chicken', name: 'Clucks',    color: '#fff8ea' },
-  { id: 'badger',  name: 'Bramble',   color: '#c7c2b5' },
-  { id: 'cat',     name: 'Marmalade', color: '#e8b866' },
-  { id: 'owl',     name: 'Professor', color: '#9b7653' },
-  { id: 'sheep',   name: 'Woolly',    color: '#fff8ea' },
-  { id: 'frog',    name: 'Ribbit',    color: '#6cc24a' },
+  { id: 'pig',     name: 'Pinky',     color: '#f4a8c0', emoji: '🐷' },
+  { id: 'fox',     name: 'Ember',     color: '#f08a3a', emoji: '🦊' },
+  { id: 'bear',    name: 'Biggs',     color: '#a0723f', emoji: '🐻' },
+  { id: 'rabbit',  name: 'Hopper',    color: '#e8dcc0', emoji: '🐰' },
+  { id: 'chicken', name: 'Clucks',    color: '#fff8ea', emoji: '🐔' },
+  { id: 'badger',  name: 'Bramble',   color: '#c7c2b5', emoji: '🦡' },
+  { id: 'cat',     name: 'Marmalade', color: '#e8b866', emoji: '🐱' },
+  { id: 'owl',     name: 'Professor', color: '#9b7653', emoji: '🦉' },
+  { id: 'sheep',   name: 'Woolly',    color: '#fff8ea', emoji: '🐑' },
+  { id: 'frog',    name: 'Ribbit',    color: '#6cc24a', emoji: '🐸' },
 ];
 
 // Must mirror MINIGAMES in src/screens.jsx so phone vote tiles line up.
@@ -178,6 +180,28 @@ function App() {
     players.filter(p => p.id !== playerId && p.character).map(p => p.character)
   );
 
+  // Auto-pick the first free critter while the JOIN screen is up so the
+  // carousel always shows a valid, unclaimed creature. If someone else
+  // grabs our pick mid-decision, hop to the next free one.
+  useEffect(() => {
+    if (joined) return;
+    if (critter && !takenCritterIds.has(critter)) return;
+    const firstFree = CRITTERS.find(c => !takenCritterIds.has(c.id));
+    if (firstFree) setCritter(firstFree.id);
+  }, [joined, critter, players, playerId]);
+
+  const cycleCritter = (dir) => {
+    const cur = CRITTERS.findIndex(c => c.id === critter);
+    const start = cur >= 0 ? cur : 0;
+    for (let off = 1; off <= CRITTERS.length; off++) {
+      const cand = CRITTERS[(start + off * dir + CRITTERS.length * 2) % CRITTERS.length];
+      if (!takenCritterIds.has(cand.id) || cand.id === critter) {
+        setCritter(cand.id);
+        break;
+      }
+    }
+  };
+
   const doJoin = () => {
     const n = (name || '').trim();
     if (!n || !critter) return;
@@ -191,6 +215,7 @@ function App() {
   };
 
   if (!joined) {
+    const shown = CRITTERS.find(c => c.id === critter) || CRITTERS[0];
     return (
       <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
         <div className="title">BARN BASH</div>
@@ -198,19 +223,21 @@ function App() {
         <div className="card">
           <div className="field">
             <label htmlFor="name">your name</label>
-            <input id="name" value={name} onChange={(e)=>setName(e.target.value.slice(0,20))} placeholder="hopper"/>
+            <input id="name" value={name} onChange={(e)=>setName(e.target.value.slice(0,20))} placeholder="e.g. Alex"/>
           </div>
           <div className="field">
             <label>pick a critter</label>
-            <div className="critter-grid">
-              {CRITTERS.map(c => (
-                <div key={c.id}
-                     className={`critter ${critter === c.id ? 'on' : ''} ${takenCritterIds.has(c.id) ? 'taken' : ''}`}
-                     style={{background: critter === c.id ? 'var(--yellow)' : (c.color + '55')}}
-                     onClick={() => !takenCritterIds.has(c.id) && setCritter(c.id)}>
-                  {c.name}
-                </div>
-              ))}
+            <div className="critter-carousel">
+              <button className="carousel-arrow"
+                      onPointerDown={(e)=>{e.preventDefault(); cycleCritter(-1);}}
+                      aria-label="previous critter">◀</button>
+              <div className="carousel-card" style={{background: shown.color + '55'}}>
+                <div className="carousel-emoji">{shown.emoji}</div>
+                <div className="carousel-name">{shown.name.toUpperCase()}</div>
+              </div>
+              <button className="carousel-arrow"
+                      onPointerDown={(e)=>{e.preventDefault(); cycleCritter(1);}}
+                      aria-label="next critter">▶</button>
             </div>
           </div>
           <button className="btn green" disabled={!name.trim() || !critter} onClick={doJoin}>JOIN</button>
