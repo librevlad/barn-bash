@@ -37,7 +37,7 @@ function PigSprint({ state, onFinish, onQuit }) {
   // events. Players with `remoteId` advance when that phone emits a
   // `tap` input. Purely additive — keyboard slot-0 tap path below still
   // works, and CPUs still auto-tick in the RAF loop below.
-  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
     mp.broadcastMinigameStart('sprint', 'TAP AS FAST AS YOU CAN!', 'tap');
@@ -270,7 +270,7 @@ function HayPanic({ state, onFinish, onQuit }) {
   // Remote phone steering: per-remoteId { left, right } hold state. Used for
   // both P0 (if phone-assigned) and CPUs (if remoteId present overrides wander).
   const remoteSteer = useRef({});
-  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
     mp.broadcastMinigameStart('haypanic', '◀ ▶ TO DODGE BALES!', 'steer');

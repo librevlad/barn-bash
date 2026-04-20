@@ -12,19 +12,40 @@
 //   - buffers controller input events that minigames can consume
 //     via a subscribe() API.
 
-const { useState: useMPState, useEffect: useMPEffect, useRef: useMPRef, useCallback: useMPCallback, useMemo: useMPMemo } = React;
+const { useState: useMPState, useEffect: useMPEffect, useRef: useMPRef, useCallback: useMPCallback, useMemo: useMPMemo, useContext: useMPContext, createContext: createMPContext } = React;
 
-// Hash of playerId → queued input events. Minigames drain via subscribe.
-const __inputListeners = new Set();
-function __fanoutInput(evt) {
-  for (const fn of __inputListeners) { try { fn(evt); } catch (_) {} }
-}
+// React Context gives deep children (mini-games, scoreboard, podium) access
+// to the multiplayer api without prop drilling and without the old
+// window.__BarnBashMPRT / __BarnBashMP globals. The single host App wraps
+// its tree in <MultiplayerProvider> and consumers call useMultiplayer().
+const MultiplayerContext = createMPContext(null);
 
 function useMultiplayer() {
+  const ctx = useMPContext(MultiplayerContext);
+  if (!ctx) throw new Error('useMultiplayer must be called inside <MultiplayerProvider>');
+  return ctx;
+}
+
+function MultiplayerProvider({ children }) {
+  const api = useMultiplayerImpl();
+  return <MultiplayerContext.Provider value={api}>{children}</MultiplayerContext.Provider>;
+}
+
+// Host-side WebSocket driver. Connects as role=host, tracks remote phone
+// players, exposes broadcast methods and an onInput subscribe API. The
+// provider instantiates it exactly once per App tree.
+function useMultiplayerImpl() {
   const [connected, setConnected] = useMPState(false);
   const [remotePlayers, setRemotePlayers] = useMPState([]); // [{id, name, character, color}]
   const wsRef = useMPRef(null);
   const reconnectRef = useMPRef(null);
+  // Provider-scoped input listener registry, replacing the old module-level
+  // Set. Stable identity (ref) so useCallback(onInput) doesn't churn.
+  const listenersRef = useMPRef(null);
+  if (listenersRef.current === null) listenersRef.current = new Set();
+  const fanout = useMPCallback((evt) => {
+    for (const fn of listenersRef.current) { try { fn(evt); } catch (_) {} }
+  }, []);
 
   useMPEffect(() => {
     let alive = true;
@@ -50,7 +71,7 @@ function useMultiplayer() {
         } else if (msg.type === 'playerLeave') {
           setRemotePlayers(prev => prev.filter(p => p.id !== msg.id));
         } else if (msg.type === 'input') {
-          __fanoutInput({ id: msg.id, kind: msg.kind, data: msg.data });
+          fanout({ id: msg.id, kind: msg.kind, data: msg.data });
         }
       });
     }
@@ -60,7 +81,7 @@ function useMultiplayer() {
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
       try { wsRef.current && wsRef.current.close(); } catch (_) {}
     };
-  }, []);
+  }, [fanout]);
 
   const send = useMPCallback((obj) => {
     const ws = wsRef.current;
@@ -100,8 +121,8 @@ function useMultiplayer() {
 
   // Subscribe to controller input events. Returns unsubscribe fn.
   const onInput = useMPCallback((fn) => {
-    __inputListeners.add(fn);
-    return () => __inputListeners.delete(fn);
+    listenersRef.current.add(fn);
+    return () => listenersRef.current.delete(fn);
   }, []);
 
   const api = useMPMemo(() => ({
@@ -110,17 +131,14 @@ function useMultiplayer() {
     onInput, send,
   }), [connected, remotePlayers, broadcastScreen, broadcastMinigameStart, broadcastMinigameEnd, broadcastScores, broadcastTurn, broadcastRoundEnd, broadcastGameOver, onInput, send]);
 
-  // Pin the API onto the window so minigame components (deep in the
-  // tree) can grab it without prop drilling through App → Minigame.
-  useMPEffect(() => { window.__BarnBashMPRT = api; }, [api]);
-
   return api;
 }
 
 // QR overlay for the title screen. Renders the phone-join URL using a
 // pure-SVG QR code (no external dep). Uses a tiny-qr encoder included
 // below.
-function MultiplayerHUD({ mp, corner = 'top-right' }) {
+function MultiplayerHUD({ corner = 'top-right' }) {
+  const mp = useMultiplayer();
   const url = `${location.origin}/controller/`;
   const ipUrl = useMPMemo(() => {
     // Prefer LAN IP hint if location.host is localhost — phones can't
@@ -455,20 +473,20 @@ function penalty(matrix, size) {
 }
 
 // Global overlay that floats up phone-sent emoji reactions near the top
-// of the host screen. Subscribes via __inputListeners directly so it
-// survives any screen transition without re-mounting.
+// of the host screen. Sits inside the MultiplayerProvider so it survives
+// any screen transition without re-mounting.
 function ReactionOverlay() {
+  const { onInput } = useMultiplayer();
   const [pops, setPops] = useMPState([]);
   useMPEffect(() => {
-    const fn = ({ kind, data }) => {
+    const off = onInput(({ kind, data }) => {
       if (kind !== 'reaction' || !data || !data.emoji) return;
       const id = Date.now() + Math.random();
       setPops(prev => [...prev, { id, emoji: data.emoji, x: 20 + Math.random() * 80 }]);
       setTimeout(() => setPops(prev => prev.filter(p => p.id !== id)), 1800);
-    };
-    __inputListeners.add(fn);
-    return () => __inputListeners.delete(fn);
-  }, []);
+    });
+    return () => { try { off && off(); } catch (_) {} };
+  }, [onInput]);
   return (
     <div style={{position:'fixed', inset:0, pointerEvents:'none', zIndex:9000, overflow:'hidden'}}>
       {pops.map(p => (
@@ -483,5 +501,8 @@ function ReactionOverlay() {
   );
 }
 
-// Expose onto window so app.jsx (loaded later) can pull them.
-window.__BarnBashMP = { useMultiplayer, MultiplayerHUD, ReactionOverlay };
+// Namespaced export — other src/*.jsx files load later and reach these
+// via window.BB.mp instead of the old window.__BarnBashMP globals.
+window.BB = Object.assign(window.BB || {}, {
+  mp: { MultiplayerProvider, useMultiplayer, MultiplayerHUD, ReactionOverlay },
+});

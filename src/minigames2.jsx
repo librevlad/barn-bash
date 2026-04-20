@@ -148,7 +148,7 @@ function AppleAim({ state, onFinish, onQuit }) {
   // Broadcast lifecycle is pinned to [mp] so we don't whipsaw the phone UI
   // with minigameEnd/Start every time `phase` or `currentPlayer` changes;
   // only the listener re-subscribes as those deps move.
-  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
     mp.broadcastMinigameStart('appleaim', 'TAP TO LOCK ANGLE, POWER, FIRE', 'tap');
@@ -454,7 +454,7 @@ function WhackAGopher({ state, onFinish, onQuit }) {
   const whack = (h) => whackFor(0, h);
 
   // phone holes contract — each remote player's hole tap maps to their index
-  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
     mp.broadcastMinigameStart('whack', 'BOP GOPHERS • SKIP BUNNIES', 'holes');

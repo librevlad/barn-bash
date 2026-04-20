@@ -1,7 +1,8 @@
 // High-level screens: Title, CharacterSelect, Board, Scoreboard, Podium
 
 /* ==========  TITLE  ========== */
-function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[], onInput=null }) {
+function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[] }) {
+  const { onInput } = window.BB.mp.useMultiplayer();
   // Ready-up: phones tap LET'S GO on their lobby once they're in. When every
   // named, critter-picked phone has confirmed, auto-invoke onPlay so the
   // game starts without the host ever reaching for the keyboard. Manual
@@ -414,14 +415,13 @@ function BoardScreen({ state, onPick, onTweaks }) {
   const { round, totalRounds, scores, players, coins, modifier } = state;
   const [votes, setVotes] = useState({}); // { [id]: [pi, pi, ...] }
   const pickedRef = useRef(false);
+  const { onInput } = window.BB.mp.useMultiplayer();
 
   // Phone voting — first mini-game to receive a vote (or majority when all
   // connected phones vote) gets auto-picked. Host tile clicks still work too.
   useEffect(() => {
-    const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
-    if (!mp || !mp.onInput) return;
     const remoteCount = players.filter(p => p.remoteId).length;
-    const off = mp.onInput(({ id, kind, data }) => {
+    const off = onInput(({ id, kind, data }) => {
       if (kind !== 'boardVote' || !data) return;
       const pi = players.findIndex(p => p.remoteId === id);
       if (pi < 0) return;
@@ -444,7 +444,7 @@ function BoardScreen({ state, onPick, onTweaks }) {
       });
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [players, onPick]);
+  }, [players, onPick, onInput]);
 
   return (
     <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,#bfe3a6 0%, #8fcf72 60%, #5aac45 100%)'}}>
@@ -603,15 +603,14 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
   const [readyIds, setReadyIds] = useState(() => new Set());
   const remoteCount = players.filter(p => p.remoteId).length;
   const readyCount = readyIds.size;
+  const { onInput } = window.BB.mp.useMultiplayer();
   useEffect(() => {
-    const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
-    if (!mp || !mp.onInput) return;
-    const off = mp.onInput(({ id, kind }) => {
+    const off = onInput(({ id, kind }) => {
       if (kind !== 'ready') return;
       setReadyIds(prev => prev.has(id) ? prev : new Set([...prev, id]));
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, []);
+  }, [onInput]);
   const pickedRef = useRef(false);
   useEffect(() => {
     if (pickedRef.current) return;
@@ -712,15 +711,14 @@ function Podium({ players, scores, onPlayAgain, onQuit }) {
   const [readyIds, setReadyIds] = useState(() => new Set());
   const remoteCount = players.filter(p => p.remoteId).length;
   const readyCount = readyIds.size;
+  const { onInput } = window.BB.mp.useMultiplayer();
   useEffect(() => {
-    const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
-    if (!mp || !mp.onInput) return;
-    const off = mp.onInput(({ id, kind }) => {
+    const off = onInput(({ id, kind }) => {
       if (kind !== 'ready') return;
       setReadyIds(prev => prev.has(id) ? prev : new Set([...prev, id]));
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, []);
+  }, [onInput]);
   const pickedRef = useRef(false);
   useEffect(() => {
     if (pickedRef.current) return;

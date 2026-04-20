@@ -37,12 +37,10 @@ function App() {
   const [tweaksOpen, setTweaksOpen] = useState$(false);
   const [editAvailable, setEditAvailable] = useState$(false);
 
-  // --- Multiplayer sidecar: connects as host, surfaces phone players,
-  //     broadcasts screen transitions so the controller UI knows what
-  //     contract to render. Input fan-out lives on mp.onInput(cb).
-  const mp = (window.__BarnBashMP && window.__BarnBashMP.useMultiplayer)
-    ? window.__BarnBashMP.useMultiplayer()
-    : { connected: false, remotePlayers: [], broadcastScreen: ()=>{}, broadcastMinigameStart: ()=>{}, broadcastMinigameEnd: ()=>{}, onInput: ()=>()=>{}, send: ()=>{} };
+  // Multiplayer sidecar — surfaces phone players, broadcasts screen /
+  // minigame state, and routes controller input via mp.onInput(cb). Read
+  // from the MultiplayerProvider that wraps the root render below.
+  const mp = window.BB.mp.useMultiplayer();
 
   useEffect$(() => {
     localStorage.setItem('barnyard-tweaks', JSON.stringify(tweaks));
@@ -278,11 +276,8 @@ function App() {
                 onCustomize={()=>{ startGame(); }}
                 onSettings={()=>setTweaksOpen(true)}
                 remotePlayers={mp.remotePlayers}
-                onInput={mp.onInput}
               />
-              {window.__BarnBashMP && window.__BarnBashMP.MultiplayerHUD && (
-                <window.__BarnBashMP.MultiplayerHUD mp={mp} corner="top-left" />
-              )}
+              <window.BB.mp.MultiplayerHUD corner="top-left"/>
             </>
           )}
           {screen === 'select' && (
@@ -379,7 +374,7 @@ function App() {
       </div>
 
       <TweaksPanel tweaks={tweaks} setTweaks={updateTweaks} open={tweaksOpen} setOpen={setTweaksOpen}/>
-      {window.__BarnBashMP && window.__BarnBashMP.ReactionOverlay && <window.__BarnBashMP.ReactionOverlay/>}
+      <window.BB.mp.ReactionOverlay/>
     </>
   );
 }
@@ -392,4 +387,8 @@ function labelFor(screen){
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App/>);
+root.render(
+  <window.BB.mp.MultiplayerProvider>
+    <App/>
+  </window.BB.mp.MultiplayerProvider>
+);

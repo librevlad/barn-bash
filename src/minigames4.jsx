@@ -87,7 +87,7 @@ function TugOWar({ state, onFinish, onQuit }) {
   }, [started, finished]);
 
   // phone tap mash — each phone player pulls their own team
-  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
     mp.broadcastMinigameStart('tug', 'MASH TAP TO PULL!', 'tap');
@@ -382,7 +382,7 @@ function FishingFrenzy({ state, onFinish, onQuit }) {
 
   // Per-phone hook swinging. Each remote player has their own x / dir; tap = drop.
   const phoneHooks = useRef({}); // { [rid]: { x, dir } }
-  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
     mp.broadcastMinigameStart('fishing', 'TAP TO DROP YOUR HOOK!', 'tap');

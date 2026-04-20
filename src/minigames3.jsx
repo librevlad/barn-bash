@@ -140,7 +140,7 @@ function EggPass({ state, onFinish, onQuit }) {
   }, [holder, passing, alive, started]);
 
   // phone tap from the current holder passes the egg
-  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
     mp.broadcastMinigameStart('egg', 'TAP WHEN YOU HAVE THE EGG!', 'tap');
@@ -394,7 +394,7 @@ function MudDash({ state, onFinish, onQuit }) {
 
   // phone steer contract: left/right = lane ±1, jump = trigger hop
   const remoteControls = useRef({}); // { [rid]: { lane, jumpPending } }
-  const mp = (typeof window !== 'undefined') ? window.__BarnBashMPRT : null;
+  const mp = window.BB.mp.useMultiplayer();
   useEffect(() => {
     if (!mp || !mp.broadcastMinigameStart) return;
     mp.broadcastMinigameStart('muddash', '◀ ▶ LANE · ▲ JUMP', 'steer');
