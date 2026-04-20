@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "typecheck": "node scripts/typecheck.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "ws": "^8.20.0"
