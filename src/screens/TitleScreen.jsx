@@ -87,7 +87,7 @@ function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[] }) {
           </div>
         </div>
         <div style={{marginTop:10,background:'#fff',border:'4px solid var(--ink)',padding:'6px 20px',borderRadius:30,fontFamily:'Luckiest Guy',letterSpacing:2,fontSize:22,color:'var(--ink-soft)',boxShadow:'0 6px 0 var(--ink)'}}>
-          A FARMYARD PARTY BRAWL &nbsp;•&nbsp; 2–6 PLAYERS &nbsp;•&nbsp; 8 MINI&#8209;GAMES
+          ВЕЧЕРИНКА ДЛЯ СВОИХ &nbsp;•&nbsp; 2–6 ИГРОКОВ &nbsp;•&nbsp; 9 МИНИ&#8209;ИГР
         </div>
         </div>
       </div>
@@ -148,7 +148,7 @@ function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[] }) {
             fontFamily:"'Luckiest Guy'", fontSize:18, color:'#fff', letterSpacing:1.5,
             boxShadow:'0 4px 0 rgba(0,0,0,.3)'
           }}>
-            {readyCount}/{remoteCount} READY{readyCount >= remoteCount ? ' — STARTING...' : ''}
+            {readyCount}/{remoteCount} ГОТОВЫ{readyCount >= remoteCount ? ' — ПОЕХАЛИ...' : ''}
           </div>
         )}
         <div style={{display:'flex', justifyContent:'center', gap:28}}>
@@ -156,7 +156,7 @@ function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[] }) {
             <svg width="36" height="36" viewBox="0 0 40 40" style={{marginRight:8}}>
               <polygon points="10,6 34,20 10,34" fill="#fff" stroke="#2a1a10" strokeWidth="3" strokeLinejoin="round"/>
             </svg>
-          }>PLAY</Btn>
+          }>ИГРАТЬ</Btn>
           <Btn variant="green" size="xl" onClick={onCustomize} icon={
             <svg width="32" height="32" viewBox="0 0 40 40" style={{marginRight:8}}>
               <circle cx="20" cy="20" r="14" fill="#fff" stroke="#2a1a10" strokeWidth="3"/>
@@ -165,29 +165,22 @@ function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[] }) {
               <circle cx="26" cy="16" r="2.5" fill="#6cc24a"/>
               <circle cx="26" cy="22" r="2.5" fill="#a36bd1"/>
             </svg>
-          }>CUSTOMIZE</Btn>
+          }>ПЕРСОНАЖ</Btn>
           <Btn variant="orange" size="xl" onClick={onSettings} icon={
             <svg width="30" height="30" viewBox="0 0 40 40" style={{marginRight:8}}>
               <path d="M20 4 L24 10 L30 8 L30 16 L36 20 L30 24 L30 32 L24 30 L20 36 L16 30 L10 32 L10 24 L4 20 L10 16 L10 8 L16 10 Z" fill="#fff" stroke="#2a1a10" strokeWidth="3" strokeLinejoin="round"/>
               <circle cx="20" cy="20" r="5" fill="#2a1a10"/>
             </svg>
-          }>SETTINGS</Btn>
+          }>НАСТРОЙКИ</Btn>
         </div>
       </div>
 
-      {/* corner credits */}
-      <div style={{position:'absolute', right:16, top:16, display:'flex', gap:8}}>
-        <div className="plank" style={{padding:'6px 12px', fontSize:14}}>
-          <Coin size={20}/> &nbsp;<span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)'}}>1,240</span>
-        </div>
-        <div className="plank" style={{padding:'6px 12px', fontSize:14}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)'}}>LVL 7</span>
-        </div>
-      </div>
-
-      {/* PRESS START blinker */}
+      {/* PRESS START blinker. Previously the top-right corner showed fake
+          "1,240 coins · LVL 7" counters that had no game meaning — kill-on-
+          sight item from the first live test (Max saw them and asked what
+          they meant). Removed until we have real progression wiring. */}
       <div style={{position:'absolute',bottom:18,left:'50%',transform:'translateX(-50%)',fontFamily:'Luckiest Guy',color:'#fff',fontSize:16,textShadow:'0 2px 0 #000',opacity:.85}}>
-        v1.0 • couch + phones • 2–6 players
+        v0.1 · телек + телефоны · 2–6 игроков
       </div>
     </div>
   );

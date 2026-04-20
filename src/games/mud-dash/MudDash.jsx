@@ -55,10 +55,30 @@ function MudDash({ state, onFinish, onQuit, game }) {
         jumpT = Math.max(jumpT, youJump.current);
         youJump.current = Math.max(0, youJump.current - dt);
       } else {
-        // CPU AI: prefer lane that has no oncoming hazard
+        // CPU AI. Previously bots almost never jumped because they preferred
+        // lane-switching — over the 3-4s an obstacle spends approaching,
+        // random lane-change attempts drifted them out of the threat lane
+        // 4+ times on average, so the jump branch (rope-only) rarely fired.
+        // Max reported "боты не прыгали" after a live test. New logic:
+        //   1. If a close hazard sits in the current lane and a jump would
+        //      clear it, jump first (works for both rope AND mud).
+        //   2. Only fall back to lane-switch when no jump can save us.
+        // Jumps stay within difficulty reaction bands but bias much higher.
         const cpuSmart = { easy: 0.55, medium: 0.8, hard: 0.95 }[difficulty] || 0.8;
-        if (Math.random() < dt * 1.5 && Math.random() < cpuSmart) {
-          // find safest lane
+        let jumpedThisTick = false;
+        obstacles.forEach(o => {
+          if (jumpedThisTick || jumpT > 0) return;
+          if (o.lane !== lane) return;
+          if (o.z < 35 || o.z > 160) return;
+          // Closer = more urgent, higher chance. 0.55..0.95 * urgency.
+          const urgency = 1 - (o.z - 35) / 125;
+          const p = cpuSmart * urgency * dt * 60;
+          if (Math.random() < p) { jumpT = 0.6; jumpedThisTick = true; }
+        });
+        // Lane-change fallback: drift toward the emptiest lane only if we
+        // couldn't jump a threat away. Cadence halved so we stay committed
+        // to jumping-as-primary.
+        if (!jumpedThisTick && Math.random() < dt * 0.7 && Math.random() < cpuSmart) {
           const threats = [0,0,0];
           obstacles.forEach(o => { if (o.z > 50 && o.z < 400) threats[o.lane] += 400 - o.z; });
           let best = lane; let bestS = threats[lane];
@@ -68,12 +88,6 @@ function MudDash({ state, onFinish, onQuit, game }) {
           });
           lane = best;
         }
-        // jump over ropes? ropes hurt if not jumping
-        obstacles.forEach(o => {
-          if (o.lane === lane && o.z > 40 && o.z < 120 && o.kind === 'rope' && jumpT <= 0 && Math.random() < cpuSmart * dt * 30) {
-            jumpT = 0.6;
-          }
-        });
       }
       // collisions at z ~ 0
       let hits = p.hits, muddy = Math.max(0, p.muddy - dt);
@@ -154,9 +168,9 @@ function MudDash({ state, onFinish, onQuit, game }) {
       <Clouds count={3}/>
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:30}}>
-        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 22px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>💧 MUD DASH</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>💧 ГРЯЗНЫЙ ЗАБЕГ</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>{Math.max(0, GAME_SEC - time).toFixed(1)}s</span>
@@ -368,11 +382,22 @@ function MudDash({ state, onFinish, onQuit, game }) {
 
 window.BB.games.register({
   id: 'mud',
-  name: 'Mud Dash',
-  blurb: 'Sloshy slippery obstacle race.',
+  name: 'Грязный Забег',
+  blurb: 'Беги через грязь, верёвки и похмелье. Финиш где-то там.',
   icon: '💧',
   tint: '#4aa3e0',
   phoneContract: 'steer',
-  phonePrompt: '◀ ▶ LANE · ▲ JUMP',
+  phonePrompt: '⬅ ➡ ПОЛОСА · ▲ ПРЫЖОК',
+  rules: {
+    name: 'Грязный Забег',
+    tagline: 'Полоса препятствий. Как понедельник на работе.',
+    howTo: [
+      '3 полосы. Переключайся между ними, избегай грязи и верёвок.',
+      '⬅ ➡ — сменить полосу. ▲ — прыжок через верёвку.',
+      'Попал в грязь — тормозишь. Влетел в верёвку — считается удар.',
+    ],
+    control: '📱 ⬅ ➡ · ▲ ПРЫЖОК · ⌨ A/D · ПРОБЕЛ',
+    win: 'Меньше всего огребаний — победа',
+  },
   component: MudDash,
 });

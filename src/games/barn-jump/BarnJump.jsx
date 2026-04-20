@@ -98,9 +98,9 @@ function BarnJump({ state, onFinish, onQuit, game }) {
   return (
     <div style={{position:'absolute', inset:0, background:bg, overflow:'hidden', transition:'background .08s ease-in'}}>
       <div style={{position:'absolute', top:20, left:20, right:20, display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:20}}>
-        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 22px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'", color:'var(--cream)', fontSize:26}}>🐑 BARN JUMP</span>
+          <span style={{fontFamily:"'Luckiest Guy'", color:'var(--cream)', fontSize:26}}>🐑 САРАЙНЫЙ ПРЫЖОК</span>
         </div>
         <div style={{width:110}}/>
       </div>
@@ -125,22 +125,39 @@ function BarnJump({ state, onFinish, onQuit, game }) {
                    : r != null     ? 'var(--green)'
                                    : '#fff';
           const fg = r == null ? 'var(--ink)' : '#fff';
+          // When a bot's reaction fires there was previously NO visible motion —
+          // only the tiny reaction-time label flipped. Max reported "боты не
+          // прыгали" from a live test. We now bounce the whole avatar the moment
+          // a reaction lands so every jump (bot or human) is legible.
+          const reacted = r != null && r !== 'early';
           return (
             <div key={i} style={{
               background:bg, color:fg, border:'3px solid var(--ink)',
               borderRadius:14, padding:'8px 12px',
               display:'flex', alignItems:'center', gap:10, minWidth:140,
-              boxShadow:'0 4px 0 var(--ink)'
+              boxShadow:'0 4px 0 var(--ink)',
+              transform: reacted ? 'translateY(-6px) scale(1.04)' : 'none',
+              transition: 'transform .18s ease'
             }}>
-              <Avatar char={p.char} size={40}/>
+              <div style={{animation: reacted ? 'barnJumpHop .5s ease-out' : 'none'}}>
+                <Avatar char={p.char} size={40}/>
+              </div>
               <div>
                 <div style={{fontFamily:"'Luckiest Guy'", fontSize:14, lineHeight:1}}>{playerLabel(p)}</div>
-                <div style={{fontFamily:"'Luckiest Guy'", fontSize:18, lineHeight:1.2, marginTop:4}}>{label}</div>
+                <div style={{fontFamily:"'Luckiest Guy'", fontSize:18, lineHeight:1.2, marginTop:4}}>
+                  {reacted && <span style={{marginRight:6}}>🦘</span>}{label}
+                </div>
               </div>
             </div>
           );
         })}
       </div>
+      <style>{`@keyframes barnJumpHop {
+        0%   { transform: translateY(0)    scale(1); }
+        40%  { transform: translateY(-24px) scale(1.15); }
+        70%  { transform: translateY(-8px)  scale(1.05); }
+        100% { transform: translateY(0)    scale(1); }
+      }`}</style>
     </div>
   );
 }
@@ -149,11 +166,22 @@ Object.assign(window, { BarnJump });
 
 window.BB.games.register({
   id: 'jump',
-  name: 'Barn Jump',
-  blurb: 'Wait for the signal, then tap first. Jump too early, you\'re out.',
+  name: 'Сарайный Прыжок',
+  blurb: 'Жди сигнала. Тапай первым. Раньше — вылетел.',
   icon: '🐑',
   tint: '#6cc24a',
   phoneContract: 'tap',
-  phonePrompt: 'TAP WHEN THE BARN TURNS GREEN!',
+  phonePrompt: 'ЭКРАН ЗЕЛЁНЫЙ — ТАПАЙ КАК НА ВЫБОРАХ',
+  rules: {
+    name: 'Сарайный Прыжок',
+    tagline: 'Жди сигнала. Дёрнулся раньше — всё, тебя нет.',
+    howTo: [
+      'Экран тёмный и надпись "ЖДЁМ" — НЕ ТАПАЙ.',
+      'Экран зелёный и "ПРЫГАЙ!" — ТАП со всей дури.',
+      'Тапнул раньше сигнала — 💥 TOO EARLY, нулевой результат.',
+    ],
+    control: '📱 ТАП · ⌨ ПРОБЕЛ',
+    win: 'Быстрейшая реакция забирает +5 монет',
+  },
   component: BarnJump,
 });

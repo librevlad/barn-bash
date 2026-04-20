@@ -124,6 +124,15 @@ function AppleAim({ state, onFinish, onQuit, game }) {
   useEffect(() => { angleRef.current = angle; }, [angle]);
   useEffect(() => { powerRef.current = power; }, [power]);
 
+  // Phase-transition cooldown. A double-fire at the transport layer (one
+  // physical tap triggered both touchstart + pointerdown on mobile) used to
+  // skip `angle → power → fire` in a single press. TapContract now dedupes
+  // by itself, but we belt-and-braces here: ignore any advance-input that
+  // lands within 250 ms of the previous phase change.
+  const phaseChangedAtRef = useRef(0);
+  useEffect(() => { phaseChangedAtRef.current = Date.now(); }, [phase]);
+  const canAdvance = () => Date.now() - phaseChangedAtRef.current >= 250;
+
   const fire = (ang = angleRef.current, pow = powerRef.current) => {
     const rad = ang * Math.PI / 180;
     const speed = 300 + pow * 8;
@@ -133,6 +142,7 @@ function AppleAim({ state, onFinish, onQuit, game }) {
 
   const onAction = () => {
     if (!started || finished || currentPlayer.isCPU) return;
+    if (!canAdvance()) return;
     if (phase === 'angle') setPhase('power');
     else if (phase === 'power') fire();
   };
@@ -146,10 +156,13 @@ function AppleAim({ state, onFinish, onQuit, game }) {
     return () => window.removeEventListener('keydown', d);
   }, [phase, started, finished, currentPlayer]);
 
-  // Phone tap from the current shooter advances the phase.
+  // Phone tap from the current shooter advances the phase. Guarded by the
+  // same 250ms cooldown so a stray double-event can't walk through two
+  // phases on one human tap.
   useEffect(() => {
     const off = game.input.onTap((id) => {
       if (!currentPlayer || currentPlayer.remoteId !== id) return;
+      if (!canAdvance()) return;
       if (phase === 'angle') setPhase('power');
       else if (phase === 'power') fire();
     });
@@ -191,9 +204,9 @@ function AppleAim({ state, onFinish, onQuit, game }) {
 
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
-        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 22px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🎯 APPLE AIM</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🎯 ЯБЛОЧКО В ГЛАЗ</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>SHOT {round+1}/{SHOTS}</span>
@@ -345,11 +358,22 @@ function AppleAim({ state, onFinish, onQuit, game }) {
 
 window.BB.games.register({
   id: 'aim',
-  name: 'Apple Aim',
-  blurb: 'Archery with apples. Most bullseyes wins.',
+  name: 'Яблочко в Глаз',
+  blurb: 'Стрельба из лука. Целься в яблоко, не в соседа.',
   icon: '🎯',
   tint: '#e04b3b',
   phoneContract: 'tap',
-  phonePrompt: 'TAP TO LOCK ANGLE, POWER, FIRE',
+  phonePrompt: 'ТАП 1 — УГОЛ · ТАП 2 — ВЫСТРЕЛ',
+  rules: {
+    name: 'Яблочко в Глаз',
+    tagline: 'Лук, яблоко, никакой дипломатии.',
+    howTo: [
+      'ПЕРВЫЙ тап фиксирует угол полёта стрелы.',
+      'ВТОРОЙ тап фиксирует силу натяжения — и стрела летит.',
+      'Центр мишени = 5 очков. Промах = 0. Дважды промахнулся — шанса уже нет.',
+    ],
+    control: '📱 ТАП · ТАП · ⌨ ПРОБЕЛ',
+    win: 'Больше всего попаданий за 3 выстрела',
+  },
   component: AppleAim,
 });

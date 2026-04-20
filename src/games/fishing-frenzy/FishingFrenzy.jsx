@@ -192,9 +192,9 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
 
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:30}}>
-        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 36px', whiteSpace:'nowrap'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:28,whiteSpace:'nowrap'}}>🎣 FISHING FRENZY</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:28,whiteSpace:'nowrap'}}>🎣 БЕШЕНАЯ РЫБАЛКА</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:22}}>{Math.max(0,GAME_SEC-time).toFixed(1)}s</span>
@@ -256,41 +256,56 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
           </div>
         ))}
 
-        {/* Human's hook swinging when not dropping */}
-        {(!dropping || dropping.player !== 0) && started && !finished && (
-          <svg style={{position:'absolute',top:0,left:hookX.current - 2,pointerEvents:'none'}} width="50" height="80" viewBox="0 0 50 80">
-            <line x1="25" y1="0" x2="25" y2="50" stroke="#2a1a10" strokeWidth="2"/>
-            <path d="M 25 50 Q 18 58 22 66 Q 30 66 28 58" fill="none" stroke="#888" strokeWidth="3" strokeLinecap="round"/>
-          </svg>
-        )}
-
-        {/* Phone players' swinging hooks (when not mid-drop) */}
+        {/* Swinging rods — one per player, each tagged with their avatar so
+            Max can actually tell which rod is his. Previously the host's rod
+            was hardcoded black with no label and phone rods were thin lines;
+            on a 4-rod pond nobody could track their own. Each rod is now:
+            owner-color line (3px) + avatar medallion at the rod top. */}
         {started && !finished && players.map((p, pi) => {
-          if (!p.remoteId) return null;
           if (dropping && dropping.player === pi) return null;
-          const h = phoneHooks.current[p.remoteId];
-          if (!h) return null;
+          const x = pi === 0 ? hookX.current : (phoneHooks.current[p.remoteId] ? phoneHooks.current[p.remoteId].x : null);
+          if (x == null) return null;
+          const color = (p.char && p.char.color) || '#2a1a10';
           return (
-            <svg key={pi} style={{position:'absolute',top:0,left:h.x - 2,pointerEvents:'none'}} width="50" height="80" viewBox="0 0 50 80">
-              <line x1="25" y1="0" x2="25" y2="50" stroke={p.char.color} strokeWidth="3"/>
-              <path d="M 25 50 Q 18 58 22 66 Q 30 66 28 58" fill="none" stroke="#888" strokeWidth="3" strokeLinecap="round"/>
-            </svg>
+            <div key={pi} style={{position:'absolute', top:0, left:x - 18, pointerEvents:'none'}}>
+              <div style={{
+                width:36, height:36, borderRadius:'50%', background:color,
+                border:'3px solid var(--ink)', boxShadow:'0 2px 0 var(--ink)',
+                overflow:'hidden', display:'grid', placeItems:'center', marginBottom:2
+              }}>
+                <Avatar char={p.char} size={28}/>
+              </div>
+              <svg width="36" height="54" viewBox="0 0 36 54" style={{display:'block',marginLeft:0}}>
+                <line x1="18" y1="0" x2="18" y2="44" stroke={color} strokeWidth="3"/>
+                <path d="M 18 44 Q 11 52 15 60 Q 23 60 21 52" fill="none" stroke="#888" strokeWidth="3" strokeLinecap="round"/>
+              </svg>
+            </div>
           );
         })}
 
-        {/* Dropping line + hook */}
+        {/* Dropping line + hook — colour follows the player who dropped so
+            the falling rod never looks like someone else's. */}
         {dropping && (
-          <svg style={{position:'absolute',top:0,left:dropping.x - 4,pointerEvents:'none'}} width="50" height={dropY + 40} viewBox={`0 0 50 ${dropY + 40}`}>
-            <line x1="25" y1="0" x2="25" y2={dropY} stroke={dropping.player === 0 ? '#2a1a10' : players[dropping.player].char.color} strokeWidth="2"/>
-            <g transform={`translate(17, ${dropY})`}>
-              <path d="M 8 0 Q 0 10 6 18 Q 16 18 12 8" fill="none" stroke="#888" strokeWidth="3" strokeLinecap="round"/>
-              {dropping.hit && (
-                <g transform="translate(-12, 10) scale(0.6)">
-                  <FishSVG kind={dropping.hit.kind}/>
-                </g>
-              )}
-            </g>
-          </svg>
+          <div style={{position:'absolute', top:0, left:dropping.x - 18, pointerEvents:'none'}}>
+            <div style={{
+              width:36, height:36, borderRadius:'50%', background:(players[dropping.player].char && players[dropping.player].char.color) || '#2a1a10',
+              border:'3px solid var(--ink)', boxShadow:'0 2px 0 var(--ink)',
+              overflow:'hidden', display:'grid', placeItems:'center', marginBottom:2
+            }}>
+              <Avatar char={players[dropping.player].char} size={28}/>
+            </div>
+            <svg width="36" height={dropY + 40} viewBox={`0 0 36 ${dropY + 40}`} style={{display:'block'}}>
+              <line x1="18" y1="0" x2="18" y2={dropY} stroke={(players[dropping.player].char && players[dropping.player].char.color) || '#2a1a10'} strokeWidth="3"/>
+              <g transform={`translate(10, ${dropY})`}>
+                <path d="M 8 0 Q 0 10 6 18 Q 16 18 12 8" fill="none" stroke="#888" strokeWidth="3" strokeLinecap="round"/>
+                {dropping.hit && (
+                  <g transform="translate(-12, 10) scale(0.6)">
+                    <FishSVG kind={dropping.hit.kind}/>
+                  </g>
+                )}
+              </g>
+            </svg>
+          </div>
         )}
 
         {/* Floating scores */}
@@ -367,11 +382,22 @@ function FishSVG({ kind }) {
 
 window.BB.games.register({
   id: 'fish',
-  name: 'Fishing Frenzy',
-  blurb: 'Swing and drop. Catch fish, avoid boots.',
+  name: 'Бешеная Рыбалка',
+  blurb: 'Удочка качается сама. Поймай, что попадётся. Не сапог.',
   icon: '🎣',
   tint: '#4aa3e0',
   phoneContract: 'tap',
-  phonePrompt: 'TAP TO DROP YOUR HOOK!',
+  phonePrompt: 'ТАП — БРОСИТЬ КРЮЧОК',
+  rules: {
+    name: 'Бешеная Рыбалка',
+    tagline: 'В пруду плавают рыбы. И сапоги. Выбор твой.',
+    howTo: [
+      'Твоя удочка качается сама. Жди момента.',
+      'ТАП — крючок падает вниз. Что там было — то и поймал.',
+      '🐟 мелкая +1 · 🐠 крупная +3 · ✨🐡 золотая +5 · 👢 сапог −1',
+    ],
+    control: '📱 ТАП · ⌨ ПРОБЕЛ',
+    win: 'Больше всего улова за 30 секунд',
+  },
   component: FishingFrenzy,
 });
