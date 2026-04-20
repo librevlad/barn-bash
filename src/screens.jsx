@@ -1,7 +1,44 @@
 // High-level screens: Title, CharacterSelect, Board, Scoreboard, Podium
 
 /* ==========  TITLE  ========== */
-function TitleScreen({ onPlay, onCustomize, onSettings }) {
+function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[], onInput=null }) {
+  // Ready-up: phones tap LET'S GO on their lobby once they're in. When every
+  // named, critter-picked phone has confirmed, auto-invoke onPlay so the
+  // game starts without the host ever reaching for the keyboard. Manual
+  // PLAY click still works as a fallback.
+  const joined = (remotePlayers || []).filter(p => p.name && p.character);
+  const remoteCount = joined.length;
+  const [readyIds, setReadyIds] = useState(() => new Set());
+  // Drop ready signals from phones that have left so a stale tap from an
+  // earlier joiner can't pre-pass the gate once a new phone takes its place.
+  const liveRemoteIds = joined.map(p => p.id).join(',');
+  useEffect(() => {
+    const live = new Set(liveRemoteIds.split(',').filter(Boolean).map(Number));
+    setReadyIds(prev => {
+      let dirty = false;
+      const next = new Set();
+      for (const id of prev) { if (live.has(id)) next.add(id); else dirty = true; }
+      return dirty ? next : prev;
+    });
+  }, [liveRemoteIds]);
+  const readyCount = readyIds.size;
+  useEffect(() => {
+    if (!onInput) return;
+    const off = onInput(({ id, kind }) => {
+      if (kind !== 'ready') return;
+      setReadyIds(prev => prev.has(id) ? prev : new Set([...prev, id]));
+    });
+    return () => { try { off && off(); } catch (_) {} };
+  }, [onInput]);
+  const pickedRef = useRef(false);
+  useEffect(() => {
+    if (pickedRef.current) return;
+    if (remoteCount > 0 && readyCount >= remoteCount) {
+      pickedRef.current = true;
+      setTimeout(onPlay, 800);
+    }
+  }, [readyCount, remoteCount, onPlay]);
+
   return (
     <div style={{ position:'absolute', inset:0 }}>
       <SceneBG opacity={1} />
@@ -60,27 +97,39 @@ function TitleScreen({ onPlay, onCustomize, onSettings }) {
       <Sparkle x={220} y={260} size={22} c="#6cc24a"/>
 
       {/* Button row on the pedestal */}
-      <div style={{position:'absolute', left:0, right:0, bottom:70, display:'flex', justifyContent:'center', gap:28}}>
-        <Btn variant="yellow" size="xl" onClick={onPlay} icon={
-          <svg width="36" height="36" viewBox="0 0 40 40" style={{marginRight:8}}>
-            <polygon points="10,6 34,20 10,34" fill="#fff" stroke="#2a1a10" strokeWidth="3" strokeLinejoin="round"/>
-          </svg>
-        }>PLAY</Btn>
-        <Btn variant="green" size="xl" onClick={onCustomize} icon={
-          <svg width="32" height="32" viewBox="0 0 40 40" style={{marginRight:8}}>
-            <circle cx="20" cy="20" r="14" fill="#fff" stroke="#2a1a10" strokeWidth="3"/>
-            <circle cx="14" cy="16" r="2.5" fill="#e04b3b"/>
-            <circle cx="20" cy="12" r="2.5" fill="#4aa3e0"/>
-            <circle cx="26" cy="16" r="2.5" fill="#6cc24a"/>
-            <circle cx="26" cy="22" r="2.5" fill="#a36bd1"/>
-          </svg>
-        }>CUSTOMIZE</Btn>
-        <Btn variant="orange" size="xl" onClick={onSettings} icon={
-          <svg width="30" height="30" viewBox="0 0 40 40" style={{marginRight:8}}>
-            <path d="M20 4 L24 10 L30 8 L30 16 L36 20 L30 24 L30 32 L24 30 L20 36 L16 30 L10 32 L10 24 L4 20 L10 16 L10 8 L16 10 Z" fill="#fff" stroke="#2a1a10" strokeWidth="3" strokeLinejoin="round"/>
-            <circle cx="20" cy="20" r="5" fill="#2a1a10"/>
-          </svg>
-        }>SETTINGS</Btn>
+      <div style={{position:'absolute', left:0, right:0, bottom:70, textAlign:'center'}}>
+        {remoteCount > 0 && (
+          <div style={{
+            marginBottom:14, display:'inline-block', background:'rgba(0,0,0,.45)',
+            border:'3px solid #fff', borderRadius:14, padding:'6px 18px',
+            fontFamily:"'Luckiest Guy'", fontSize:18, color:'#fff', letterSpacing:1.5,
+            boxShadow:'0 4px 0 rgba(0,0,0,.3)'
+          }}>
+            {readyCount}/{remoteCount} READY{readyCount >= remoteCount ? ' — STARTING...' : ''}
+          </div>
+        )}
+        <div style={{display:'flex', justifyContent:'center', gap:28}}>
+          <Btn variant="yellow" size="xl" onClick={onPlay} icon={
+            <svg width="36" height="36" viewBox="0 0 40 40" style={{marginRight:8}}>
+              <polygon points="10,6 34,20 10,34" fill="#fff" stroke="#2a1a10" strokeWidth="3" strokeLinejoin="round"/>
+            </svg>
+          }>PLAY</Btn>
+          <Btn variant="green" size="xl" onClick={onCustomize} icon={
+            <svg width="32" height="32" viewBox="0 0 40 40" style={{marginRight:8}}>
+              <circle cx="20" cy="20" r="14" fill="#fff" stroke="#2a1a10" strokeWidth="3"/>
+              <circle cx="14" cy="16" r="2.5" fill="#e04b3b"/>
+              <circle cx="20" cy="12" r="2.5" fill="#4aa3e0"/>
+              <circle cx="26" cy="16" r="2.5" fill="#6cc24a"/>
+              <circle cx="26" cy="22" r="2.5" fill="#a36bd1"/>
+            </svg>
+          }>CUSTOMIZE</Btn>
+          <Btn variant="orange" size="xl" onClick={onSettings} icon={
+            <svg width="30" height="30" viewBox="0 0 40 40" style={{marginRight:8}}>
+              <path d="M20 4 L24 10 L30 8 L30 16 L36 20 L30 24 L30 32 L24 30 L20 36 L16 30 L10 32 L10 24 L4 20 L10 16 L10 8 L16 10 Z" fill="#fff" stroke="#2a1a10" strokeWidth="3" strokeLinejoin="round"/>
+              <circle cx="20" cy="20" r="5" fill="#2a1a10"/>
+            </svg>
+          }>SETTINGS</Btn>
+        </div>
       </div>
 
       {/* corner credits */}

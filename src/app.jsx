@@ -274,6 +274,8 @@ function App() {
                 onPlay={startGame}
                 onCustomize={()=>{ startGame(); }}
                 onSettings={()=>setTweaksOpen(true)}
+                remotePlayers={mp.remotePlayers}
+                onInput={mp.onInput}
               />
               {window.__BarnBashMP && window.__BarnBashMP.MultiplayerHUD && (
                 <window.__BarnBashMP.MultiplayerHUD mp={mp} corner="top-left" />
