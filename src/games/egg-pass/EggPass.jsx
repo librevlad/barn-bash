@@ -170,9 +170,9 @@ function EggPass({ state, onFinish, onQuit, game }) {
 
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
-        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 22px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🥚 EGG PASS</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🥚 ГОРЯЧЕЕ ЯЙЦО</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>R{round}</span>
@@ -284,11 +284,22 @@ function EggPass({ state, onFinish, onQuit, game }) {
 
 window.BB.games.register({
   id: 'egg',
-  name: 'Egg Pass',
-  blurb: 'Hot-potato egg. Don\'t let it pop in your hand.',
+  name: 'Горячее Яйцо',
+  blurb: 'Яйцо-бомба. Поймал — пасуй дальше. Не сиди как идиот.',
   icon: '🥚',
   tint: '#fff5e4',
   phoneContract: 'tap',
-  phonePrompt: 'TAP WHEN YOU HAVE THE EGG!',
+  phonePrompt: 'ЯЙЦО У ТЕБЯ? ТАПАЙ ПОКА НЕ ВЗОРВАЛОСЬ!',
+  rules: {
+    name: 'Горячее Яйцо',
+    tagline: 'Яйцо горячее. Как политические новости.',
+    howTo: [
+      'У кого-то в руках яйцо. Видно по жёлтой рамке.',
+      'Поймал — ТАПАЙ быстро, яйцо улетит к другому.',
+      'Задержался — яйцо взорвалось у тебя в руках. Минус очки, плюс позор.',
+    ],
+    control: '📱 ТАП когда яйцо у тебя',
+    win: 'Последний не-взорвавшийся — победил',
+  },
   component: EggPass,
 });

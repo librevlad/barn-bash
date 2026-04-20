@@ -52,16 +52,16 @@ function BoardScreen({ state, onPick, onTweaks }) {
       {/* Top bar */}
       <div style={{position:'absolute',top:20,left:24,right:24,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div className="plank" style={{padding:'10px 20px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:22}}>ROUND {round} / {totalRounds}</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:22}}>РАУНД {round} / {totalRounds}</span>
         </div>
         <div className="plank" style={{padding:'10px 24px', transform:'rotate(1.5deg)'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:24}}>PICK A MINI-GAME</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:24}}>ВЫБИРАЙ МИНИ-ИГРУ</span>
         </div>
         <div style={{display:'flex',gap:10}}>
           <div className="plank" style={{padding:'10px 14px'}}>
             <Coin size={22}/> <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20,marginLeft:6}}>{coins}</span>
           </div>
-          <Btn variant="cream" size="sm" onClick={onTweaks}>⚙ TWEAKS</Btn>
+          <Btn variant="cream" size="sm" onClick={onTweaks}>⚙ НАСТРОЙКИ</Btn>
         </div>
       </div>
 
@@ -75,7 +75,7 @@ function BoardScreen({ state, onPick, onTweaks }) {
           }}>
             <Avatar char={p.char} size={44}/>
             <div>
-              <div style={{fontFamily:"'Luckiest Guy'",fontSize:14, color:'var(--ink)'}}>{playerLabel(p)} {i===0 && !p.displayName && <span style={{color:'var(--red)'}}>(YOU)</span>}</div>
+              <div style={{fontFamily:"'Luckiest Guy'",fontSize:14, color:'var(--ink)'}}>{playerLabel(p)} {i===0 && !p.displayName && <span style={{color:'var(--red)'}}>(ТЫ)</span>}</div>
               <div style={{display:'flex',alignItems:'center',gap:4}}>
                 <Coin size={16}/><span style={{fontFamily:"'Luckiest Guy'",fontSize:18,color:'var(--wood-dk)'}}>{scores[i]}</span>
               </div>
@@ -88,7 +88,7 @@ function BoardScreen({ state, onPick, onTweaks }) {
       {modifier && (
         <div style={{position:'absolute', top:220, left:'50%', transform:'translateX(-50%) rotate(-2deg)'}}>
           <Card style={{background:'#ffd8a0', borderColor:'var(--ink)', padding:'12px 24px'}}>
-            <div style={{fontFamily:"'Luckiest Guy'",fontSize:14,color:'#a8291a'}}>⚡ ROUND TWIST</div>
+            <div style={{fontFamily:"'Luckiest Guy'",fontSize:14,color:'#a8291a'}}>⚡ ТВИСТ РАУНДА</div>
             <div style={{fontFamily:"'Luckiest Guy'",fontSize:22,color:'var(--ink)'}}>{modifier.emoji || '⚡'} {(modifier.text || modifier).toUpperCase()}</div>
           </Card>
         </div>
@@ -146,13 +146,13 @@ function MiniCard({ mg, onPick, voters = [] }) {
       </div>
       <div style={{display:'flex', justifyContent:'space-between', marginTop:12, alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:4, fontFamily:"'Luckiest Guy'", color:'var(--wood-dk)'}}>
-          <Coin size={18}/> +5 / WIN
+          <Coin size={18}/> +5 ЗА ПОБЕДУ
         </div>
         <div style={{
           background: 'var(--ink)', color:'#fff',
           borderRadius:10, padding:'4px 10px', fontFamily:"'Luckiest Guy'", fontSize:14, letterSpacing:1
         }}>
-          READY
+          ПОЕХАЛИ
         </div>
       </div>
     </div>

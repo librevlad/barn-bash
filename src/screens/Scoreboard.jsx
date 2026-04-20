@@ -64,9 +64,9 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
 
       <div style={{position:'absolute',top:40,left:0,right:0,textAlign:'center'}}>
         <div className="plank" style={{display:'inline-block', padding:'14px 40px', borderRadius:24, whiteSpace:'nowrap'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:32}}>ROUND {round} · {minigameName.toUpperCase()}</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:32}}>РАУНД {round} · {minigameName.toUpperCase()}</span>
         </div>
-        <div style={{marginTop:10,fontFamily:"'Luckiest Guy'",fontSize:18,color:'var(--cream-2)',letterSpacing:2}}>RESULTS</div>
+        <div style={{marginTop:10,fontFamily:"'Luckiest Guy'",fontSize:18,color:'var(--cream-2)',letterSpacing:2}}>РЕЗУЛЬТАТЫ</div>
       </div>
 
       {/* Round card reveal */}
@@ -84,7 +84,7 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
               </div>
             )}
             {rank === 0 && (
-              <div style={{position:'absolute',top:-12,left:-12,background:'var(--yellow)',border:'3px solid var(--ink)',borderRadius:10,padding:'2px 8px',fontFamily:"'Luckiest Guy'",fontSize:14,transform:'rotate(-8deg)'}}>WINNER!</div>
+              <div style={{position:'absolute',top:-12,left:-12,background:'var(--yellow)',border:'3px solid var(--ink)',borderRadius:10,padding:'2px 8px',fontFamily:"'Luckiest Guy'",fontSize:14,transform:'rotate(-8deg)'}}>ПОБЕДИТЕЛЬ!</div>
             )}
             <div style={{fontFamily:"'Luckiest Guy'", fontSize:36, color:rank===0?'#d99312':'var(--ink)'}}>#{rank+1}</div>
             <Avatar char={r.p.char} size={100} bob={rank===0}/>
@@ -96,7 +96,7 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
               <span style={{fontFamily:"'Luckiest Guy'", fontSize:24, color:r.e>0?'var(--ink)':'#888'}}>+{r.e}</span>
             </div>
             <div style={{marginTop:8, fontFamily:"'Luckiest Guy'", fontSize:13, color:'var(--ink-soft)', opacity:.7}}>
-              TOTAL
+              ВСЕГО
             </div>
             <div style={{fontFamily:"'Luckiest Guy'", fontSize:20, color:'var(--ink)'}}>{r.s + r.e}</div>
           </div>
@@ -105,7 +105,7 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
 
       {/* Running standings ribbon */}
       <div style={{position:'absolute',bottom:170,left:'50%',transform:'translateX(-50%)',background:'rgba(0,0,0,.3)',border:'3px solid var(--cream)',borderRadius:16,padding:'10px 20px',display:'flex',gap:20,alignItems:'center',backdropFilter:'blur(4px)'}}>
-        <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream-2)',fontSize:16,letterSpacing:1}}>OVERALL ▸</span>
+        <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream-2)',fontSize:16,letterSpacing:1}}>ОБЩИЙ ЗАЧЁТ ▸</span>
         {leaderboard.map((L, i) => (
           <div key={L.i} style={{display:'flex',alignItems:'center',gap:6}}>
             <span style={{fontFamily:"'Luckiest Guy'",color:i===0?'var(--yellow)':'var(--cream)',fontSize:18}}>{i+1}.</span>
@@ -120,12 +120,12 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
           <div style={{marginBottom:10, display:'inline-block', background:'rgba(0,0,0,.35)',
             border:'3px solid var(--cream)', borderRadius:14, padding:'6px 16px',
             fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--cream)', letterSpacing:1}}>
-            {readyCount}/{remoteCount} READY
+            {readyCount}/{remoteCount} ГОТОВЫ
           </div>
         )}
         <div>
           <Btn variant="green" size="xl" onClick={onContinue} className="pulse">
-            {round >= totalRounds ? 'FINAL PODIUM! 🏆' : `ROUND ${round+1} ▶`}
+            {round >= totalRounds ? 'ФИНАЛЬНЫЙ ПОДИУМ! 🏆' : `РАУНД ${round+1} ▶`}
           </Btn>
         </div>
       </div>

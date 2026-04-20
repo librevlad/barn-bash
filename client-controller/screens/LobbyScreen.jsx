@@ -19,24 +19,28 @@ function LobbyScreen({ hostScreen, players, send }) {
   };
   const label = ({
     title:      ready
-      ? "ready! waiting for the others…"
-      : "you're in! tap LET'S GO when everyone's here",
-    select:     "you're locked in — waiting for the others",
-    scoreboard: 'round over — check the big screen',
-    podium:     'champion crowned!',
-  })[hostScreen] || 'get ready…';
+      ? 'готов! ждём остальных…'
+      : 'ты в игре! тапай ПОЕХАЛИ когда все подтянулись',
+    select:     'зафиксирован — ждём остальных',
+    scoreboard: 'раунд окончен — смотри на большой экран',
+    podium:     'чемпион коронован!',
+  })[hostScreen] || 'готовься…';
+  const plCount = players.length;
+  const plWord = plCount % 10 === 1 && plCount % 100 !== 11 ? 'игрок'
+               : [2,3,4].includes(plCount % 10) && ![12,13,14].includes(plCount % 100) ? 'игрока'
+               : 'игроков';
   return (
     <div className="card pulse" style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
       <div style={{fontFamily:"'Luckiest Guy'",fontSize:26,color:'var(--ink)',textAlign:'center',lineHeight:1.15,maxWidth:300}}>{label}</div>
       <div style={{fontSize:14,fontWeight:600,color:'var(--wood-dk)',textAlign:'center'}}>
-        {players.length} player{players.length === 1 ? '' : 's'} in the room
+        {plCount} {plWord} в комнате
       </div>
       {showReady && (
         <button className={`btn ${ready ? 'green' : ''}`}
                 disabled={ready}
                 onClick={onReady}
                 style={{marginTop:4, maxWidth:280}}>
-          {ready ? '✓ READY' : "LET'S GO!"}
+          {ready ? '✓ ГОТОВ' : 'ПОЕХАЛИ!'}
         </button>
       )}
     </div>

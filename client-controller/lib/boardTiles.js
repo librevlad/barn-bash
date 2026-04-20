@@ -5,15 +5,15 @@
 // here too.
 
 const BOARD_TILES = [
-  { id:'tap',    name:'Pig Sprint',      icon:'🏁', tint:'#ffc93c' },
-  { id:'hay',    name:'Hay Panic',       icon:'🌾', tint:'#8acb4a' },
-  { id:'egg',    name:'Egg Pass',        icon:'🥚', tint:'#fff5e4' },
-  { id:'aim',    name:'Apple Aim',       icon:'🎯', tint:'#e04b3b' },
-  { id:'mud',    name:'Mud Dash',        icon:'💧', tint:'#4aa3e0' },
-  { id:'gopher', name:'Whack-a-Gopher',  icon:'🔨', tint:'#a36bd1' },
-  { id:'tug',    name:'Tug-o-War',       icon:'🪢', tint:'#c18040' },
-  { id:'fish',   name:'Fishing Frenzy',  icon:'🎣', tint:'#4aa3e0' },
-  { id:'jump',   name:'Barn Jump',       icon:'🐑', tint:'#6cc24a' },
+  { id:'tap',    name:'Поросячий Забег',     icon:'🏁', tint:'#ffc93c' },
+  { id:'hay',    name:'Сенная Паника',       icon:'🌾', tint:'#8acb4a' },
+  { id:'egg',    name:'Горячее Яйцо',        icon:'🥚', tint:'#fff5e4' },
+  { id:'aim',    name:'Яблочко в Глаз',      icon:'🎯', tint:'#e04b3b' },
+  { id:'mud',    name:'Грязный Забег',       icon:'💧', tint:'#4aa3e0' },
+  { id:'gopher', name:'Суслик, Пошёл Вон',   icon:'🔨', tint:'#a36bd1' },
+  { id:'tug',    name:'Канатный Беспредел',  icon:'🪢', tint:'#c18040' },
+  { id:'fish',   name:'Бешеная Рыбалка',     icon:'🎣', tint:'#4aa3e0' },
+  { id:'jump',   name:'Сарайный Прыжок',     icon:'🐑', tint:'#6cc24a' },
 ];
 
 Object.assign(window, { BOARD_TILES });

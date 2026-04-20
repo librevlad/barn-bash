@@ -11,7 +11,7 @@ function BoardVoteScreen({ send }) {
   return (
     <>
       <div className="screen-hint">
-        {voted ? `voted for ${BOARD_TILES.find(t=>t.id===voted)?.name}` : 'tap a mini-game!'}
+        {voted ? `голос за ${BOARD_TILES.find(t=>t.id===voted)?.name}` : 'тапай мини-игру!'}
       </div>
       <div style={{flex:1, display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginTop:10, overflowY:'auto', paddingRight:4}}>
         {BOARD_TILES.map(t => (

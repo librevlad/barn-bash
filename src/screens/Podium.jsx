@@ -53,12 +53,12 @@ function Podium({ players, scores, onPlayAgain, onQuit }) {
 
       <div style={{position:'absolute',top:30,left:0,right:0,textAlign:'center'}}>
         <div style={{display:'flex', gap:14, justifyContent:'center'}}>
-          <TitleWord text="CHAMPION!" color="var(--yellow)" size={72}/>
+          <TitleWord text="ЧЕМПИОН!" color="var(--yellow)" size={72}/>
         </div>
         {champion && (
           <div className="pop-in" style={{marginTop:10,display:'inline-flex',alignItems:'center',gap:10,background:'rgba(0,0,0,.35)',border:'4px solid #fff',borderRadius:16,padding:'8px 22px',animationDelay:'.4s'}}>
             <Avatar char={champion.p.char} size={42}/>
-            <span style={{fontFamily:"'Luckiest Guy'",color:'#fff',fontSize:28,letterSpacing:2}}>{playerLabel(champion.p)} WINS!</span>
+            <span style={{fontFamily:"'Luckiest Guy'",color:'#fff',fontSize:28,letterSpacing:2}}>{playerLabel(champion.p)} ВЫИГРАЛ(А)!</span>
           </div>
         )}
       </div>
@@ -106,12 +106,12 @@ function Podium({ players, scores, onPlayAgain, onQuit }) {
             fontFamily:"'Luckiest Guy'", fontSize:18, color:'#fff', letterSpacing:1.5,
             boxShadow:'0 4px 0 rgba(0,0,0,.3)'
           }}>
-            {readyCount}/{remoteCount} READY FOR REMATCH
+            {readyCount}/{remoteCount} ЖДУТ РЕВАНША
           </div>
         )}
         <div style={{display:'flex', justifyContent:'center', gap:16}}>
-          <Btn variant="green" size="xl" onClick={onPlayAgain}>PLAY AGAIN ↻</Btn>
-          <Btn variant="red" size="xl" onClick={onQuit}>MAIN MENU</Btn>
+          <Btn variant="green" size="xl" onClick={onPlayAgain}>ЕЩЁ РАЗОК ↻</Btn>
+          <Btn variant="red" size="xl" onClick={onQuit}>ГЛАВНОЕ МЕНЮ</Btn>
         </div>
       </div>
     </div>

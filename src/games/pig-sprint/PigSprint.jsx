@@ -109,9 +109,9 @@ function PigSprint({ state, onFinish, onQuit, game }) {
 
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
-        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 22px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🏁 PIG SPRINT</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🏁 ПОРОСЯЧИЙ ЗАБЕГ</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>{time.toFixed(1)}s</span>
@@ -199,11 +199,21 @@ function PigSprint({ state, onFinish, onQuit, game }) {
 
 window.BB.games.register({
   id: 'tap',
-  name: 'Pig Sprint',
-  blurb: 'Smash to run! First to the finish line wins.',
+  name: 'Поросячий Забег',
+  blurb: 'Долби кнопку. Кто быстрее, тот и финишировал.',
   icon: '🏁',
   tint: '#ffc93c',
   phoneContract: 'tap',
-  phonePrompt: 'TAP AS FAST AS YOU CAN!',
+  phonePrompt: 'ТАПАЙ КАК БУДТО ОТ ЭТОГО ЗАВИСИТ ТВОЯ ЖИЗНЬ',
+  rules: {
+    name: 'Поросячий Забег',
+    tagline: 'Беги так, будто за тобой гонятся москали.',
+    howTo: [
+      'ДОЛБИ по кнопке чем быстрее — тем быстрее твой поросёнок.',
+      'Каждый тап = +шаг. Остановишься — обгонят.',
+    ],
+    control: '📱 ТАП-ТАП-ТАП · ⌨ ПРОБЕЛ',
+    win: 'Первый на финише забирает +5 монет',
+  },
   component: PigSprint,
 });

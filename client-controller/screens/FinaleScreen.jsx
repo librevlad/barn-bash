@@ -3,15 +3,15 @@
 // lands on the Podium, with the TAP FOR REMATCH button.
 
 const FINALE_TAGS = {
-  1: { title:'CHAMPION!',  color:'var(--yellow)', emoji:'👑', sub:'The whole barn is cheering.' },
-  2: { title:'SILVER',     color:'#d4d4d4',       emoji:'🥈', sub:'So close. One more round next time.' },
-  3: { title:'BRONZE',     color:'#cd7f32',       emoji:'🥉', sub:'Podium finish. Not bad.' },
+  1: { title:'ЧЕМПИОН!',  color:'var(--yellow)', emoji:'👑', sub:'Весь сарай в аплодисментах.' },
+  2: { title:'СЕРЕБРО',   color:'#d4d4d4',       emoji:'🥈', sub:'Ну почти. В следующий раз.' },
+  3: { title:'БРОНЗА',    color:'#cd7f32',       emoji:'🥉', sub:'Подиум это всё-таки подиум.' },
 };
 
 function FinaleScreen({ finale, send }) {
   const tag = FINALE_TAGS[finale.rank] || {
     title:`#${finale.rank}`, color:'#888', emoji:'🎯',
-    sub:'Rematch? There\'s always a rematch.'
+    sub:'Реванш? Реванш всегда.'
   };
   const [ready, setReady] = useState(false);
   const onReady = () => {
@@ -26,7 +26,7 @@ function FinaleScreen({ finale, send }) {
       justifyContent:'center', gap:14, textAlign:'center',
       background:`radial-gradient(circle at 50% 30%, ${tag.color} 0%, #fff 70%)`
     }}>
-      <div style={{fontSize:14, fontWeight:700, letterSpacing:2, color:'var(--wood-dk)'}}>GAME OVER</div>
+      <div style={{fontSize:14, fontWeight:700, letterSpacing:2, color:'var(--wood-dk)'}}>ФИНАЛ</div>
       <div style={{fontSize:96, lineHeight:1}}>{tag.emoji}</div>
       <div style={{
         background:tag.color, color:'var(--ink)', border:'5px solid var(--ink)',
@@ -38,7 +38,7 @@ function FinaleScreen({ finale, send }) {
         background:'var(--yellow)', border:'4px solid var(--ink)', borderRadius:14,
         padding:'8px 20px', boxShadow:'0 5px 0 var(--ink)',
         fontFamily:"'Luckiest Guy',cursive", fontSize:26
-      }}>{finale.total} coins total</div>
+      }}>{finale.total} монет всего</div>
       <div style={{fontSize:13, fontWeight:600, color:'var(--wood-dk)', maxWidth:240, lineHeight:1.3}}>
         {tag.sub}
       </div>
@@ -46,7 +46,7 @@ function FinaleScreen({ finale, send }) {
               disabled={ready}
               onClick={onReady}
               style={{marginTop:4, maxWidth:280}}>
-        {ready ? '✓ READY' : 'TAP FOR REMATCH'}
+        {ready ? '✓ ГОТОВ' : 'ТАП — РЕВАНШ'}
       </button>
     </div>
   );

@@ -25,13 +25,21 @@
   function MinigameHost({ def, state, onFinish, onQuit }) {
     const mp = BB.mp.useMultiplayer();
 
+    // Rules splash gates every minigame mount. Max reported "слишком
+    // быстро начинается — непонятно что делать" after the first live
+    // test. We now delay the minigame render AND the broadcastMinigameStart
+    // hand-off to phones until the rules countdown ends, so both TV and
+    // phone land on the play contract at the same moment.
+    const [rulesDone, setRulesDone] = useState(false);
+
     // Broadcast the start/end of this mini-game exactly once per mount,
-    // with the id + prompt + contract straight from the registry def.
-    // Games no longer duplicate this three-line effect themselves.
+    // AFTER the rules splash dismisses. Games no longer duplicate this
+    // three-line effect themselves.
     useEffect(() => {
+      if (!rulesDone) return;
       mp.broadcastMinigameStart(def.id, def.phonePrompt || null, def.phoneContract || null);
       return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd(def.id); };
-    }, [def.id, mp.broadcastMinigameStart, mp.broadcastMinigameEnd]);
+    }, [rulesDone, def.id, mp.broadcastMinigameStart, mp.broadcastMinigameEnd]);
 
     // Local host-side chaos event bus. Lives on a ref so publishChaos +
     // onChaos keep stable identity across renders — no WS traffic, pure
@@ -107,6 +115,10 @@
       });
       return () => off && off();
     }, [game]);
+
+    if (!rulesDone) {
+      return <RulesSplash def={def} onSkip={() => setRulesDone(true)} />;
+    }
 
     const G = def.component;
     return (

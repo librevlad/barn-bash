@@ -82,9 +82,9 @@ function CharacterSelect({ onBack, onStart, playerCount=4, remotePlayers=null })
 
       {/* Header */}
       <div style={{position:'absolute', top: 24, left: 24, right:24, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-        <Btn variant="cream" size="sm" onClick={onBack}>◀ BACK</Btn>
+        <Btn variant="cream" size="sm" onClick={onBack}>◀ НАЗАД</Btn>
         <div className="plank" style={{padding:'12px 30px', borderRadius:22}}>
-          <span style={{fontFamily:"'Luckiest Guy'", fontSize:32, color:'var(--cream)'}}>PICK YOUR CRITTER</span>
+          <span style={{fontFamily:"'Luckiest Guy'", fontSize:32, color:'var(--cream)'}}>ВЫБИРАЙ ЗВЕРЮГУ</span>
         </div>
         <div style={{width:110}}/>
       </div>
@@ -99,7 +99,7 @@ function CharacterSelect({ onBack, onStart, playerCount=4, remotePlayers=null })
       {/* Character roster showcase */}
       <div style={{position:'absolute', bottom:220, left:40, right:40}}>
         <div style={{textAlign:'center', fontFamily:"'Luckiest Guy'", fontSize:22, color:'var(--ink)', marginBottom:10}}>
-          ROSTER · TAP ARROWS TO SWAP
+          ВСЕ ПЕРСОНАЖИ · ТЫКАЙ ◀ ▶ ЧТОБ МЕНЯТЬ
         </div>
         <div style={{display:'flex', justifyContent:'center', gap:12, flexWrap:'wrap'}}>
           {CHARACTERS.map(c => {
@@ -129,12 +129,12 @@ function CharacterSelect({ onBack, onStart, playerCount=4, remotePlayers=null })
             fontFamily:"'Luckiest Guy'", fontSize:18, color:'#fff', letterSpacing:1.5,
             boxShadow:'0 4px 0 rgba(0,0,0,.3)'
           }}>
-            PHONES READY — STARTING...
+            ВСЕ ГОТОВЫ — ПОЕХАЛИ...
           </div>
         )}
         <div style={{display:'flex', justifyContent:'center', gap:20}}>
           <Btn variant="red" size="xl" onClick={onStart} disabled={!allReady} className={allReady ? 'pulse':''}>
-            {allReady ? 'START THE BEDLAM! ▶' : 'WAITING FOR PLAYERS...'}
+            {allReady ? 'ПОЕХАЛИ! ▶' : 'ЖДЁМ ИГРОКОВ...'}
           </Btn>
         </div>
       </div>
@@ -157,18 +157,18 @@ function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
       transition:'transform .2s ease, box-shadow .2s ease'
     }}>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)'}}>
-        <span>P{idx+1}{isYou && !slot.displayName ? ' (YOU)' : ''}</span>
+        <span>P{idx+1}{isYou && !slot.displayName ? ' (ТЫ)' : ''}</span>
         {slot.displayName && !slot.isCPU ? (
           <span style={{
             background:'var(--green)', color:'#fff', border:'2px solid var(--ink)',
             borderRadius:8, padding:'2px 8px', fontFamily:"'Luckiest Guy'", fontSize:12,
             letterSpacing:1, boxShadow:'0 2px 0 var(--ink)', display:'inline-flex', gap:4, alignItems:'center'
-          }}>📱 PHONE</span>
+          }}>📱 ТЕЛЕФОН</span>
         ) : (!isYou && (
           <button onClick={()=>toggleCPU(idx)} style={{
             background: slot.isCPU ? 'var(--blue)' : 'var(--grass)', color:'#fff', border:'2px solid var(--ink)',
             borderRadius:8, padding:'2px 8px', fontFamily:"'Luckiest Guy'", fontSize:12, cursor:'pointer'
-          }}>{slot.isCPU ? 'CPU' : 'HUMAN'}</button>
+          }}>{slot.isCPU ? 'БОТ' : 'ЖИВОЙ'}</button>
         ))}
       </div>
 
@@ -182,7 +182,7 @@ function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
         {nameLabel}
       </div>
       <div style={{textAlign:'center', fontFamily:"'Luckiest Guy'", fontSize:13, color:'var(--wood-dk)', letterSpacing:.5, marginTop:2, marginBottom:8}}>
-        {showAsCritter ? `AS ${slot.char.name.toUpperCase()}` : `"${slot.char.tag}"`}
+        {showAsCritter ? `В ОБРАЗЕ ${slot.char.name.toUpperCase()}` : `"${slot.char.tag}"`}
       </div>
 
       <button onClick={()=>!slot.isCPU && !slot.displayName && toggleReady(idx)} disabled={slot.isCPU || !!slot.displayName} style={{
@@ -193,7 +193,7 @@ function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
         color: slot.ready ? '#fff' : 'var(--ink)',
         boxShadow:'0 4px 0 var(--ink)'
       }}>
-        {slot.isCPU ? '✓ BOT READY' : slot.ready ? '✓ READY!' : 'READY?'}
+        {slot.isCPU ? '✓ БОТ ГОТОВ' : slot.ready ? '✓ ГОТОВ!' : 'ГОТОВ?'}
       </button>
 
       {slot.ready && <Sparkle x={-10} y={-10} size={24} c="#ffc93c"/>}

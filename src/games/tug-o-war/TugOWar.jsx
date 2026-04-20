@@ -133,9 +133,9 @@ function TugOWar({ state, onFinish, onQuit, game }) {
 
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
-        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 32px', whiteSpace:'nowrap'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:28,whiteSpace:'nowrap'}}>🪢 TUG-O-WAR</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:28,whiteSpace:'nowrap'}}>🪢 КАНАТНЫЙ БЕСПРЕДЕЛ</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:16}}>MASH SPACE!</span>
@@ -256,11 +256,22 @@ function TugOWar({ state, onFinish, onQuit, game }) {
 
 window.BB.games.register({
   id: 'tug',
-  name: 'Tug-o-War',
-  blurb: 'Team mash-off. Red vs Blue, pull the ribbon across.',
+  name: 'Канатный Беспредел',
+  blurb: 'Команда на команду. Красные против Синих. Без правил.',
   icon: '🪢',
   tint: '#c18040',
   phoneContract: 'tap',
-  phonePrompt: 'MASH TAP TO PULL!',
+  phonePrompt: 'ДОЛБИ ТАП — ТЯНИ КАНАТ!',
+  rules: {
+    name: 'Канатный Беспредел',
+    tagline: 'Красные vs Синие. Дипломатии не будет.',
+    howTo: [
+      'Вас поделили на две команды. Совпадений не бывает.',
+      'ДОЛБИ кнопку. Чем быстрее вся команда — тем ближе лента к вам.',
+      'Та команда что дотянула ленту до своего края — победила.',
+    ],
+    control: '📱 ТАП-ТАП-ТАП · ⌨ ПРОБЕЛ',
+    win: 'Команда-победитель делит +5 монет',
+  },
   component: TugOWar,
 });

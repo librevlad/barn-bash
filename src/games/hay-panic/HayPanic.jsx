@@ -171,9 +171,9 @@ function HayPanic({ state, onFinish, onQuit, game }) {
 
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
-        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 22px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🌾 HAY PANIC</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🌾 СЕННАЯ ПАНИКА</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>{Math.max(0,30 - time).toFixed(1)}s</span>
@@ -287,11 +287,22 @@ function HayBale({ x, y, rot }) {
 
 window.BB.games.register({
   id: 'hay',
-  name: 'Hay Panic',
-  blurb: 'Dodge falling bales. Last animal standing.',
+  name: 'Сенная Паника',
+  blurb: 'С неба сыпятся тюки. Не стой там где они падают.',
   icon: '🌾',
   tint: '#8acb4a',
   phoneContract: 'steer',
-  phonePrompt: '◀ ▶ TO DODGE BALES!',
+  phonePrompt: '⬅ ➡ ЧТОБ НЕ СТАТЬ ТЮКОМ',
+  rules: {
+    name: 'Сенная Паника',
+    tagline: 'С неба летят тюки. Не зевай.',
+    howTo: [
+      'Двигайся влево-вправо, уворачивайся.',
+      'Попал под тюк — тюк, оказывается, тяжёлый. Минус жизнь.',
+      'Последний кто не стал блином — победил.',
+    ],
+    control: '📱 ⬅ ➡ · ⌨ A / D',
+    win: 'Последний выживший забирает всё',
+  },
   component: HayPanic,
 });

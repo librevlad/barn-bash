@@ -2,7 +2,7 @@
 // Post-round celebration shown on the phone between rounds, with the
 // 'TAP WHEN READY' ready-up button that auto-advances the host.
 
-const RANK_TAGS = { 1: { label:'#1 · WINNER!', color:'var(--yellow)', emoji:'🏆' },
+const RANK_TAGS = { 1: { label:'#1 · ПОБЕДА!', color:'var(--yellow)', emoji:'🏆' },
                     2: { label:'#2',           color:'#c0c0c0',       emoji:'🥈' },
                     3: { label:'#3',           color:'#cd7f32',       emoji:'🥉' } };
 
@@ -36,15 +36,15 @@ function RoundSummary({ summary, send }) {
         fontFamily:"'Luckiest Guy',cursive", fontSize:20,
         color: gotCoins ? 'var(--ink)' : '#888',
         boxShadow:'0 4px 0 var(--ink)'
-      }}>+{summary.earned} coins</div>
+      }}>+{summary.earned} монет</div>
       <div style={{fontSize:13, fontWeight:600, color:'var(--wood-dk)'}}>
-        total {summary.total}
+        всего {summary.total}
       </div>
       <button className={`btn ${ready ? 'green' : ''} ${ready ? '' : 'pulse'}`}
               disabled={ready}
               onClick={onReady}
               style={{marginTop:4, maxWidth:280}}>
-        {ready ? '✓ READY' : 'TAP WHEN READY'}
+        {ready ? '✓ ГОТОВ' : 'ТАП КОГДА ГОТОВ'}
       </button>
     </div>
   );

@@ -152,9 +152,9 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
       <Clouds count={3}/>
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
-        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 22px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🔨 WHACK-A-GOPHER</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🔨 СУСЛИК, ПОШЁЛ ВОН</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>{Math.max(0,GAME_SEC - time).toFixed(1)}s</span>
@@ -299,11 +299,23 @@ function BunnyFace() {
 
 window.BB.games.register({
   id: 'gopher',
-  name: 'Whack-a-Gopher',
-  blurb: 'Bop the gopher. Don\'t bop the bunny.',
+  name: 'Суслик, Пошёл Вон',
+  blurb: 'Бей сусликов. Не бей зайчиков. Они не виноваты.',
   icon: '🔨',
   tint: '#a36bd1',
   phoneContract: 'holes',
-  phonePrompt: 'BOP GOPHERS • SKIP BUNNIES',
+  phonePrompt: 'ТЫК по 🐹 · НЕ ТЫК по 🐰',
+  rules: {
+    name: 'Суслик, Пошёл Вон',
+    tagline: 'Из нор лезут суслики. И зайчики. Не перепутай.',
+    howTo: [
+      'На телефоне 4 норы. Тыкай в ту, откуда кто-то вылез.',
+      '🐹 суслик — бей! +2 очка',
+      '✨🐹 золотой — +5 очков',
+      '🐰 зайчик — НЕ БЕЙ. Зайчик хороший, минус 3 за каждого.',
+    ],
+    control: '📱 ТЫК в нужную дыру',
+    win: 'Больше всего очков за 30 секунд',
+  },
   component: WhackAGopher,
 });
