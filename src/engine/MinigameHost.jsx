@@ -33,6 +33,12 @@
       return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd(def.id); };
     }, [def.id, mp.broadcastMinigameStart, mp.broadcastMinigameEnd]);
 
+    // Local host-side chaos event bus. Lives on a ref so publishChaos +
+    // onChaos keep stable identity across renders — no WS traffic, pure
+    // in-memory fan-out like the leaderboard listener set.
+    const chaosListeners = useRef(null);
+    if (chaosListeners.current === null) chaosListeners.current = new Set();
+
     // Narrow api surface — stable across renders so useEffect deps on
     // [api] don't churn. Every mp field on here is already a useCallback
     // inside the provider.
@@ -46,6 +52,13 @@
       },
       publishScores: mp.broadcastScores,
       publishTurn:   mp.broadcastTurn,
+      publishChaos(data) {
+        chaosListeners.current.forEach(cb => { try { cb(data); } catch (_) {} });
+      },
+      onChaos(cb) {
+        chaosListeners.current.add(cb);
+        return () => chaosListeners.current.delete(cb);
+      },
     }), [mp.onInput, mp.broadcastScores, mp.broadcastTurn]);
 
     // Wrap the transport-level api in the semantic domain api. Games
@@ -55,6 +68,31 @@
       () => BB.engine.createGameDomainAPI(api, { onFinish, onQuit }),
       [api, onFinish, onQuit]
     );
+
+    // Lazily build one ChaosEngine instance per MinigameHost mount so the
+    // 8-15s random-event scheduler starts fresh each round.
+    const chaosRef = useRef(null);
+    if (!chaosRef.current) {
+      chaosRef.current = BB.engine.createChaosEngine({
+        leaderboard: game.leaderboard,
+        api: game,
+      });
+    }
+
+    useEffect(() => {
+      chaosRef.current.start();
+      return () => chaosRef.current.stop();
+    }, []);
+
+    // Host-side chaos listener: log for now, richer handlers hook here
+    // later (AI Host, visual overlays, sound fx).
+    useEffect(() => {
+      if (!game.api || !game.api.onChaos) return;
+      const off = game.api.onChaos((event) => {
+        console.log('CHAOS EVENT RECEIVED:', event);
+      });
+      return () => off && off();
+    }, [game]);
 
     const G = def.component;
     return (

@@ -5,13 +5,34 @@
 
 function LeaderboardOverlay({ game }) {
   const [state, setState] = useState(game.leaderboard.getState());
+  const [chaos, setChaos] = useState(null);
 
   useEffect(() => {
     return game.leaderboard.subscribe(setState);
   }, [game]);
 
+  useEffect(() => {
+    if (!game.api || !game.api.onChaos) return;
+    const off = game.api.onChaos((event) => {
+      setChaos(event);
+      setTimeout(() => setChaos(null), 2000);
+    });
+    return () => off && off();
+  }, [game]);
+
   return (
     <div style={styles.container}>
+      {chaos && (
+        <div style={{
+          background: 'orange',
+          color: 'black',
+          padding: 6,
+          marginBottom: 6,
+          fontWeight: 'bold',
+        }}>
+          CHAOS: {chaos.type}
+        </div>
+      )}
       {state.entries.map((e, i) => (
         <div key={e.playerId} style={{
           ...styles.row,

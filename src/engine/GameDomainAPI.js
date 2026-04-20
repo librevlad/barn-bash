@@ -55,6 +55,17 @@
         on:        leaderboard.on,
         getState:  leaderboard.getState,
       },
+
+      // Chaos passthrough — the Chaos Engine publishes events; listeners
+      // (MinigameHost, LeaderboardOverlay) grab them via game.api.onChaos.
+      publishChaos: (data) => api.publishChaos(data),
+      chaos: {
+        publish: (data) => api.publishChaos(data),
+      },
+      api: {
+        onChaos:      api.onChaos,
+        publishChaos: api.publishChaos,
+      },
     };
   }
 
