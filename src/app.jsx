@@ -93,21 +93,24 @@ function App() {
   }));
 
   const startGame = () => {
-    // Phase mp/Stage 2 — build players from phone controllers when
-    // any are connected; fall back to the single-player-vs-CPU flow
-    // so dev on the desktop still works even when no phone joined.
+    // tweaks.playerCount is the *total* lineup size (2-6). The mix depends on
+    // who's in the room: every joined phone takes a slot, CPU critters fill
+    // the rest up to the target. If more phones are connected than the
+    // target, bump the total so nobody who joined gets kicked. Zero-phone
+    // sessions stay as the classic local you + CPUs solo flow.
     const connected = (mp.remotePlayers || []).filter(p => p.character);
+    const phoneCount = Math.min(connected.length, 6);
     let players;
-    if (connected.length > 0) {
+    if (phoneCount > 0) {
+      const target = Math.max(Math.min(tweaks.playerCount, 6), phoneCount);
       const used = new Set();
-      players = connected.map(p => {
+      players = connected.slice(0, 6).map(p => {
         const char = CHARACTERS.find(c => c.id === p.character) || CHARACTERS[0];
         used.add(char.id);
         return { char, isCPU: false, remoteId: p.id, displayName: p.name || char.name };
       });
-      // Optionally pad to minimum 2 players with CPUs for solo testing.
       const pool = CHARACTERS.filter(c => !used.has(c.id)).sort(() => Math.random() - .5);
-      while (players.length < 2 && pool.length > 0) {
+      while (players.length < target && pool.length > 0) {
         players.push({ char: pool.shift(), isCPU: true });
       }
     } else {

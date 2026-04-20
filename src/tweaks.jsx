@@ -22,11 +22,14 @@ function TweaksPanel({ tweaks, setTweaks, open, setOpen }) {
         ))}
       </div>
 
-      <label>Player count</label>
+      <label>Players total (phones + CPU fill)</label>
       <div className="seg">
         {[2,3,4,5,6].map(n=>(
           <button key={n} className={tweaks.playerCount===n?'on':''} onClick={()=>setTweaks({...tweaks, playerCount:n})}>{n}</button>
         ))}
+      </div>
+      <div style={{fontSize:11,color:'#8a6a4e',fontStyle:'italic',marginTop:2}}>
+        Every joined phone plays. CPUs fill up to this total; extra phones just bump it.
       </div>
 
       <label>Total rounds</label>
