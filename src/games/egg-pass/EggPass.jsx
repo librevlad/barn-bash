@@ -1,0 +1,304 @@
+// src/games/egg-pass/EggPass.jsx
+// Hot-potato egg: tap to pass before it pops in your hand.
+
+/* ==========  GAME 5: EGG PASS  ==========
+   A "hot potato" — a ticking egg moves around the ring. Each player has a window to tap
+   SPACE to shove it to the next player. If time runs out in your hand — egg breaks, you're out.
+*/
+function EggPass({ state, onFinish, onQuit }) {
+  const players = state.players;
+  const N = players.length;
+  const [started, setStarted] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [alive, setAlive] = useState(()=>players.map(()=>true));
+  const [holder, setHolder] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(3);
+  const [baseTime, setBaseTime] = useState(3);
+  const [shake, setShake] = useState(false);
+  const [round, setRound] = useState(1);
+  const [eliminated, setEliminated] = useState([]); // order eliminated
+  const [eggPos, setEggPos] = useState({ x: 0, y: 0 });
+  const [passing, setPassing] = useState(false);
+
+  const difficulty = state.difficulty;
+  const cpuReflex = { easy: [0.6, 1.2], medium: [0.3, 0.8], hard: [0.15, 0.4] }[difficulty] || [0.3, 0.8];
+
+  // positions around a ring
+  const CX = 800, CY = 470, R = 260;
+  const slotPos = (i) => ({
+    x: CX + Math.cos((i / N) * Math.PI * 2 - Math.PI/2) * R,
+    y: CY + Math.sin((i / N) * Math.PI * 2 - Math.PI/2) * R,
+  });
+
+  useEffect(() => { setEggPos(slotPos(holder)); }, [holder, N]);
+
+  useRaf((dt) => {
+    if (!started || finished || passing) return;
+    setTimeLeft(t => {
+      const nt = t - dt;
+      if (nt <= 0) {
+        // Egg breaks on current holder
+        explode();
+        return 0;
+      }
+      if (nt < 1) setShake(true);
+      return nt;
+    });
+  }, started && !finished);
+
+  const aliveCount = alive.filter(Boolean).length;
+
+  const passEgg = () => {
+    if (!started || finished || passing) return;
+    // find next alive player
+    let next = holder;
+    for (let k = 1; k <= N; k++) {
+      const cand = (holder + k) % N;
+      if (alive[cand]) { next = cand; break; }
+    }
+    setPassing(true);
+    setShake(false);
+    const from = slotPos(holder);
+    const to = slotPos(next);
+    // animate via state over 240ms
+    const startT = performance.now();
+    const dur = 240;
+    const step = () => {
+      const e = Math.min(1, (performance.now() - startT) / dur);
+      const ease = 1 - Math.pow(1-e, 3);
+      setEggPos({ x: from.x + (to.x - from.x) * ease, y: from.y + (to.y - from.y) * ease - Math.sin(ease * Math.PI) * 60 });
+      if (e < 1) requestAnimationFrame(step);
+      else {
+        setHolder(next);
+        setPassing(false);
+        setTimeLeft(baseTime * 0.92);
+        setBaseTime(b => Math.max(0.6, b * 0.96));
+      }
+    };
+    requestAnimationFrame(step);
+  };
+
+  const explode = () => {
+    setAlive(prev => { const next = prev.slice(); next[holder] = false; return next; });
+    setEliminated(prev => [...prev, holder]);
+    // pick next alive holder
+    setTimeout(() => {
+      let next = holder;
+      for (let k = 1; k <= N; k++) {
+        const cand = (holder + k) % N;
+        if (alive[cand] && cand !== holder) { next = cand; break; }
+      }
+      setHolder(next);
+      setBaseTime(3);
+      setTimeLeft(3);
+      setRound(r => r + 1);
+      setShake(false);
+    }, 900);
+  };
+
+  // CPU handler
+  useEffect(() => {
+    if (!started || finished || passing) return;
+    const cur = players[holder];
+    if (!cur || !cur.isCPU) return;
+    const [lo, hi] = cpuReflex;
+    const reactIn = lo + Math.random() * (hi - lo);
+    const panicked = Math.random() < (difficulty === 'hard' ? 0.05 : difficulty === 'medium' ? 0.15 : 0.3);
+    const react = panicked ? baseTime + 0.5 : Math.min(reactIn, Math.max(0.15, timeLeft - 0.2));
+    const t = setTimeout(() => { if (!finished) passEgg(); }, react * 1000);
+    return () => clearTimeout(t);
+  }, [holder, passing, started]);
+
+  // Win check
+  useEffect(() => {
+    if (aliveCount === 1 && !finished && started) {
+      setTimeout(() => setFinished(true), 600);
+    }
+  }, [aliveCount, started, finished]);
+
+  useEffect(() => {
+    if (!finished) return;
+    // earned: last alive = 5, then reverse order of elimination
+    const order = [];
+    const lastAliveIdx = alive.findIndex(Boolean);
+    order.push(lastAliveIdx);
+    for (let i = eliminated.length - 1; i >= 0; i--) order.push(eliminated[i]);
+    const earned = Array(N).fill(0);
+    const payouts = [5, 3, 2, 1, 0, 0];
+    order.forEach((idx, rank) => { if (idx >= 0) earned[idx] = payouts[rank] ?? 0; });
+    setTimeout(() => onFinish(earned), 1400);
+  }, [finished]);
+
+  // space = pass (human only)
+  useEffect(() => {
+    const d = (e) => {
+      if ((e.key === ' ' || e.code === 'Space') && holder === 0 && alive[0] && !passing) {
+        e.preventDefault(); passEgg();
+      }
+    };
+    window.addEventListener('keydown', d);
+    return () => window.removeEventListener('keydown', d);
+  }, [holder, passing, alive, started]);
+
+  // phone tap from the current holder passes the egg
+  const mp = window.BB.mp.useMultiplayer();
+  useEffect(() => {
+    if (!mp || !mp.broadcastMinigameStart) return;
+    mp.broadcastMinigameStart('egg', 'TAP WHEN YOU HAVE THE EGG!', 'tap');
+    return () => { mp.broadcastMinigameEnd && mp.broadcastMinigameEnd('egg'); };
+  }, [mp]);
+  // Broadcast whose hands the egg is in so only the holder's phone lights up.
+  useEffect(() => {
+    if (!mp || !mp.broadcastTurn) return;
+    const cur = players[holder];
+    if (!cur) return;
+    mp.broadcastTurn({
+      activeId: cur.remoteId || null,
+      activeName: playerLabel(cur),
+    });
+  }, [mp, holder, players]);
+  useEffect(() => {
+    if (!mp || !mp.onInput) return;
+    const off = mp.onInput(({ id, kind }) => {
+      if (kind !== 'tap') return;
+      if (passing || finished || !started) return;
+      const cur = players[holder];
+      if (!cur || cur.remoteId !== id) return;
+      if (!alive[holder]) return;
+      passEgg();
+    });
+    return () => { try { off && off(); } catch (_) {} };
+  }, [mp, holder, passing, started, finished, alive]);
+
+  const pct = Math.max(0, timeLeft / baseTime);
+
+  return (
+    <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at center, #6b4a2e 0%, #3a2510 90%)',overflow:'hidden'}}>
+      {/* floorboards */}
+      <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(90deg, #5a3a1c 0 120px, #4a3018 120px 124px)', opacity:.5}}/>
+      <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,.5) 100%)'}}/>
+
+      {/* HUD */}
+      <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
+        <Btn variant="cream" size="sm" onClick={onQuit}>◀ QUIT</Btn>
+        <div className="plank" style={{padding:'8px 22px'}}>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🥚 EGG PASS</span>
+        </div>
+        <div className="plank" style={{padding:'8px 16px'}}>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>R{round}</span>
+        </div>
+      </div>
+
+      {/* Timer ring (center) */}
+      <svg style={{position:'absolute', left: CX-90, top: CY-90, pointerEvents:'none'}} width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="78" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth="10"/>
+        <circle cx="90" cy="90" r="78" fill="none"
+          stroke={pct < 0.33 ? '#e04b3b' : pct < 0.6 ? '#ffc93c' : '#6cc24a'}
+          strokeWidth="12" strokeLinecap="round"
+          strokeDasharray={`${pct * 490} 490`}
+          transform="rotate(-90 90 90)"/>
+        <text x="90" y="96" textAnchor="middle" fontFamily="Luckiest Guy" fontSize="48" fill="#fff" stroke="#2a1a10" strokeWidth="2">
+          {timeLeft.toFixed(1)}
+        </text>
+      </svg>
+
+      {/* players around ring */}
+      {players.map((p, i) => {
+        const pos = slotPos(i);
+        const isDead = !alive[i];
+        const isHolder = i === holder && alive[i];
+        return (
+          <div key={i} style={{
+            position:'absolute', left:`calc(50% - 800px + ${pos.x}px)`, top:pos.y,
+            transform:'translate(-50%,-50%)',
+            opacity: isDead ? 0.25 : 1,
+            filter: isDead ? 'grayscale(1)' : 'none',
+            transition:'all .4s ease',
+          }}>
+            <div style={{
+              background: isHolder ? 'var(--yellow)' : '#fff',
+              border:'4px solid var(--ink)', borderRadius:14, padding:10,
+              boxShadow: isHolder ? '0 8px 0 var(--ink), 0 0 30px rgba(255,201,60,.8)' : '0 4px 0 var(--ink)',
+              display:'flex', flexDirection:'column', alignItems:'center',
+              transform: isHolder ? 'scale(1.15)' : 'scale(1)',
+              transition:'all .3s ease',
+            }}>
+              <Avatar char={p.char} size={80} bob={isHolder}/>
+              <div style={{fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)', marginTop:4}}>
+                {playerLabel(p)}
+              </div>
+              {i === 0 && !p.isCPU && <div style={{fontSize:10,fontFamily:"'Luckiest Guy'",color:'var(--red)'}}>YOU</div>}
+              {isDead && <div style={{position:'absolute',top:-18,left:'50%',transform:'translateX(-50%) rotate(-8deg)',background:'var(--red)',color:'#fff',padding:'2px 10px',border:'3px solid var(--ink)',borderRadius:8,fontFamily:"'Luckiest Guy'"}}>OUT</div>}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Egg */}
+      <div style={{
+        position:'absolute', left: `calc(50% - 800px + ${eggPos.x}px)`, top: eggPos.y,
+        transform:`translate(-50%,-50%) ${shake?'rotate('+((Math.sin(performance.now()/30))*10)+'deg)':''}`,
+        zIndex: 15,
+        pointerEvents:'none',
+      }}>
+        <svg width="90" height="110" viewBox="0 0 90 110" style={{filter:'drop-shadow(0 6px 0 rgba(0,0,0,.4))'}}>
+          <ellipse cx="45" cy="58" rx="38" ry="48" fill="#fff5e4" stroke="#2a1a10" strokeWidth="4"/>
+          <ellipse cx="32" cy="38" rx="12" ry="16" fill="#fff" opacity=".6"/>
+          {/* danger cracks */}
+          {pct < 0.5 && <path d="M 45 20 L 48 36 L 40 42 L 50 52" stroke="#2a1a10" strokeWidth="2" fill="none"/>}
+          {pct < 0.25 && <path d="M 30 50 L 38 60 L 32 68 L 42 78" stroke="#2a1a10" strokeWidth="2" fill="none"/>}
+          {/* fuse */}
+          <path d="M 45 12 Q 55 4 62 8" stroke="#2a1a10" strokeWidth="3" fill="none"/>
+          <circle cx="63" cy="8" r={pct < 0.5 ? 7 : 5} fill={pct < 0.3 ? '#e04b3b' : '#ffc93c'}/>
+          <circle cx="63" cy="8" r={pct < 0.5 ? 4 : 3} fill="#fff" opacity=".8"/>
+        </svg>
+      </div>
+
+      {/* Action button (human holder only) */}
+      {holder === 0 && alive[0] && !passing && !finished && (
+        <div style={{position:'absolute',bottom:20,left:0,right:0,display:'flex',justifyContent:'center',zIndex:20}}>
+          <button onClick={passEgg} className="pulse" style={{
+            fontFamily:"'Luckiest Guy'", fontSize:36, padding:'16px 48px',
+            background:'var(--red)', color:'#fff',
+            WebkitTextStroke:'2px var(--ink)', border:'5px solid var(--ink)', borderRadius:20,
+            boxShadow:'0 10px 0 var(--ink)', cursor:'pointer'
+          }}>
+            🥚 PASS! (SPACE)
+          </button>
+        </div>
+      )}
+      {holder !== 0 && !finished && (
+        <div style={{position:'absolute',bottom:30,left:0,right:0,textAlign:'center'}}>
+          <div style={{display:'inline-block',background:'#fff',border:'3px solid var(--ink)',borderRadius:14,padding:'8px 16px',fontFamily:"'Luckiest Guy'",fontSize:18}}>
+            {playerLabel(players[holder])} HAS THE EGG!
+          </div>
+        </div>
+      )}
+
+      {!started && <Countdown onDone={()=>setStarted(true)}/>}
+      {finished && (
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.3)',display:'grid',placeItems:'center',zIndex:40}}>
+          <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:100,color:'var(--yellow)',WebkitTextStroke:'5px var(--ink)',textShadow:'0 8px 0 var(--ink)'}}>
+            {playerLabel(players[alive.findIndex(Boolean)])} WINS!
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ==========  GAME 6: MUD DASH  ==========
+   Endless-runner style. Lanes of slippery mud. Jump over puddles, slide under ropes.
+   Left/Right to switch lanes, SPACE to jump. Last 30s. Fewest hits wins.
+*/
+
+window.BB.games.register({
+  id: 'egg',
+  name: 'Egg Pass',
+  blurb: 'Hot-potato egg. Don\'t let it pop in your hand.',
+  icon: '🥚',
+  tint: '#fff5e4',
+  phoneContract: 'tap',
+  phonePrompt: 'TAP WHEN YOU HAVE THE EGG!',
+  component: EggPass,
+});
