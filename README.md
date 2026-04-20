@@ -1,7 +1,7 @@
 # Barn Bash
 
 A 2D farmyard party-game prototype you play on the couch with a laptop
-(the "host") and up to six friends joining from their phones. Eight
+(the "host") and up to six friends joining from their phones. Nine
 mini-games, 2-6 players, round twists, live scoreboard, emoji reactions,
 and a full Jackbox-style auto-advance flow — nobody has to touch the
 host keyboard once the first PLAY is pressed.
@@ -156,15 +156,27 @@ write to localStorage) live in `useEffect`s that watch the state.
 Each mini-game file self-registers at load:
 ```js
 BB.games.register({
-  id: 'pig-sprint', name: 'Pig Sprint',
-  blurb: '…', icon: '🏁', tint: '#ffc93c',
-  phoneContract: 'tap', phonePrompt: 'TAP AS FAST AS YOU CAN!',
-  component: PigSprint,
+  id: 'jump', name: 'Barn Jump',
+  blurb: 'Wait for the signal, then tap first…',
+  icon: '🐑', tint: '#6cc24a',
+  phoneContract: 'tap', phonePrompt: 'TAP WHEN THE BARN TURNS GREEN!',
+  component: BarnJump,
 });
 ```
 `BoardScreen` iterates `BB.games.list()` to render the tile grid, and
 `SceneManager` picks `BB.games.get(state.currentGameId).component`
 when `state.screen === Screen.Minigame`. No central switch.
+
+The 9th mini-game, **Barn Jump**, was added post-refactor as a live
+demo of the registry: one new folder under `src/games/barn-jump/`,
+one `BB.games.register({…})` call, one `<script>` tag appended to
+`index.html`, one new row in `client-controller/controller.jsx`'s
+`BOARD_TILES` — no other file changed. The Board tile, the
+SceneManager routing, the phone vote grid, and the Scoreboard recap
+picked it up automatically.
+
+![Barn Jump Scoreboard — the 9th game, added post-refactor, flows
+end-to-end through the registry](screenshots/barn-jump-scoreboard.png)
 
 ### Multiplayer context
 `BB.mp.MultiplayerProvider` wraps the App tree and exposes the

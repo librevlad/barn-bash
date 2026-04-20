@@ -20,7 +20,8 @@ const CRITTERS = [
   { id: 'frog',    name: 'Ribbit',    color: '#6cc24a', emoji: '🐸' },
 ];
 
-// Must mirror MINIGAMES in src/screens.jsx so phone vote tiles line up.
+// Must mirror the host-side games registry (src/games/**) so phone vote
+// tiles line up. Adding a game means appending one row here too.
 const BOARD_TILES = [
   { id:'tap',    name:'Pig Sprint',      icon:'🏁', tint:'#ffc93c' },
   { id:'hay',    name:'Hay Panic',       icon:'🌾', tint:'#8acb4a' },
@@ -30,6 +31,7 @@ const BOARD_TILES = [
   { id:'gopher', name:'Whack-a-Gopher',  icon:'🔨', tint:'#a36bd1' },
   { id:'tug',    name:'Tug-o-War',       icon:'🪢', tint:'#c18040' },
   { id:'fish',   name:'Fishing Frenzy',  icon:'🎣', tint:'#4aa3e0' },
+  { id:'jump',   name:'Barn Jump',       icon:'🐑', tint:'#6cc24a' },
 ];
 
 function vibrate(ms) {
