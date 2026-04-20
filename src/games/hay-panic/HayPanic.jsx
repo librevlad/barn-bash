@@ -3,7 +3,7 @@
 // HayBale SVG helper that renders each falling tile.
 
 /* ==========  GAME 2: HAY PANIC (dodge falling bales)  ========== */
-function HayPanic({ state, onFinish, onQuit, api }) {
+function HayPanic({ state, onFinish, onQuit, game }) {
   const players = state.players;
   const FIELD_W = 1400, FIELD_H = 540;
   const [started, setStarted] = useState(false);
@@ -46,7 +46,7 @@ function HayPanic({ state, onFinish, onQuit, api }) {
   // both P0 (if phone-assigned) and CPUs (if remoteId present overrides wander).
   const remoteSteer = useRef({});
   useEffect(() => {
-    const off = api.inputs.on('steer', (id, data) => {
+    const off = game.input.onSteer((id, data) => {
       if (!data) return;
       const s = remoteSteer.current[id] || { left:false, right:false };
       if (data.dir === 'left')  s.left  = !!data.down;
@@ -54,7 +54,7 @@ function HayPanic({ state, onFinish, onQuit, api }) {
       remoteSteer.current[id] = s;
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [api]);
+  }, [game]);
 
   useRaf((dt) => {
     if (!started || finished) return;
@@ -159,7 +159,7 @@ function HayPanic({ state, onFinish, onQuit, api }) {
         });
       const earned = Array(players.length).fill(0);
       ranking.forEach((r, rank) => earned[r.i] = [5,3,1,0][rank] ?? 0);
-      setTimeout(() => onFinish(earned), 1000);
+      setTimeout(() => game.game.finish(earned), 1000);
     }
   }, [alive, time]);
 

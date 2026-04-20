@@ -5,7 +5,7 @@
    A "hot potato" — a ticking egg moves around the ring. Each player has a window to tap
    SPACE to shove it to the next player. If time runs out in your hand — egg breaks, you're out.
 */
-function EggPass({ state, onFinish, onQuit, api }) {
+function EggPass({ state, onFinish, onQuit, game }) {
   const players = state.players;
   const N = players.length;
   const [started, setStarted] = useState(false);
@@ -126,7 +126,7 @@ function EggPass({ state, onFinish, onQuit, api }) {
     const earned = Array(N).fill(0);
     const payouts = [5, 3, 2, 1, 0, 0];
     order.forEach((idx, rank) => { if (idx >= 0) earned[idx] = payouts[rank] ?? 0; });
-    setTimeout(() => onFinish(earned), 1400);
+    setTimeout(() => game.game.finish(earned), 1400);
   }, [finished]);
 
   // space = pass (human only)
@@ -145,13 +145,12 @@ function EggPass({ state, onFinish, onQuit, api }) {
   useEffect(() => {
     const cur = players[holder];
     if (!cur) return;
-    api.publishTurn({
-      activeId: cur.remoteId || null,
+    game.turn.set(cur.remoteId || null, {
       activeName: playerLabel(cur),
     });
-  }, [api, holder, players]);
+  }, [game, holder, players]);
   useEffect(() => {
-    const off = api.inputs.on('tap', (id) => {
+    const off = game.input.onTap((id) => {
       if (passing || finished || !started) return;
       const cur = players[holder];
       if (!cur || cur.remoteId !== id) return;
@@ -159,7 +158,7 @@ function EggPass({ state, onFinish, onQuit, api }) {
       passEgg();
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [api, holder, passing, started, finished, alive]);
+  }, [game, holder, passing, started, finished, alive]);
 
   const pct = Math.max(0, timeLeft / baseTime);
 

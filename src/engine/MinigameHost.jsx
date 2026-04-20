@@ -48,8 +48,16 @@
       publishTurn:   mp.broadcastTurn,
     }), [mp.onInput, mp.broadcastScores, mp.broadcastTurn]);
 
+    // Wrap the transport-level api in the semantic domain api. Games
+    // receive only `game`; the raw api stays internal so mini-games can't
+    // reach around the domain layer.
+    const game = useMemo(
+      () => BB.engine.createGameDomainAPI(api, { onFinish, onQuit }),
+      [api, onFinish, onQuit]
+    );
+
     const G = def.component;
-    return <G state={state} onFinish={onFinish} onQuit={onQuit} api={api}/>;
+    return <G state={state} onFinish={onFinish} onQuit={onQuit} game={game}/>;
   }
 
   BB.engine = Object.assign(BB.engine || {}, { MinigameHost });

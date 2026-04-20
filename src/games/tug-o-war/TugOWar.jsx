@@ -5,7 +5,7 @@
    Teams split evenly (red vs blue). You (index 0) join red team. Mash SPACE to pull.
    Rope has a center ribbon. First team to pull ribbon over their side wins.
 */
-function TugOWar({ state, onFinish, onQuit, api }) {
+function TugOWar({ state, onFinish, onQuit, game }) {
   const players = state.players;
   const N = players.length;
   // Balanced team split — you are always on Red. Blue gets ceil(N/2), Red gets floor... wait, balance:
@@ -96,16 +96,16 @@ function TugOWar({ state, onFinish, onQuit, api }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    api.publishScores({ byId, leader, label: 'taps' });
-  }, [api, tapCounts, players]);
+    game.score.update(byId, { leader, label: 'taps' });
+  }, [game, tapCounts, players]);
   useEffect(() => {
-    const off = api.inputs.on('tap', (id) => {
+    const off = game.input.onTap((id) => {
       const pi = players.findIndex(pp => pp.remoteId === id);
       if (pi < 0) return;
       doTapFor(pi);
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [api, started, finished]);
+  }, [game, started, finished]);
 
   useEffect(() => {
     if (!finished) return;
@@ -117,7 +117,7 @@ function TugOWar({ state, onFinish, onQuit, api }) {
     rankedW.forEach((idx, rank) => earned[idx] = rank === 0 ? 5 : 3);
     const rankedL = [...lossTeam].sort((a,b)=> tapCounts[b]-tapCounts[a]);
     rankedL.forEach((idx, rank) => earned[idx] = rank === 0 ? 2 : 0);
-    setTimeout(() => onFinish(earned), 1400);
+    setTimeout(() => game.game.finish(earned), 1400);
   }, [finished]);
 
   // visual: rope offset

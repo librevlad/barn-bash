@@ -2,7 +2,7 @@
 // Swing-and-drop timing: catch fish, avoid boots. FishSVG renders each
 // tile of the reel.
 
-function FishingFrenzy({ state, onFinish, onQuit, api }) {
+function FishingFrenzy({ state, onFinish, onQuit, game }) {
   const players = state.players;
   const N = players.length;
   const GAME_SEC = 30;
@@ -131,15 +131,15 @@ function FishingFrenzy({ state, onFinish, onQuit, api }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    api.publishScores({ byId, leader, label: 'catch' });
-  }, [api, scores, players]);
+    game.score.update(byId, { leader, label: 'catch' });
+  }, [game, scores, players]);
   useEffect(() => {
     players.forEach((p, i) => {
       if (p.remoteId && !phoneHooks.current[p.remoteId]) {
         phoneHooks.current[p.remoteId] = { x: 200 + i * 160, dir: 1 };
       }
     });
-    const off = api.inputs.on('tap', (id) => {
+    const off = game.input.onTap((id) => {
       if (dropping) return;
       const pi = players.findIndex(pp => pp.remoteId === id);
       if (pi < 0) return;
@@ -148,7 +148,7 @@ function FishingFrenzy({ state, onFinish, onQuit, api }) {
       setDropping({ player: pi, x, startT: performance.now() });
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [api, started, finished, dropping, players]);
+  }, [game, started, finished, dropping, players]);
 
   // Swing each phone hook independently
   useRaf((dt) => {
@@ -170,7 +170,7 @@ function FishingFrenzy({ state, onFinish, onQuit, api }) {
     const ranked = scores.map((s,i)=>({i,s})).sort((a,b)=>b.s-a.s);
     const earned = Array(N).fill(0);
     [5,3,1,0,0,0].forEach((v,rank)=>{ if (ranked[rank]) earned[ranked[rank].i] = v; });
-    setTimeout(() => onFinish(earned), 1400);
+    setTimeout(() => game.game.finish(earned), 1400);
   }, [finished]);
 
   const playerHookX = (pi) => {

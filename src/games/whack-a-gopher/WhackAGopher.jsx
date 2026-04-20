@@ -6,7 +6,7 @@
    5 holes; gophers pop up (+1) and bunnies sometimes (−1). You have limited time.
    You = whacker, controls by clicking a hole. CPUs auto-whack nearby pops.
 */
-function WhackAGopher({ state, onFinish, onQuit, api }) {
+function WhackAGopher({ state, onFinish, onQuit, game }) {
   const players = state.players;
   const HOLES = 6;
   const GAME_SEC = 25;
@@ -109,10 +109,10 @@ function WhackAGopher({ state, onFinish, onQuit, api }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    api.publishScores({ byId, leader, label: 'bops' });
-  }, [api, scores, players]);
+    game.score.update(byId, { leader, label: 'bops' });
+  }, [game, scores, players]);
   useEffect(() => {
-    const off = api.inputs.on('holes', (id, data) => {
+    const off = game.input.onHoles((id, data) => {
       if (!data) return;
       const h = data.h;
       if (typeof h !== 'number' || h < 0 || h >= HOLES) return;
@@ -121,13 +121,13 @@ function WhackAGopher({ state, onFinish, onQuit, api }) {
       whackFor(pi, h);
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [api, started, finished]);
+  }, [game, started, finished]);
 
   useEffect(() => {
     if (!finished) return;
     const earned = [...scores.map((s,i)=>({i,s}))].sort((a,b)=>b.s-a.s)
       .reduce((acc, r, rank) => { acc[r.i] = [5,3,1,0][rank] ?? 0; return acc; }, Array(players.length).fill(0));
-    setTimeout(() => onFinish(earned), 1200);
+    setTimeout(() => game.game.finish(earned), 1200);
   }, [finished]);
 
   // key hotkeys 1-6

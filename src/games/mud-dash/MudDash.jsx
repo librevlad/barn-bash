@@ -2,7 +2,7 @@
 // Endless runner through a slippery mud obstacle course. Three lanes,
 // left/right + jump phone contract.
 
-function MudDash({ state, onFinish, onQuit, api }) {
+function MudDash({ state, onFinish, onQuit, game }) {
   const players = state.players;
   const N = players.length;
   const LANES = 3;
@@ -114,15 +114,15 @@ function MudDash({ state, onFinish, onQuit, api }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    api.publishScores({ byId, leader, label: 'meters' });
-  }, [api, pstate, players]);
+    game.score.update(byId, { leader, label: 'meters' });
+  }, [game, pstate, players]);
   useEffect(() => {
     players.forEach((p) => {
       if (p.remoteId && !remoteControls.current[p.remoteId]) {
         remoteControls.current[p.remoteId] = { lane: 1, jumpPending: false };
       }
     });
-    const off = api.inputs.on('steer', (id, data) => {
+    const off = game.input.onSteer((id, data) => {
       if (!data) return;
       const rc = remoteControls.current[id];
       if (!rc) return;
@@ -131,7 +131,7 @@ function MudDash({ state, onFinish, onQuit, api }) {
       if (data.dir === 'jump'  && data.down) rc.jumpPending = true;
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [api, players]);
+  }, [game, players]);
 
   useEffect(() => {
     if (!finished) return;
@@ -139,7 +139,7 @@ function MudDash({ state, onFinish, onQuit, api }) {
     const ranked = pstate.map((p,i)=>({i,h:p.hits,d:p.dist})).sort((a,b)=> a.h - b.h || b.d - a.d);
     const earned = Array(N).fill(0);
     [5,3,1,0,0,0].forEach((v,rank)=>{ if (ranked[rank]) earned[ranked[rank].i] = v; });
-    setTimeout(() => onFinish(earned), 1200);
+    setTimeout(() => game.game.finish(earned), 1200);
   }, [finished]);
 
   const laneX = (l) => 300 + l * 330; // within 1200-wide track

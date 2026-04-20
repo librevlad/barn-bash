@@ -3,7 +3,7 @@
 // down a lane. First past the finish wins +5 coins; podium gets +3, +1, 0.
 
 /* ==========  GAME 1: PIG SPRINT (tap race)  ========== */
-function PigSprint({ state, onFinish, onQuit, api }) {
+function PigSprint({ state, onFinish, onQuit, game }) {
   const players = state.players;
   const FINISH = 1300;
   const [started, setStarted] = useState(false);
@@ -24,10 +24,10 @@ function PigSprint({ state, onFinish, onQuit, api }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    api.publishScores({ byId, leader, label: 'yards' });
-  }, [api, positions, players]);
+    game.score.update(byId, { leader, label: 'yards' });
+  }, [game, positions, players]);
   useEffect(() => {
-    const off = api.inputs.on('tap', (id) => {
+    const off = game.input.onTap((id) => {
       if (!started || finished) return;
       const idx = players.findIndex(p => p.remoteId === id);
       if (idx < 0) return;
@@ -38,7 +38,7 @@ function PigSprint({ state, onFinish, onQuit, api }) {
       });
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [api, started, finished, players]);
+  }, [game, started, finished, players]);
 
   // clock
   const [time, setTime] = useState(0);
@@ -76,7 +76,7 @@ function PigSprint({ state, onFinish, onQuit, api }) {
       finishOrder.forEach((pi, rank) => {
         earned[pi] = [5,3,1,0][rank] ?? 0;
       });
-      setTimeout(() => onFinish(earned), 900);
+      setTimeout(() => game.game.finish(earned), 900);
     }
   }, [finishOrder]);
 

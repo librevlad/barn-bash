@@ -9,7 +9,7 @@
 // (whichever comes first). Demonstrates that a new mini-game is just
 // a folder + a registry call — no switch statement anywhere.
 
-function BarnJump({ state, onFinish, onQuit, api }) {
+function BarnJump({ state, onFinish, onQuit, game }) {
   const players = state.players;
   const [phase, setPhase] = useState('wait'); // wait | go | done
   const [signalAt, setSignalAt] = useState(null);
@@ -49,13 +49,13 @@ function BarnJump({ state, onFinish, onQuit, api }) {
 
   // Phone tap input (any remoteId) — maps to that player's slot.
   useEffect(() => {
-    const off = api.inputs.on('tap', (id) => {
+    const off = game.input.onTap((id) => {
       const idx = players.findIndex(p => p.remoteId === id);
       if (idx < 0) return;
       record(idx);
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [api, phase, signalAt, players]);
+  }, [game, phase, signalAt, players]);
 
   // Keyboard space = local-you (slot 0 only when it's a non-CPU non-phone).
   useEffect(() => {
@@ -85,7 +85,7 @@ function BarnJump({ state, onFinish, onQuit, api }) {
       .sort((a, b) => a.r - b.r);
     const earned = Array(players.length).fill(0);
     valid.forEach((row, rank) => { earned[row.i] = [5, 3, 1, 0][rank] ?? 0; });
-    const t = setTimeout(() => onFinish(earned), 1400);
+    const t = setTimeout(() => game.game.finish(earned), 1400);
     return () => clearTimeout(t);
   }, [phase]);
 

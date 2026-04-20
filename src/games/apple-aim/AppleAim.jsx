@@ -3,7 +3,7 @@
 // locks, then the arrow flies with gravity. Ring hit = 1-5 points.
 
 /* ==========  GAME 3: APPLE AIM (archery)  ========== */
-function AppleAim({ state, onFinish, onQuit, api }) {
+function AppleAim({ state, onFinish, onQuit, game }) {
   const players = state.players;
   const FIELD_W = 1400, FIELD_H = 520;
   const [started, setStarted] = useState(false);
@@ -148,13 +148,13 @@ function AppleAim({ state, onFinish, onQuit, api }) {
 
   // Phone tap from the current shooter advances the phase.
   useEffect(() => {
-    const off = api.inputs.on('tap', (id) => {
+    const off = game.input.onTap((id) => {
       if (!currentPlayer || currentPlayer.remoteId !== id) return;
       if (phase === 'angle') setPhase('power');
       else if (phase === 'power') fire();
     });
     return () => { try { off && off(); } catch (_) {} };
-  }, [api, phase, currentPlayer, started, finished]);
+  }, [game, phase, currentPlayer, started, finished]);
   useEffect(() => {
     const byId = {};
     let leader = 0;
@@ -163,25 +163,24 @@ function AppleAim({ state, onFinish, onQuit, api }) {
       if (p.remoteId) byId[p.remoteId] = s;
       if (s > leader) leader = s;
     });
-    api.publishScores({ byId, leader, label: 'rings' });
-  }, [api, scores, players]);
+    game.score.update(byId, { leader, label: 'rings' });
+  }, [game, scores, players]);
   // Turn-based: tell phones whose turn it is so the non-active shooter
   // doesn't stare at a TAP pad wondering why nothing happens.
   useEffect(() => {
     if (!currentPlayer) return;
-    api.publishTurn({
-      activeId: currentPlayer.remoteId || null,
+    game.turn.set(currentPlayer.remoteId || null, {
       activeName: playerLabel(currentPlayer),
       phase,
     });
-  }, [api, turn, currentPlayer, phase]);
+  }, [game, turn, currentPlayer, phase]);
 
   // finish
   useEffect(() => {
     if (!finished) return;
     const earned = [...scores.map((s,i)=>({i,s}))].sort((a,b)=>b.s-a.s)
       .reduce((acc, r, rank) => { acc[r.i] = [5,3,1,0][rank] ?? 0; return acc; }, Array(players.length).fill(0));
-    setTimeout(() => onFinish(earned), 1500);
+    setTimeout(() => game.game.finish(earned), 1500);
   }, [finished]);
 
   return (
