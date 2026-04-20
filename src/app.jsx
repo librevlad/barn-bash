@@ -73,6 +73,22 @@ function App() {
     dispatch({ type: 'CONTINUE_ROUND', nextModifier: tweaks.twists ? pick(TWISTS) : null });
   };
 
+  // Esc anywhere on the host resets to Title. Useful when the host TV is
+  // stuck mid-minigame or the Jackbox loop loses sync — no need to hunt
+  // for the TWEAKS panel or reload the whole browser tab.
+  useEffect$(() => {
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      // Don't hijack Esc while typing in an input (Tweaks fields etc.)
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (state.screen === window.BB.Screen.Title) return;
+      dispatch({ type: 'GO_TITLE' });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [state.screen]);
+
   // Edit-mode iframe handshake (unchanged behaviour).
   useEffect$(() => {
     const onMsg = (e) => {
@@ -128,7 +144,13 @@ function App() {
           />
         </div>
       </div>
-      <TweaksPanel tweaks={tweaks} setTweaks={updateTweaks} open={tweaksOpen} setOpen={setTweaksOpen}/>
+      <TweaksPanel
+        tweaks={tweaks}
+        setTweaks={updateTweaks}
+        open={tweaksOpen}
+        setOpen={setTweaksOpen}
+        onReset={() => { dispatch({ type: 'GO_TITLE' }); setTweaksOpen(false); }}
+      />
       <window.BB.mp.ReactionOverlay/>
     </>
   );

@@ -1,6 +1,6 @@
 // Tweaks panel + edit mode messaging
 
-function TweaksPanel({ tweaks, setTweaks, open, setOpen }) {
+function TweaksPanel({ tweaks, setTweaks, open, setOpen, onReset }) {
   const palettes = [
     { id:'barnyard', name:'Barnyard', colors:['#ffc93c','#e04b3b','#6cc24a','#4aa3e0'] },
     { id:'sunset',   name:'Sunset',   colors:['#f28b3a','#e04b7a','#a36bd1','#4a3a8e'] },
@@ -66,6 +66,29 @@ function TweaksPanel({ tweaks, setTweaks, open, setOpen }) {
           </div>
         ))}
       </div>
+
+      {onReset && (
+        <>
+          <label style={{marginTop:14}}>Danger zone</label>
+          <button
+            onClick={() => {
+              if (confirm('End this game and go back to Title? Scores + lineup will reset. (Tweaks + connected phones stay.)')) {
+                onReset();
+              }
+            }}
+            style={{
+              width:'100%', background:'var(--red)', color:'#fff',
+              border:'3px solid var(--ink)', borderRadius:12,
+              fontFamily:"'Luckiest Guy'", fontSize:16, padding:'10px',
+              cursor:'pointer', boxShadow:'0 4px 0 var(--ink)', letterSpacing:1
+            }}>
+            ↺ RESET TO TITLE
+          </button>
+          <div style={{fontSize:11,color:'#8a6a4e',fontStyle:'italic',marginTop:6,textAlign:'center'}}>
+            Shortcut: press <b>Esc</b> anywhere on the host.
+          </div>
+        </>
+      )}
     </div>
   );
 }

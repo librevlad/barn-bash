@@ -38,7 +38,20 @@
     const { Screen } = BB;
     switch (action.type) {
       case 'GO_TITLE':
-        return { ...state, screen: Screen.Title };
+        // Full reset: back to Title with a clean board. Keeps nothing but
+        // coins (persistent meta-currency). Used by the MAIN MENU button on
+        // Podium, the RESET TO TITLE button in TWEAKS, and the Esc key.
+        return {
+          ...state,
+          screen: Screen.Title,
+          round: 1,
+          scores: [],
+          players: [],
+          lastEarned: [],
+          lastMinigame: null,
+          currentGameId: null,
+          modifier: null,
+        };
 
       case 'START_GAME': {
         const { players, totalRounds, modifier, difficulty } = action;
@@ -65,6 +78,10 @@
         return { ...state, screen: Screen.Minigame, currentGameId: action.gameId };
 
       case 'FINISH_MINIGAME':
+        // Guard: if the lineup is empty, the round has already been reset
+        // (GO_TITLE). A late-fire setTimeout from an unmounting mini-game
+        // shouldn't drag the host back into the Scoreboard.
+        if (!state.players || state.players.length === 0) return state;
         return {
           ...state,
           screen: Screen.Scoreboard,
