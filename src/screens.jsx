@@ -96,6 +96,47 @@ function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[], onInpu
       <Sparkle x={1300} y={260} size={20} c="#4aa3e0"/>
       <Sparkle x={220} y={260} size={22} c="#6cc24a"/>
 
+      {/* Joined phones gallery — pops in as critters arrive, flips green
+          with a corner checkmark once the player taps LET'S GO. */}
+      {remoteCount > 0 && (
+        <div style={{
+          position:'absolute', left:0, right:0, bottom:220,
+          display:'flex', justifyContent:'center', gap:14, flexWrap:'wrap', padding:'0 60px'
+        }}>
+          {joined.map(p => {
+            const char = CHARACTERS.find(c => c.id === p.character) || CHARACTERS[0];
+            const isReady = readyIds.has(p.id);
+            return (
+              <div key={p.id} className="pop-in" style={{
+                background: isReady ? 'var(--green)' : '#fff',
+                border:'4px solid var(--ink)', borderRadius:16,
+                boxShadow:'0 6px 0 var(--ink)',
+                padding:'10px 14px', display:'flex', flexDirection:'column',
+                alignItems:'center', gap:4, minWidth:110, position:'relative'
+              }}>
+                <Avatar char={char} size={64} bob={!isReady}/>
+                <div style={{
+                  fontFamily:"'Luckiest Guy'", fontSize:16,
+                  color: isReady ? '#fff' : 'var(--ink)', letterSpacing:.5
+                }}>
+                  {(p.name || char.name).toUpperCase()}
+                </div>
+                {isReady && (
+                  <div style={{
+                    position:'absolute', top:-10, right:-10,
+                    background:'var(--yellow)', border:'3px solid var(--ink)',
+                    borderRadius:'50%', width:30, height:30,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)',
+                    boxShadow:'0 3px 0 var(--ink)'
+                  }}>✓</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Button row on the pedestal */}
       <div style={{position:'absolute', left:0, right:0, bottom:70, textAlign:'center'}}>
         {remoteCount > 0 && (
