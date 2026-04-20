@@ -137,6 +137,20 @@ function CharacterSelect({ onBack, onStart, playerCount=4, remotePlayers=null })
 
   const allReady = slots.every(s => s.ready);
   const usedIds = slots.map(s => s.char.id);
+  const hasPhones = Array.isArray(remotePlayers) && remotePlayers.some(p => p.remoteId);
+
+  // Auto-start when every phone-owned slot is in (phones auto-ready their
+  // slot on entry, so in phone mode `allReady` is effectively "rooms full").
+  // 1200ms settle gives the roster a beat to register visually before the
+  // screen flips. Manual START click still works as a fallback.
+  const pickedRef = useRef(false);
+  useEffect(() => {
+    if (pickedRef.current) return;
+    if (hasPhones && allReady) {
+      pickedRef.current = true;
+      setTimeout(onStart, 1200);
+    }
+  }, [hasPhones, allReady, onStart]);
 
   const cycle = (idx, dir) => {
     setSlots(prev => {
@@ -208,10 +222,22 @@ function CharacterSelect({ onBack, onStart, playerCount=4, remotePlayers=null })
       </div>
 
       {/* Start button */}
-      <div style={{position:'absolute', bottom:40, left:0, right:0, display:'flex', justifyContent:'center', gap:20}}>
-        <Btn variant="red" size="xl" onClick={onStart} disabled={!allReady} className={allReady ? 'pulse':''}>
-          {allReady ? 'START THE BEDLAM! ▶' : 'WAITING FOR PLAYERS...'}
-        </Btn>
+      <div style={{position:'absolute', bottom:40, left:0, right:0, textAlign:'center'}}>
+        {hasPhones && allReady && (
+          <div style={{
+            marginBottom:10, display:'inline-block', background:'rgba(0,0,0,.45)',
+            border:'3px solid #fff', borderRadius:14, padding:'6px 18px',
+            fontFamily:"'Luckiest Guy'", fontSize:18, color:'#fff', letterSpacing:1.5,
+            boxShadow:'0 4px 0 rgba(0,0,0,.3)'
+          }}>
+            PHONES READY — STARTING...
+          </div>
+        )}
+        <div style={{display:'flex', justifyContent:'center', gap:20}}>
+          <Btn variant="red" size="xl" onClick={onStart} disabled={!allReady} className={allReady ? 'pulse':''}>
+            {allReady ? 'START THE BEDLAM! ▶' : 'WAITING FOR PLAYERS...'}
+          </Btn>
+        </div>
       </div>
     </div>
   );
@@ -260,10 +286,11 @@ function CharSlot({ slot, idx, cycle, toggleReady, toggleCPU }) {
         {showAsCritter ? `AS ${slot.char.name.toUpperCase()}` : `"${slot.char.tag}"`}
       </div>
 
-      <button onClick={()=>!slot.isCPU && toggleReady(idx)} disabled={slot.isCPU} style={{
+      <button onClick={()=>!slot.isCPU && !slot.displayName && toggleReady(idx)} disabled={slot.isCPU || !!slot.displayName} style={{
         width:'100%', background: slot.ready ? 'var(--green)' : 'var(--cream-2)',
         border:'3px solid var(--ink)', borderRadius:12,
-        fontFamily:"'Luckiest Guy'", fontSize:18, padding:'6px', cursor: slot.isCPU ? 'default':'pointer',
+        fontFamily:"'Luckiest Guy'", fontSize:18, padding:'6px',
+        cursor: (slot.isCPU || slot.displayName) ? 'default' : 'pointer',
         color: slot.ready ? '#fff' : 'var(--ink)',
         boxShadow:'0 4px 0 var(--ink)'
       }}>
