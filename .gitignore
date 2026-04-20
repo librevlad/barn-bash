@@ -2,9 +2,14 @@ node_modules/
 .claude/
 .playwright-mcp/
 .gstack/
+screenshots-review/
 
-# Local dev screenshots from walks and audits
-stage*.png
-audit-*.png
-walk-*.png
-multi-*.png
+# Any stray image / bundle / log left at repo root during local dev.
+# README-grade captures live under screenshots/ and are tracked.
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
+/*.log
+/*.tmp
+/barn-bash-code.txt
