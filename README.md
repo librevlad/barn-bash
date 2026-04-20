@@ -65,39 +65,119 @@ host is waiting on phone confirmation, and per-minigame input pads
 
 ## Layout
 
+The host-side code is organised by domain. Nothing imports anything
+(Babel-in-browser, no bundler), so every file attaches its exports to a
+`window.BB` namespace or globals, and `index.html` loads the scripts in
+dependency order. Adding a mini-game is a three-step recipe: create
+`src/games/<id>/<Name>.jsx`, call `window.BB.games.register({...})` at
+the bottom, drop a `<script>` tag into `index.html`. The SceneManager
++ Board tiles auto-pick it up; no switch statement anywhere needs to
+change.
+
 ```
-index.html                — root HTML, loads React + Babel + src/*.jsx
-src/app.jsx               — top-level App, screen state, stage scaling,
-                            palette tinting, tweaks panel host
-src/characters.jsx        — SVG character art (Pig / Fox / Bear / …)
-src/common.jsx            — shared widgets (Clouds, Coin, Confetti,
-                            Sparkle, BackgroundPainting, …)
-src/screens.jsx           — TitleScreen / CharacterSelect / BoardScreen /
-                            Scoreboard / Podium
-src/minigames.jsx         — Pig Sprint, Hay Panic
-src/minigames2.jsx        — Apple Aim, Whack-a-Gopher
-src/minigames3.jsx        — Egg Pass, Mud Dash
-src/minigames4.jsx        — Tug-o-War, Fishing Frenzy
-src/multiplayer.jsx       — WebSocket host hook + QR overlay
-src/tweaks.jsx            — in-page tweaks panel
-client-controller/        — phone controller (index.html + controller.jsx)
-server.js                 — static file server + WebSocket relay
-assets/bg.png             — painted barnyard scene (title + subtle
-                            in-game watermark)
+src/
+  app.jsx                     — <200-line shell: tweaks state + reducer
+                                + multiplayer bridge + <SceneManager/>
+  characters.jsx              — SVG character art (Pig / Fox / Bear / …)
+  multiplayer.jsx             — BB.mp: MultiplayerProvider + Context +
+                                WebSocket host hook + QR overlay +
+                                ReactionOverlay
+  tweaks.jsx                  — in-page TWEAKS panel (difficulty, total
+                                players, rounds, palette, twists)
+
+  core/                       — pure game logic, no React
+    screens.js                  BB.Screen enum (Title / CharacterSelect /
+                                Board / Minigame / Scoreboard / Podium)
+    gameReducer.js              BB.core.gameReducer + initialGameState;
+                                all screen transitions live here
+    lineup.js                   buildLineup(remote, tweaks) → players[]
+    math.js                     randBetween, clamp, pick
+    players.js                  playerLabel (phone-drop-aware)
+    score.js                    rankByValue + buildRoundEndPayload +
+                                buildGameOverPayload
+
+  engine/
+    SceneManager.jsx          — single switch on state.screen that
+                                routes to screens/* and picks the
+                                minigame component via the registry
+
+  games/                      — one folder per mini-game, self-registering
+    registry.js                 BB.games.{register,get,list}
+    pig-sprint/PigSprint.jsx
+    hay-panic/HayPanic.jsx      (+ HayBale svg helper)
+    apple-aim/AppleAim.jsx
+    whack-a-gopher/WhackAGopher.jsx  (+ GopherFace, BunnyFace)
+    egg-pass/EggPass.jsx
+    mud-dash/MudDash.jsx
+    tug-o-war/TugOWar.jsx
+    fishing-frenzy/FishingFrenzy.jsx (+ FishSVG)
+
+  screens/                    — one host-TV view per file
+    TitleScreen.jsx, CharacterSelect.jsx, BoardScreen.jsx,
+    Scoreboard.jsx, Podium.jsx
+
+  ui/
+    widgets.jsx               — Clouds, Coin, Confetti, Sparkle,
+                                WoodSign, Card, TitleWord, Btn,
+                                SceneBG, Grass
+    timing.jsx                — React hook destructure + useRaf +
+                                useInterval
+    Countdown.jsx             — shared 3-2-1 GO overlay
+
+  config/
+    twists.js                 — TWISTS array of round modifiers
+
+client-controller/            — phone controller (index.html +
+                                controller.jsx, one file, no build)
+server.js                     — static file server + WebSocket relay
+assets/bg.png                 — painted barnyard backdrop
 ```
 
-## Multiplayer architecture
+## Architecture
 
-- `server.js` is a thin broker: it serves the static files and relays
-  messages between the single host connection and N phone controllers.
-  Controllers get a stable integer `playerId` that survives reloads via
-  a `clientId` saved in the controller's `localStorage`.
-- The host (`/`) owns authoritative game state and broadcasts screen
-  transitions, mini-game start/end, live scores, turn updates, round
-  ends, and game-over finale payloads back to every connected phone.
-- Phones (`/controller/`) render a per-minigame input contract driven
-  by those broadcasts — tap pad, three-button steer pad, 3×2 holes
-  grid, board-vote grid, ready-ups, reactions, character swap.
+### Server
+`server.js` is a thin broker. It serves static files and relays
+messages between the single host connection and N phone controllers.
+Controllers get a stable integer `playerId` that survives reloads via
+a `clientId` saved in their `localStorage`; slots flagged isCPU when
+a phone drops flip back the moment it reconnects.
+
+### Host state
+A single `useReducer(gameReducer)` in `app.jsx` owns the `GameState`
+(`screen`, `round`, `totalRounds`, `scores`, `players`, `coins`,
+`modifier`, `difficulty`, `lastEarned`, `lastMinigame`, `currentGameId`).
+Every transition is an action — `START_GAME`, `CONFIRM_CHARACTERS`,
+`PICK_MINIGAME`, `FINISH_MINIGAME`, `QUIT_MINIGAME`, `CONTINUE_ROUND`,
+`GO_TITLE`, `PHONE_PRESENCE_SYNC`. Side effects (broadcast to phones,
+write to localStorage) live in `useEffect`s that watch the state.
+
+### Mini-game registry
+`src/games/registry.js` exposes `BB.games.{register, get, list}`.
+Each mini-game file self-registers at load:
+```js
+BB.games.register({
+  id: 'pig-sprint', name: 'Pig Sprint',
+  blurb: '…', icon: '🏁', tint: '#ffc93c',
+  phoneContract: 'tap', phonePrompt: 'TAP AS FAST AS YOU CAN!',
+  component: PigSprint,
+});
+```
+`BoardScreen` iterates `BB.games.list()` to render the tile grid, and
+`SceneManager` picks `BB.games.get(state.currentGameId).component`
+when `state.screen === Screen.Minigame`. No central switch.
+
+### Multiplayer context
+`BB.mp.MultiplayerProvider` wraps the App tree and exposes the
+WebSocket API (`remotePlayers`, `broadcast*`, `onInput`, `send`) via
+React Context. Consumers call `BB.mp.useMultiplayer()` — no more
+`window.__BarnBashMPRT` globals, no prop drilling.
+
+### Phone controller
+`/controller/` renders per-minigame input contracts driven by host
+broadcasts — tap pad, three-button steer pad, 3×2 holes grid,
+board-vote grid, ready-ups, reactions, critter swap. Protocol (`join`,
+`input`, `screen`, `minigameStart/End`, `scoreUpdate`, `turnUpdate`,
+`roundEnd`, `gameOver`, `ready`) is unchanged through the refactor.
 
 ## History
 
