@@ -94,10 +94,12 @@ function BoardScreen({ state, onPick, onTweaks }) {
         </div>
       )}
 
-      {/* Minigame cards grid — 4×2 keeps all eight tiles visible on a
-          1600×900 viewport without forcing a scroll. */}
+      {/* Minigame cards grid — 5 columns keeps 9-10 tiles (3 rows max) on a
+          1600×900 viewport without letting the last row overflow the stage.
+          Was 4×2 fixed; breaking the 4-col assumption was cheaper than
+          rewriting every tile's minHeight. */}
       <div style={{position:'absolute', top: 320, left:0, right:0, display:'grid',
-        gridTemplateColumns:'repeat(4, 300px)', gap:22, justifyContent:'center'}}>
+        gridTemplateColumns:'repeat(5, 280px)', gap:22, justifyContent:'center'}}>
         {games.map(mg => (
           <MiniCard key={mg.id} mg={mg} onPick={() => onPick(mg.id)}
                     voters={(votes[mg.id] || []).map(pi => players[pi]).filter(Boolean)}/>
