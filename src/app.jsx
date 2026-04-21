@@ -73,9 +73,17 @@ function App() {
     // Party Mode entry — no totalRounds cap; reducer flips mode flag and
     // the post-scoreboard loop goes straight to the next AI-picked game
     // instead of showing the Board.
+    let partyPlayers = window.BB.core.buildLineup(mp.remotePlayers, tweaks);
+    // Solo Party Mode (no phones connected) = all-CPU demo. Turn-based
+    // minigames (Apple Aim, Tug-o-War) need an explicit P1 tap to advance;
+    // with nobody on a phone, the session would hang waiting on the "you"
+    // slot. Flipping that slot to CPU unblocks solo QA-gate runs AND lets
+    // the host preview Party Mode on the TV before anyone scans the QR.
+    const hasPhones = (mp.remotePlayers || []).length > 0;
+    if (!hasPhones) partyPlayers = partyPlayers.map(p => ({ ...p, isCPU: true }));
     dispatch({
       type: 'START_PARTY',
-      players: window.BB.core.buildLineup(mp.remotePlayers, tweaks),
+      players: partyPlayers,
       modifier: tweaks.twists ? pick(TWISTS) : null,
       difficulty: tweaks.difficulty,
     });
