@@ -30,7 +30,9 @@
         total: (state.scores[i] || 0) + (state.lastEarned[i] || 0),
       };
     });
-    return { minigame: state.lastMinigame || 'Mini-game', byId };
+    // mode lets the phone show the party-specific "ХВАТИТ" exit button on
+    // the RoundSummary screen. Classic rounds hide it.
+    return { minigame: state.lastMinigame || 'Mini-game', mode: state.mode || 'classic', byId };
   }
 
   // Payload broadcast to phones on Podium transition: final rank + total

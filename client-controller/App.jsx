@@ -17,7 +17,7 @@ function App() {
   const [minigame, setMinigame] = useState(null);
   const [score, setScore] = useState(null); // { mine, leader, label }
   const [turn, setTurn] = useState(null);   // { activeId, activeName, phase }
-  const [summary, setSummary] = useState(null); // { minigame, rank, earned, total }
+  const [summary, setSummary] = useState(null); // { minigame, rank, earned, total, mode }
   const [finale, setFinale] = useState(null);   // { rank, total }
   const [swapOpen, setSwapOpen] = useState(false);
   const wsRef = useRef(null);
@@ -75,7 +75,10 @@ function App() {
         else if (msg.type === 'roundEnd') {
           const me = msg.byId && playerIdRef.current != null ? msg.byId[playerIdRef.current] : null;
           if (me) {
-            setSummary({ minigame: msg.minigame, rank: me.rank, earned: me.earned, total: me.total });
+            setSummary({
+              minigame: msg.minigame, rank: me.rank, earned: me.earned, total: me.total,
+              mode: msg.mode || 'classic',
+            });
             // Buzz based on placing: winner double, podium single, also-ran tap.
             if (me.rank === 1) vibrate([80, 40, 80, 40, 120]);
             else if (me.rank <= 3) vibrate([60, 40, 60]);

@@ -9,12 +9,20 @@ const RANK_TAGS = { 1: { label:'#1 · ПОБЕДА!', color:'var(--yellow)', emo
 function RoundSummary({ summary, send }) {
   const tag = RANK_TAGS[summary.rank] || { label:`#${summary.rank}`, color:'#888', emoji:'🎯' };
   const gotCoins = summary.earned > 0;
+  const isParty = summary.mode === 'party';
   const [ready, setReady] = useState(false);
+  const [exited, setExited] = useState(false);
   const onReady = () => {
     if (ready) return;
     setReady(true);
     vibrate(25);
     send({ type: 'input', kind: 'ready' });
+  };
+  const onExitParty = () => {
+    if (exited) return;
+    setExited(true);
+    vibrate([40, 30, 80]);
+    send({ type: 'input', kind: 'partyExit' });
   };
   return (
     <div className="card" style={{
@@ -44,8 +52,16 @@ function RoundSummary({ summary, send }) {
               disabled={ready}
               onClick={onReady}
               style={{marginTop:4, maxWidth:280}}>
-        {ready ? '✓ ГОТОВ' : 'ТАП КОГДА ГОТОВ'}
+        {ready ? '✓ ГОТОВ' : (isParty ? 'ДАЛЬШЕ' : 'ТАП КОГДА ГОТОВ')}
       </button>
+      {isParty && (
+        <button className="btn red sm"
+                disabled={exited}
+                onClick={onExitParty}
+                style={{marginTop:8, maxWidth:280, opacity: exited ? 0.7 : 1}}>
+          {exited ? '✓ ВЫХОД' : 'ХВАТИТ, ВСЕ ЛОПНУЛИ'}
+        </button>
+      )}
     </div>
   );
 }

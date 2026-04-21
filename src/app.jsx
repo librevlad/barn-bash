@@ -113,6 +113,20 @@ function App() {
     dispatch({ type: 'CONFIRM_CHARACTERS' });
   };
 
+  // Global party-exit listener: whenever we're in a party session any
+  // phone tapping "ХВАТИТ" on their RoundSummary (or the host pressing
+  // the TV-side button) ends the session and jumps to Podium. Lives at
+  // the app level so a late tap after Scoreboard has unmounted still
+  // lands, not just when the overlay is on-screen.
+  useEffect$(() => {
+    if (state.mode !== 'party') return;
+    if (!mp.onInput) return;
+    const off = mp.onInput(({ kind }) => {
+      if (kind === 'partyExit') dispatch({ type: 'END_PARTY' });
+    });
+    return () => { try { off && off(); } catch (_) {} };
+  }, [state.mode, mp.onInput]);
+
   // Esc anywhere on the host resets to Title. Useful when the host TV is
   // stuck mid-minigame or the Jackbox loop loses sync — no need to hunt
   // for the TWEAKS panel or reload the whole browser tab.
