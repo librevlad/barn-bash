@@ -55,6 +55,32 @@ function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameN
       setTimeout(onContinue, 450);
     }
   }, [readyCount, remoteCount, onContinue]);
+  // Party-mode transient overlay: the AI moderator keeps the session
+  // flowing on its own. If nobody taps a phone or the host button within
+  // ~5s, auto-advance to the next pick so the Scoreboard doesn't feel
+  // terminal like the classic flow. Phone ready-up still short-circuits.
+  const PARTY_AUTO_MS = 5000;
+  const [partyRemaining, setPartyRemaining] = useState(PARTY_AUTO_MS);
+  useEffect(() => {
+    if (mode !== 'party') return;
+    let remaining = PARTY_AUTO_MS;
+    setPartyRemaining(remaining);
+    const iv = setInterval(() => {
+      remaining -= 100;
+      if (remaining <= 0) {
+        clearInterval(iv);
+        setPartyRemaining(0);
+        if (!pickedRef.current) {
+          pickedRef.current = true;
+          onContinue();
+        }
+      } else {
+        setPartyRemaining(remaining);
+      }
+    }, 100);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
   return (
     <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #1a4b7a 0%, #2d6fa0 50%, #4aa3e0 100%)'}}>
       {/* scanlines */}
@@ -128,14 +154,25 @@ function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameN
             {readyCount}/{remoteCount} ГОТОВЫ
           </div>
         )}
+        {mode === 'party' && (
+          <div style={{
+            marginBottom:10, display:'inline-block', background:'rgba(0,0,0,.35)',
+            border:'3px solid var(--cream-2)', borderRadius:14, padding:'6px 16px',
+            fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--cream-2)', letterSpacing:1
+          }}>
+            {partyRemaining > 0
+              ? `СЛЕДУЮЩАЯ ИГРА ЧЕРЕЗ ${Math.ceil(partyRemaining/1000)}...`
+              : 'ПОЕХАЛИ...'}
+          </div>
+        )}
         <div style={{display:'flex', gap:16, justifyContent:'center', alignItems:'center', flexWrap:'wrap'}}>
-          <Btn variant="green" size="xl" onClick={onContinue} className="pulse">
+          <Btn variant="green" size="xl" onClick={() => { pickedRef.current = true; onContinue(); }} className="pulse">
             {mode === 'party'
               ? 'ДАЛЬШЕ ▶'
               : (round >= totalRounds ? 'ФИНАЛЬНЫЙ ПОДИУМ! 🏆' : `РАУНД ${round+1} ▶`)}
           </Btn>
           {mode === 'party' && onEndParty && (
-            <Btn variant="red" size="sm" onClick={onEndParty}>
+            <Btn variant="red" size="sm" onClick={() => { pickedRef.current = true; onEndParty(); }}>
               ХВАТИТ — ВСЕ УЖЕ ЛОПНУЛИ
             </Btn>
           )}
