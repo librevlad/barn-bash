@@ -2,7 +2,10 @@
 // gallery, ready-up ribbon, and PLAY / CUSTOMIZE / SETTINGS row.
 
 /* ==========  TITLE  ========== */
-function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[] }) {
+// onPlay = primary CTA (Party Mode post-pivot — the MVP flow).
+// onClassicPlay = secondary button for the pre-pivot 5-round classic loop;
+// kept while we prove Party Mode on live playtests.
+function TitleScreen({ onPlay, onClassicPlay, onCustomize, onSettings, remotePlayers=[] }) {
   const { onInput } = window.BB.mp.useMultiplayer();
   // Ready-up: phones tap LET'S GO on their lobby once they're in. When every
   // named, critter-picked phone has confirmed, auto-invoke onPlay so the
@@ -151,12 +154,17 @@ function TitleScreen({ onPlay, onCustomize, onSettings, remotePlayers=[] }) {
             {readyCount}/{remoteCount} ГОТОВЫ{readyCount >= remoteCount ? ' — ПОЕХАЛИ...' : ''}
           </div>
         )}
-        <div style={{display:'flex', justifyContent:'center', gap:28}}>
-          <Btn variant="yellow" size="xl" onClick={onPlay} icon={
+        <div style={{display:'flex', justifyContent:'center', gap:24, alignItems:'center', flexWrap:'wrap'}}>
+          <Btn variant="red" size="xl" onClick={onPlay} icon={
             <svg width="36" height="36" viewBox="0 0 40 40" style={{marginRight:8}}>
               <polygon points="10,6 34,20 10,34" fill="#fff" stroke="#2a1a10" strokeWidth="3" strokeLinejoin="round"/>
             </svg>
-          }>ИГРАТЬ</Btn>
+          }>ВЕЧЕРИНКА</Btn>
+          {onClassicPlay && (
+            <Btn variant="yellow" size="sm" onClick={onClassicPlay}>
+              5 РАУНДОВ
+            </Btn>
+          )}
           <Btn variant="green" size="xl" onClick={onCustomize} icon={
             <svg width="32" height="32" viewBox="0 0 40 40" style={{marginRight:8}}>
               <circle cx="20" cy="20" r="14" fill="#fff" stroke="#2a1a10" strokeWidth="3"/>

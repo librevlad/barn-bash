@@ -104,6 +104,150 @@ test('CONTINUE_ROUND on last round routes to Podium, no round++', () => {
   assert.deepStrictEqual(next.scores, [13, 6]);
 });
 
+test('CONFIRM_CHARACTERS in party mode jumps straight to first Minigame', () => {
+  const state = {
+    screen: Screen.CharacterSelect, mode: 'party',
+    players: [{ id: 1 }], currentGameId: null,
+  };
+  const next = core.gameReducer(state, {
+    type: 'CONFIRM_CHARACTERS', firstGameId: 'pig-sprint',
+  });
+  assert.strictEqual(next.screen, Screen.Minigame);
+  assert.strictEqual(next.currentGameId, 'pig-sprint');
+});
+
+test('CONFIRM_CHARACTERS classic mode still routes to Board', () => {
+  const state = { screen: Screen.CharacterSelect, mode: 'classic' };
+  const next = core.gameReducer(state, { type: 'CONFIRM_CHARACTERS' });
+  assert.strictEqual(next.screen, Screen.Board);
+});
+
+test('START_PARTY sets mode=party and totalRounds=null', () => {
+  const initial = {
+    screen: Screen.Title, round: 1, totalRounds: 5,
+    scores: [], players: [], playedGameIds: [], coins: 1240,
+    mode: 'classic', lastEarned: [], lastMinigame: null, currentGameId: null,
+    modifier: null, difficulty: 'medium',
+  };
+  const next = core.gameReducer(initial, {
+    type: 'START_PARTY',
+    players: [{ id: 1 }, { id: 2 }],
+    difficulty: 'medium',
+    modifier: null,
+  });
+  assert.strictEqual(next.mode, 'party');
+  assert.strictEqual(next.totalRounds, null);
+  assert.strictEqual(next.screen, Screen.CharacterSelect);
+  assert.deepStrictEqual(next.playedGameIds, []);
+  assert.deepStrictEqual(next.scores, [0, 0]);
+  assert.strictEqual(next.round, 1);
+});
+
+test('FINISH_MINIGAME appends currentGameId to playedGameIds in party mode', () => {
+  const state = {
+    screen: Screen.Minigame, mode: 'party',
+    players: [{ id: 1 }, { id: 2 }],
+    scores: [0, 0], lastEarned: [], lastMinigame: null,
+    currentGameId: 'pig-sprint', playedGameIds: [],
+  };
+  const next = core.gameReducer(state, {
+    type: 'FINISH_MINIGAME', earned: [3, 1], name: 'Pig Sprint',
+  });
+  assert.strictEqual(next.screen, Screen.Scoreboard);
+  assert.deepStrictEqual(next.playedGameIds, ['pig-sprint']);
+  assert.strictEqual(next.currentGameId, null);
+});
+
+test('FINISH_MINIGAME does NOT touch playedGameIds in classic mode', () => {
+  const state = {
+    screen: Screen.Minigame, mode: 'classic',
+    players: [{ id: 1 }],
+    scores: [0], lastEarned: [], lastMinigame: null,
+    currentGameId: 'pig-sprint', playedGameIds: [],
+  };
+  const next = core.gameReducer(state, {
+    type: 'FINISH_MINIGAME', earned: [3], name: 'Pig Sprint',
+  });
+  assert.deepStrictEqual(next.playedGameIds, []);
+});
+
+test('CONTINUE_ROUND in party mode routes to Minigame with nextGameId, not Board', () => {
+  const state = {
+    screen: Screen.Scoreboard, mode: 'party',
+    round: 2, totalRounds: null,
+    players: [{ id: 1 }, { id: 2 }],
+    scores: [5, 3], lastEarned: [2, 0],
+    coins: 50, playedGameIds: ['pig-sprint'],
+  };
+  const next = core.gameReducer(state, {
+    type: 'CONTINUE_ROUND', nextGameId: 'hay-panic',
+  });
+  assert.strictEqual(next.screen, Screen.Minigame);
+  assert.strictEqual(next.currentGameId, 'hay-panic');
+  assert.deepStrictEqual(next.scores, [7, 3]);
+  // Party mode doesn't terminate on round count; round advances but isn't capped
+  assert.strictEqual(next.round, 3);
+  // Fresh minigame → lastEarned reset so next Scoreboard doesn't double-count
+  assert.deepStrictEqual(next.lastEarned, [0, 0]);
+});
+
+test('CONTINUE_ROUND in party mode without nextGameId is a no-op on screen', () => {
+  // Defensive: if handler forgets to supply nextGameId, we should not blank
+  // out currentGameId and crash SceneManager. Stay on Scoreboard.
+  const state = {
+    screen: Screen.Scoreboard, mode: 'party',
+    round: 2, totalRounds: null,
+    scores: [5, 3], lastEarned: [2, 0],
+    coins: 0, playedGameIds: [],
+  };
+  const next = core.gameReducer(state, { type: 'CONTINUE_ROUND' });
+  assert.strictEqual(next.screen, Screen.Scoreboard);
+});
+
+test('END_PARTY routes to Podium with lastEarned folded into scores', () => {
+  const state = {
+    screen: Screen.Scoreboard, mode: 'party',
+    scores: [10, 5], lastEarned: [3, 0],
+    coins: 0, playedGameIds: ['pig-sprint', 'hay-panic'],
+  };
+  const next = core.gameReducer(state, { type: 'END_PARTY' });
+  assert.strictEqual(next.screen, Screen.Podium);
+  assert.deepStrictEqual(next.scores, [13, 5]);
+});
+
+test('END_PARTY from Minigame (mid-round exit) bails straight to Podium', () => {
+  const state = {
+    screen: Screen.Minigame, mode: 'party',
+    scores: [10, 5], lastEarned: [],
+    currentGameId: 'barn-jump', playedGameIds: ['pig-sprint'],
+  };
+  const next = core.gameReducer(state, { type: 'END_PARTY' });
+  assert.strictEqual(next.screen, Screen.Podium);
+  assert.strictEqual(next.currentGameId, null);
+  // No lastEarned to fold in; totals unchanged
+  assert.deepStrictEqual(next.scores, [10, 5]);
+});
+
+test('GO_TITLE resets party-specific fields (mode, playedGameIds)', () => {
+  const party = {
+    screen: Screen.Minigame, mode: 'party',
+    round: 3, scores: [5, 3], players: [{id:1}],
+    playedGameIds: ['pig-sprint', 'hay-panic'],
+    lastEarned: [], lastMinigame: null, currentGameId: 'barn-jump',
+    coins: 200, modifier: null, difficulty: 'medium', totalRounds: null,
+  };
+  const next = core.gameReducer(party, { type: 'GO_TITLE' });
+  assert.strictEqual(next.mode, 'classic');
+  assert.deepStrictEqual(next.playedGameIds, []);
+  assert.strictEqual(next.screen, Screen.Title);
+});
+
+test('initialGameState seeds mode=classic and playedGameIds=[]', () => {
+  const s = core.initialGameState({ totalRounds: 5, difficulty: 'medium' });
+  assert.strictEqual(s.mode, 'classic');
+  assert.deepStrictEqual(s.playedGameIds, []);
+});
+
 test('PHONE_PRESENCE_SYNC flips isCPU on phone-owned slots', () => {
   const state = {
     players: [

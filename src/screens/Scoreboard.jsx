@@ -26,7 +26,10 @@ function CrownSVG({ size = 64 }) {
 }
 
 /* ==========  SCOREBOARD  ========== */
-function Scoreboard({ players, scores, earned, onContinue, minigameName, round, totalRounds }) {
+// mode = 'classic' | 'party'. In party mode the scoreboard is transient
+// (no final-round finale label, no fixed "РАУНД N / N"); a dedicated
+// "Хватит" control exits the session to Podium — wired in P3.
+function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameName, round, totalRounds, mode='classic' }) {
   const ranked = [...players].map((p,i)=>({p,i,s:scores[i],e:earned[i]})).sort((a,b)=>b.e - a.e);
   const leaderboard = [...players].map((p,i)=>({p,i,total: scores[i] + earned[i]})).sort((a,b)=>b.total - a.total);
 
@@ -64,7 +67,9 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
 
       <div style={{position:'absolute',top:40,left:0,right:0,textAlign:'center'}}>
         <div className="plank" style={{display:'inline-block', padding:'14px 40px', borderRadius:24, whiteSpace:'nowrap'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:32}}>РАУНД {round} · {minigameName.toUpperCase()}</span>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:32}}>
+            {mode === 'party' ? `ИГРА ${round} · ${minigameName.toUpperCase()}` : `РАУНД ${round} · ${minigameName.toUpperCase()}`}
+          </span>
         </div>
         <div style={{marginTop:10,fontFamily:"'Luckiest Guy'",fontSize:18,color:'var(--cream-2)',letterSpacing:2}}>РЕЗУЛЬТАТЫ</div>
       </div>
@@ -123,10 +128,17 @@ function Scoreboard({ players, scores, earned, onContinue, minigameName, round, 
             {readyCount}/{remoteCount} ГОТОВЫ
           </div>
         )}
-        <div>
+        <div style={{display:'flex', gap:16, justifyContent:'center', alignItems:'center', flexWrap:'wrap'}}>
           <Btn variant="green" size="xl" onClick={onContinue} className="pulse">
-            {round >= totalRounds ? 'ФИНАЛЬНЫЙ ПОДИУМ! 🏆' : `РАУНД ${round+1} ▶`}
+            {mode === 'party'
+              ? 'ДАЛЬШЕ ▶'
+              : (round >= totalRounds ? 'ФИНАЛЬНЫЙ ПОДИУМ! 🏆' : `РАУНД ${round+1} ▶`)}
           </Btn>
+          {mode === 'party' && onEndParty && (
+            <Btn variant="red" size="sm" onClick={onEndParty}>
+              ХВАТИТ — ВСЕ УЖЕ ЛОПНУЛИ
+            </Btn>
+          )}
         </div>
       </div>
     </div>

@@ -13,7 +13,8 @@
         return (
           <>
             <TitleScreen
-              onPlay={handlers.onStartGame}
+              onPlay={handlers.onStartParty}
+              onClassicPlay={handlers.onStartGame}
               onCustomize={handlers.onStartGame}
               onSettings={() => onTweaks(true)}
               remotePlayers={mp.remotePlayers}
@@ -26,7 +27,7 @@
         return (
           <CharacterSelect
             onBack={() => dispatch({ type: 'GO_TITLE' })}
-            onStart={() => dispatch({ type: 'CONFIRM_CHARACTERS' })}
+            onStart={handlers.onConfirmCharacters}
             playerCount={tweaks.playerCount}
             remotePlayers={state.players}
           />
@@ -65,7 +66,9 @@
             minigameName={state.lastMinigame || 'Mini-game'}
             round={state.round}
             totalRounds={state.totalRounds}
+            mode={state.mode}
             onContinue={handlers.onContinueRound}
+            onEndParty={handlers.onEndParty}
           />
         );
 

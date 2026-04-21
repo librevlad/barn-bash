@@ -69,8 +69,45 @@ function App() {
       difficulty: tweaks.difficulty,
     });
   };
+  const handleStartParty = () => {
+    // Party Mode entry — no totalRounds cap; reducer flips mode flag and
+    // the post-scoreboard loop goes straight to the next AI-picked game
+    // instead of showing the Board.
+    dispatch({
+      type: 'START_PARTY',
+      players: window.BB.core.buildLineup(mp.remotePlayers, tweaks),
+      modifier: tweaks.twists ? pick(TWISTS) : null,
+      difficulty: tweaks.difficulty,
+    });
+  };
+  // Naive picker for Party Mode P1 — uniform random over the games
+  // registry, filtered to avoid immediate repeats when possible. The
+  // weighted version (recency / coverage / session length) lands in P4.
+  const pickNextPartyGame = () => {
+    const ids = window.BB.games.ids();
+    if (!ids || ids.length === 0) return null;
+    const last = state.currentGameId || (state.playedGameIds || []).slice(-1)[0];
+    const pool = ids.length > 1 ? ids.filter(id => id !== last) : ids;
+    return pick(pool);
+  };
   const handleContinueRound = () => {
+    if (state.mode === 'party') {
+      dispatch({
+        type: 'CONTINUE_ROUND',
+        nextGameId: pickNextPartyGame(),
+        nextModifier: tweaks.twists ? pick(TWISTS) : null,
+      });
+      return;
+    }
     dispatch({ type: 'CONTINUE_ROUND', nextModifier: tweaks.twists ? pick(TWISTS) : null });
+  };
+  const handleEndParty = () => dispatch({ type: 'END_PARTY' });
+  const handleConfirmCharacters = () => {
+    if (state.mode === 'party') {
+      dispatch({ type: 'CONFIRM_CHARACTERS', firstGameId: pickNextPartyGame() });
+      return;
+    }
+    dispatch({ type: 'CONFIRM_CHARACTERS' });
   };
 
   // Esc anywhere on the host resets to Title. Useful when the host TV is
@@ -139,7 +176,13 @@ function App() {
             state={state}
             tweaks={tweaks}
             dispatch={dispatch}
-            handlers={{ onStartGame: handleStartGame, onContinueRound: handleContinueRound }}
+            handlers={{
+              onStartGame: handleStartGame,
+              onStartParty: handleStartParty,
+              onContinueRound: handleContinueRound,
+              onEndParty: handleEndParty,
+              onConfirmCharacters: handleConfirmCharacters,
+            }}
             onTweaks={setTweaksOpen}
           />
         </div>
