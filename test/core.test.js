@@ -15,6 +15,7 @@ require(path.resolve(__dirname, '../src/core/screens.js'));
 require(path.resolve(__dirname, '../src/core/math.js'));
 require(path.resolve(__dirname, '../src/core/gameReducer.js'));
 require(path.resolve(__dirname, '../src/core/score.js'));
+require(path.resolve(__dirname, '../src/core/partyPicker.js'));
 
 const { Screen, core } = global.window.BB;
 
@@ -309,6 +310,62 @@ test('buildGameOverPayload uses final scores', () => {
   assert.strictEqual(payload.byId[7].rank, 1);
   assert.strictEqual(payload.byId[7].total, 17);
   assert.strictEqual(payload.byId[9].rank, 2);
+});
+
+test('pickNextPartyGame returns null for empty gameIds', () => {
+  assert.strictEqual(core.pickNextPartyGame({ gameIds: [] }), null);
+  assert.strictEqual(core.pickNextPartyGame({ gameIds: null }), null);
+});
+
+test('pickNextPartyGame returns the only game when list length is 1', () => {
+  assert.strictEqual(core.pickNextPartyGame({ gameIds: ['only'] }), 'only');
+  // Even if it is lastGameId — we have no alternative to avoid a repeat.
+  assert.strictEqual(
+    core.pickNextPartyGame({ gameIds: ['only'], lastGameId: 'only' }), 'only'
+  );
+});
+
+test('pickNextPartyGame never repeats lastGameId when alternatives exist', () => {
+  // Deterministic because lastGameId weight is 0.
+  for (let i = 0; i < 50; i++) {
+    const id = core.pickNextPartyGame({ gameIds: ['a', 'b'], lastGameId: 'a' });
+    assert.strictEqual(id, 'b');
+  }
+});
+
+test('pickNextPartyGame biases toward unplayed games over played (statistical)', () => {
+  // Weights: unplayed = 3, played-once = 1. Ratio ~3:1 expected.
+  let unplayedCount = 0;
+  const N = 2000;
+  for (let i = 0; i < N; i++) {
+    const id = core.pickNextPartyGame({
+      gameIds: ['played', 'unplayed'],
+      playedGameIds: ['played'],
+    });
+    if (id === 'unplayed') unplayedCount++;
+  }
+  // 3:1 ideal = 75%. Allow ±8% window for randomness.
+  assert.ok(unplayedCount > N * 0.67, `unplayed should dominate: ${unplayedCount}/${N}`);
+  assert.ok(unplayedCount < N * 0.85, `but not be deterministic: ${unplayedCount}/${N}`);
+});
+
+test('pickNextPartyGame accepts an injected rand for determinism', () => {
+  // rand=0 → picks the first game that still has positive weight.
+  // With lastGameId='a', 'a' has weight 0, so first positive is 'b'.
+  const id = core.pickNextPartyGame({
+    gameIds: ['a', 'b', 'c'], lastGameId: 'a', rand: () => 0,
+  });
+  assert.strictEqual(id, 'b');
+});
+
+test('pickNextPartyGame after everything played keeps picking (no starvation)', () => {
+  // Every game played 2x — weights all positive (0.75), picker still fires.
+  const id = core.pickNextPartyGame({
+    gameIds: ['a', 'b', 'c'],
+    playedGameIds: ['a', 'b', 'c', 'a', 'b', 'c'],
+    lastGameId: 'c',
+  });
+  assert.ok(['a', 'b'].includes(id), `expected a or b (not last=c): ${id}`);
 });
 
 test('randBetween / clamp / pick are attached to the shim window', () => {

@@ -80,15 +80,18 @@ function App() {
       difficulty: tweaks.difficulty,
     });
   };
-  // Naive picker for Party Mode P1 — uniform random over the games
-  // registry, filtered to avoid immediate repeats when possible. The
-  // weighted version (recency / coverage / session length) lands in P4.
+  // Party Mode picker — defers to BB.core.pickNextPartyGame (pure,
+  // unit-tested): weighted random biased toward unplayed games, skipping
+  // back-to-back repeats. State lives in the reducer's playedGameIds.
   const pickNextPartyGame = () => {
     const ids = window.BB.games.ids();
     if (!ids || ids.length === 0) return null;
-    const last = state.currentGameId || (state.playedGameIds || []).slice(-1)[0];
-    const pool = ids.length > 1 ? ids.filter(id => id !== last) : ids;
-    return pick(pool);
+    const last = state.currentGameId || (state.playedGameIds || []).slice(-1)[0] || null;
+    return window.BB.core.pickNextPartyGame({
+      gameIds: ids,
+      playedGameIds: state.playedGameIds || [],
+      lastGameId: last,
+    });
   };
   const handleContinueRound = () => {
     if (state.mode === 'party') {
