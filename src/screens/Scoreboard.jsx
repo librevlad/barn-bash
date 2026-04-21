@@ -59,7 +59,10 @@ function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameN
   // flowing on its own. If nobody taps a phone or the host button within
   // ~5s, auto-advance to the next pick so the Scoreboard doesn't feel
   // terminal like the classic flow. Phone ready-up still short-circuits.
-  const PARTY_AUTO_MS = 5000;
+  // 7s (not 5s) gives the host-side "ХВАТИТ" exit button a reasonable
+  // read-decide-tap window. Jackbox-like pace without cutting the decision
+  // moment too tight.
+  const PARTY_AUTO_MS = 7000;
   const [partyRemaining, setPartyRemaining] = useState(PARTY_AUTO_MS);
   useEffect(() => {
     if (mode !== 'party') return;
