@@ -249,6 +249,35 @@ test('initialGameState seeds mode=classic and playedGameIds=[]', () => {
   const s = core.initialGameState({ totalRounds: 5, difficulty: 'medium' });
   assert.strictEqual(s.mode, 'classic');
   assert.deepStrictEqual(s.playedGameIds, []);
+  assert.strictEqual(s.lastModeratorKey, null);
+});
+
+test('SET_MODERATOR_KEY stores the last picked template key', () => {
+  const state = { lastModeratorKey: null };
+  const next = core.gameReducer(state, { type: 'SET_MODERATOR_KEY', key: 'solo-3' });
+  assert.strictEqual(next.lastModeratorKey, 'solo-3');
+});
+
+test('SET_MODERATOR_KEY is a no-op when key is unchanged', () => {
+  // No-op: same reference returned so useEffect + useReducer don't
+  // churn when Scoreboard re-dispatches on a stable memoised line.
+  const state = { lastModeratorKey: 'solo-3' };
+  const next = core.gameReducer(state, { type: 'SET_MODERATOR_KEY', key: 'solo-3' });
+  assert.strictEqual(next, state);
+});
+
+test('GO_TITLE clears lastModeratorKey', () => {
+  const state = { lastModeratorKey: 'solo-3', players: [], scores: [], lastEarned: [] };
+  const next = core.gameReducer(state, { type: 'GO_TITLE' });
+  assert.strictEqual(next.lastModeratorKey, null);
+});
+
+test('START_PARTY clears lastModeratorKey from a prior session', () => {
+  const state = { lastModeratorKey: 'tie-2', mode: 'classic', totalRounds: 5 };
+  const next = core.gameReducer(state, {
+    type: 'START_PARTY', players: [{ id: 1 }], modifier: null, difficulty: 'medium',
+  });
+  assert.strictEqual(next.lastModeratorKey, null);
 });
 
 test('PHONE_PRESENCE_SYNC flips isCPU on phone-owned slots', () => {

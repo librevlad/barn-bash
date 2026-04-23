@@ -29,7 +29,7 @@ function CrownSVG({ size = 64 }) {
 // mode = 'classic' | 'party'. In party mode the scoreboard is transient
 // (no final-round finale label, no fixed "РАУНД N / N"); a dedicated
 // "Хватит" control exits the session to Podium — wired in P3.
-function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameName, round, totalRounds, mode='classic' }) {
+function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameName, round, totalRounds, mode='classic', lastModeratorKey=null, onModeratorPicked }) {
   const ranked = [...players].map((p,i)=>({p,i,s:scores[i],e:earned[i]})).sort((a,b)=>b.e - a.e);
   const leaderboard = [...players].map((p,i)=>({p,i,total: scores[i] + earned[i]})).sort((a,b)=>b.total - a.total);
 
@@ -37,13 +37,25 @@ function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameN
   // LLM, no network. Memoised on mount so re-renders from the ready-up
   // counter don't reshuffle the line mid-read. Classic mode stays silent;
   // the moderator is specifically the Party Mode flavour.
+  //
+  // Dedup: lastModeratorKey lives in reducer state so the next
+  // Scoreboard's picker can skip the template we just showed. The
+  // effect below tells the parent which key was picked once the line is
+  // rendered. The pick itself stays pure — the callback is the only
+  // side effect and it runs once per Scoreboard mount.
   const moderatorLine = useMemo(() => {
     if (mode !== 'party') return null;
     if (!window.BB.core || !window.BB.core.pickModeratorLine) return null;
     return window.BB.core.pickModeratorLine({
       players, scores, earned, lastMinigame: minigameName,
+      lastLineKey: lastModeratorKey,
     });
   }, [mode]);
+  useEffect(() => {
+    if (moderatorLine && moderatorLine.key && typeof onModeratorPicked === 'function') {
+      onModeratorPicked(moderatorLine.key);
+    }
+  }, [moderatorLine]);
 
   // Ready-up tracking: phones tap READY on their summary overlay. When every
   // phone-owned slot has confirmed, auto-continue so the host doesn't need

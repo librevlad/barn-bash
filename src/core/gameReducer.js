@@ -19,6 +19,10 @@
 //   lastMinigame: string | null     // friendly name for the Scoreboard hero
 //   currentGameId: string | null    // registry id while screen === Minigame
 //   playedGameIds: string[]         // party-mode session history for picker
+//   lastModeratorKey: string | null // party-mode: last moderator template
+//                                   //   key so the next Scoreboard's picker
+//                                   //   can avoid picking the same line
+//                                   //   back-to-back
 // }
 
 (function(BB) {
@@ -37,6 +41,7 @@
       lastMinigame: null,
       currentGameId: null,
       playedGameIds: [],
+      lastModeratorKey: null,
     };
   }
 
@@ -59,6 +64,7 @@
           currentGameId: null,
           modifier: null,
           playedGameIds: [],
+          lastModeratorKey: null,
         };
 
       case 'START_GAME': {
@@ -78,6 +84,7 @@
           lastMinigame: null,
           currentGameId: null,
           playedGameIds: [],
+          lastModeratorKey: null,
         };
       }
 
@@ -102,6 +109,7 @@
           lastMinigame: null,
           currentGameId: null,
           playedGameIds: [],
+          lastModeratorKey: null,
         };
       }
 
@@ -207,6 +215,15 @@
         });
         return dirty ? { ...state, players: next } : state;
       }
+
+      case 'SET_MODERATOR_KEY':
+        // Party-mode Scoreboard dispatches this once per mount with the
+        // template key it just rendered, so the next Scoreboard's picker
+        // can skip that key via pickModeratorLine's dedup path. Ignore
+        // no-op writes so the effect loop can fire without spamming
+        // useReducer.
+        if (state.lastModeratorKey === action.key) return state;
+        return { ...state, lastModeratorKey: action.key };
 
       default:
         return state;
