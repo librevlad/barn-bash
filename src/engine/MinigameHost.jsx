@@ -77,13 +77,20 @@
       [api, onFinish, onQuit]
     );
 
-    // Lazily build one ChaosEngine instance per MinigameHost mount so the
-    // 8-15s random-event scheduler starts fresh each round.
+    // Lazily build one ChaosEngine instance per MinigameHost mount so
+    // the random-event scheduler starts fresh each round. Party-mode
+    // rounds ramp intensity via BB.core.intensityFromRound so the
+    // cadence tightens as the session drags on; classic mode passes 0
+    // which reproduces the pre-P7 8-15s pacing verbatim.
     const chaosRef = useRef(null);
     if (!chaosRef.current) {
+      const intensity = BB.core && BB.core.intensityFromRound
+        ? BB.core.intensityFromRound({ round: state.round, mode: state.mode })
+        : 0;
       chaosRef.current = BB.engine.createChaosEngine({
         leaderboard: game.leaderboard,
         api: game,
+        intensity,
       });
     }
 

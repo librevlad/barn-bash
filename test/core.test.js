@@ -17,6 +17,7 @@ require(path.resolve(__dirname, '../src/core/gameReducer.js'));
 require(path.resolve(__dirname, '../src/core/score.js'));
 require(path.resolve(__dirname, '../src/core/partyPicker.js'));
 require(path.resolve(__dirname, '../src/core/moderator.js'));
+require(path.resolve(__dirname, '../src/core/chaosPacing.js'));
 
 const { Screen, core } = global.window.BB;
 
@@ -462,6 +463,55 @@ test('pickModeratorLine: injected rand makes selection deterministic', () => {
     players, scores: [5, 3], earned: [2, 0], rand: () => 0.42,
   });
   assert.deepStrictEqual(a, b);
+});
+
+test('intensityFromRound returns 0 in classic mode regardless of round', () => {
+  for (const round of [1, 5, 10, 100]) {
+    assert.strictEqual(
+      core.intensityFromRound({ round, mode: 'classic' }), 0,
+      `classic round ${round} should be 0`
+    );
+  }
+});
+
+test('intensityFromRound ramps 0→1 across party rounds 1..9', () => {
+  assert.strictEqual(core.intensityFromRound({ round: 1, mode: 'party' }), 0);
+  assert.strictEqual(core.intensityFromRound({ round: 5, mode: 'party' }), 0.5);
+  assert.strictEqual(core.intensityFromRound({ round: 9, mode: 'party' }), 1);
+  // After round 9 it's capped so deep parties don't break the contract.
+  assert.strictEqual(core.intensityFromRound({ round: 20, mode: 'party' }), 1);
+});
+
+test('intensityFromRound is monotonic non-decreasing across party rounds', () => {
+  let prev = -1;
+  for (let r = 1; r <= 15; r++) {
+    const v = core.intensityFromRound({ round: r, mode: 'party' });
+    assert.ok(v >= prev, `round ${r} (=${v}) must be ≥ prev (${prev})`);
+    assert.ok(v >= 0 && v <= 1, `round ${r} value ${v} out of [0,1]`);
+    prev = v;
+  }
+});
+
+test('chaosDelayRange at intensity 0 reproduces the 8-15s window', () => {
+  const { minMs, spanMs } = core.chaosDelayRange(0);
+  assert.strictEqual(minMs, 8000);
+  assert.strictEqual(spanMs, 7000);
+  assert.strictEqual(minMs + spanMs, 15000);
+});
+
+test('chaosDelayRange at intensity 1 tightens to a 4-8s window', () => {
+  const { minMs, spanMs } = core.chaosDelayRange(1);
+  assert.strictEqual(minMs, 4000);
+  assert.strictEqual(spanMs, 4000);
+  assert.strictEqual(minMs + spanMs, 8000);
+});
+
+test('swapWeight is 0 at intensity 0 and 0.15 at intensity 1', () => {
+  assert.strictEqual(core.swapWeight(0), 0);
+  assert.ok(Math.abs(core.swapWeight(1) - 0.15) < 1e-9);
+  // Defensive: negative or >1 input clamps into [0, 0.15].
+  assert.strictEqual(core.swapWeight(-2), 0);
+  assert.ok(Math.abs(core.swapWeight(42) - 0.15) < 1e-9);
 });
 
 test('randBetween / clamp / pick are attached to the shim window', () => {

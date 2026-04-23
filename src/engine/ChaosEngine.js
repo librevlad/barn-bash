@@ -1,16 +1,21 @@
 // src/engine/ChaosEngine.js
-// Infrastructure-level chaos injector: every 8-15 seconds picks one of
-// three random events driven by the current leaderboard standings and
+// Infrastructure-level chaos injector: every 4-15 seconds picks one of
+// four random events driven by the current leaderboard standings and
 // publishes it through the game's chaos channel. The minigames don't
 // know or care; listeners on the host TV + overlay do.
 //
-//   createChaosEngine({ leaderboard, api }) → { start, stop }
+//   createChaosEngine({ leaderboard, api, intensity? }) → { start, stop }
+//
+// `intensity` is 0..1 and comes from BB.core.intensityFromRound in
+// party mode — higher intensity shortens the delay window AND enables
+// the disruptive "swap" event in the random roll. At intensity=0 the
+// behaviour matches the pre-P7 pacing (8-15s delay, three events).
 //
 // Spec-verbatim body wrapped in an IIFE because the project has no
 // bundler — factory lands on BB.engine.createChaosEngine.
 
 (function(BB) {
-  function createChaosEngine({ leaderboard, api }) {
+  function createChaosEngine({ leaderboard, api, intensity = 0 } = {}) {
     let timer = null;
     let active = false;
 
@@ -49,15 +54,32 @@
     }
 
     function randomDelay() {
-      return 8000 + Math.random() * 7000; // 8-15 sec
+      // Delay window shortens smoothly with intensity. At intensity=0
+      // the 8000/7000 baseline reproduces the pre-P7 cadence verbatim.
+      const range = BB.core && BB.core.chaosDelayRange
+        ? BB.core.chaosDelayRange(intensity)
+        : { minMs: 8000, spanMs: 7000 };
+      return range.minMs + Math.random() * range.spanMs;
     }
 
     function triggerRandomEvent() {
+      // Swap is a high-disruption event — weight it in only when the
+      // party has warmed up. Remaining 1 - swap weight is split among
+      // the three base events in the original 0.4 / 0.3 / 0.3 ratio.
+      const swapW = BB.core && BB.core.swapWeight
+        ? BB.core.swapWeight(intensity)
+        : 0;
       const roll = Math.random();
 
-      if (roll < 0.4) {
+      if (roll < swapW) {
+        chaosSwap();
+        return;
+      }
+      const rest = 1 - swapW;
+      const rescaled = (roll - swapW) / rest; // 0..1 across the remaining bucket
+      if (rescaled < 0.4) {
         voting.startVote();
-      } else if (roll < 0.7) {
+      } else if (rescaled < 0.7) {
         antiLeader();
       } else {
         underdogBoost();
