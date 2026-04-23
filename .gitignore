@@ -3,6 +3,7 @@ node_modules/
 .playwright-mcp/
 .gstack/
 screenshots-review/
+.qa/
 
 # Any stray image / bundle / log left at repo root during local dev.
 # README-grade captures live under screenshots/ and are tracked.
