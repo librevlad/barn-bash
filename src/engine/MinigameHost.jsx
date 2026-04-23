@@ -131,7 +131,7 @@
     return (
       <>
         <G state={state} onFinish={onFinish} onQuit={onQuit} game={game}/>
-        <LeaderboardOverlay game={game} />
+        <LeaderboardOverlay game={game} players={state.players} />
       </>
     );
   }
