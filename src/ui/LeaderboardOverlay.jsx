@@ -142,8 +142,13 @@ function LeaderboardOverlay({ game, players = [] }) {
 
 const styles = {
   container: {
+    // Sits below every minigame's top-bar HUD (БАК button + SHOT/Timer
+    // pill, all at top:20 height ~40 in a flex row). Keeping y=70 gives
+    // ~10px clear of the row end so a game-level badge can't draw over
+    // the ЛИДЕРБОРД header. Cosmetic sun-blur radials at top:80 right:120
+    // live under this plank visually; overlay's solid plank wins.
     position: 'absolute',
-    top: 12, right: 12, zIndex: 10,
+    top: 70, right: 12, zIndex: 10,
     pointerEvents: 'none',
   },
 };
