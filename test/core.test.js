@@ -16,6 +16,7 @@ require(path.resolve(__dirname, '../src/core/math.js'));
 require(path.resolve(__dirname, '../src/core/gameReducer.js'));
 require(path.resolve(__dirname, '../src/core/score.js'));
 require(path.resolve(__dirname, '../src/core/partyPicker.js'));
+require(path.resolve(__dirname, '../src/core/moderator.js'));
 
 const { Screen, core } = global.window.BB;
 
@@ -366,6 +367,101 @@ test('pickNextPartyGame after everything played keeps picking (no starvation)', 
     lastGameId: 'c',
   });
   assert.ok(['a', 'b'].includes(id), `expected a or b (not last=c): ${id}`);
+});
+
+test('pickModeratorLine returns null for empty players', () => {
+  assert.strictEqual(core.pickModeratorLine({ players: [] }), null);
+  assert.strictEqual(core.pickModeratorLine({ players: null }), null);
+});
+
+test('pickModeratorLine picks shutout when everyone earned 0', () => {
+  const players = [{ char: { name: 'pig' } }, { char: { name: 'cow' } }];
+  const line = core.pickModeratorLine({
+    players, scores: [3, 1], earned: [0, 0], lastMinigame: 'pig-sprint',
+    rand: () => 0,
+  });
+  assert.strictEqual(line.category, 'shutout');
+  assert.ok(line.text.length > 0);
+  // Shutout templates don't reference any player names, so substitution
+  // should leave no lingering {placeholder} tokens.
+  assert.ok(!/\{\w+\}/.test(line.text), `unfilled placeholder: ${line.text}`);
+});
+
+test('pickModeratorLine picks tie when two players share the top earn', () => {
+  const players = [
+    { char: { name: 'pig' }, displayName: 'vlad' },
+    { char: { name: 'cow' }, displayName: 'misha' },
+    { char: { name: 'sheep' }, displayName: 'max' },
+  ];
+  const line = core.pickModeratorLine({
+    players, scores: [0, 0, 0], earned: [3, 3, 1],
+    rand: () => 0,
+  });
+  assert.strictEqual(line.category, 'tie');
+  // Templates tie-1 / tie-4 use {winner1} + {winner2} — with rand=0 we land
+  // on tie-1 which interpolates both. Confirm at least one resolved name
+  // lands in the output to prove substitution ran.
+  assert.ok(line.text.includes('VLAD') || line.text.includes('MISHA'),
+    `expected a tied winner name in: ${line.text}`);
+  assert.ok(!/\{\w+\}/.test(line.text), `unfilled placeholder: ${line.text}`);
+});
+
+test('pickModeratorLine picks blowout when single winner ≥2x next', () => {
+  const players = [
+    { char: { name: 'pig' }, displayName: 'vlad' },
+    { char: { name: 'cow' }, displayName: 'misha' },
+  ];
+  const line = core.pickModeratorLine({
+    players, scores: [0, 0], earned: [6, 1],
+    rand: () => 0,
+  });
+  assert.strictEqual(line.category, 'blowout');
+  assert.ok(line.text.includes('VLAD'), `expected winner name: ${line.text}`);
+  assert.ok(!/\{\w+\}/.test(line.text), `unfilled placeholder: ${line.text}`);
+});
+
+test('pickModeratorLine: tight single winner falls through to solo/roast/leader', () => {
+  // 2 vs 1 is not a blowout (ratio 2 but absolute 2 is tiny). Solo-winner
+  // is the expected category for a tight round like this.
+  const players = [
+    { char: { name: 'pig' }, displayName: 'vlad' },
+    { char: { name: 'cow' }, displayName: 'misha' },
+  ];
+  const line = core.pickModeratorLine({
+    players, scores: [0, 0], earned: [2, 1],
+    // rand sequence: 0 picks first category ('solo-winner'), then 0 picks
+    // the first template in that bank.
+    rand: () => 0,
+  });
+  assert.notStrictEqual(line.category, 'blowout');
+  assert.ok(['solo-winner', 'zero-roast', 'leader-taunt'].includes(line.category),
+    `unexpected category: ${line.category}`);
+});
+
+test('pickModeratorLine avoids repeating lastLineKey when alternatives exist', () => {
+  const players = [{ char: { name: 'pig' } }, { char: { name: 'cow' } }];
+  // Force shutout category — 4 templates available.
+  // With lastLineKey='shut-1' and rand=0, picker should pick the first
+  // *remaining* template, which is 'shut-2'.
+  const line = core.pickModeratorLine({
+    players, scores: [0, 0], earned: [0, 0],
+    lastLineKey: 'shut-1', rand: () => 0,
+  });
+  assert.notStrictEqual(line.key, 'shut-1', `expected dedup, got: ${line.key}`);
+});
+
+test('pickModeratorLine: injected rand makes selection deterministic', () => {
+  const players = [
+    { char: { name: 'pig' }, displayName: 'vlad' },
+    { char: { name: 'cow' }, displayName: 'misha' },
+  ];
+  const a = core.pickModeratorLine({
+    players, scores: [5, 3], earned: [2, 0], rand: () => 0.42,
+  });
+  const b = core.pickModeratorLine({
+    players, scores: [5, 3], earned: [2, 0], rand: () => 0.42,
+  });
+  assert.deepStrictEqual(a, b);
 });
 
 test('randBetween / clamp / pick are attached to the shim window', () => {

@@ -33,6 +33,18 @@ function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameN
   const ranked = [...players].map((p,i)=>({p,i,s:scores[i],e:earned[i]})).sort((a,b)=>b.e - a.e);
   const leaderboard = [...players].map((p,i)=>({p,i,total: scores[i] + earned[i]})).sort((a,b)=>b.total - a.total);
 
+  // Party-mode AI-moderator one-liner. Pure rule-based template pick — no
+  // LLM, no network. Memoised on mount so re-renders from the ready-up
+  // counter don't reshuffle the line mid-read. Classic mode stays silent;
+  // the moderator is specifically the Party Mode flavour.
+  const moderatorLine = useMemo(() => {
+    if (mode !== 'party') return null;
+    if (!window.BB.core || !window.BB.core.pickModeratorLine) return null;
+    return window.BB.core.pickModeratorLine({
+      players, scores, earned, lastMinigame: minigameName,
+    });
+  }, [mode]);
+
   // Ready-up tracking: phones tap READY on their summary overlay. When every
   // phone-owned slot has confirmed, auto-continue so the host doesn't need
   // to reach for the keyboard.
@@ -100,11 +112,36 @@ function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameN
             {mode === 'party' ? `ИГРА ${round} · ${minigameName.toUpperCase()}` : `РАУНД ${round} · ${minigameName.toUpperCase()}`}
           </span>
         </div>
-        <div style={{marginTop:10,fontFamily:"'Luckiest Guy'",fontSize:18,color:'var(--cream-2)',letterSpacing:2}}>РЕЗУЛЬТАТЫ</div>
+        {mode === 'party' && moderatorLine && moderatorLine.text ? (
+          // Party-mode AI-moderator quip replaces the static "РЕЗУЛЬТАТЫ"
+          // label — the host is already announcing the beat, no need to
+          // double up. Wrapped in its own block so the plank above stays
+          // centered even when the quip is long.
+          <div style={{marginTop: 14, display: 'flex', justifyContent:'center'}}>
+            <div className="pop-in" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 12,
+              background:'rgba(0,0,0,.38)', border:'3px solid var(--cream)',
+              borderRadius:18, padding:'8px 22px', maxWidth: 1200,
+              fontFamily:"'Fredoka', sans-serif", fontSize: 22, fontWeight: 600,
+              color:'#fff', letterSpacing:.3, lineHeight: 1.25,
+              animationDelay: '0.25s'
+            }}>
+              <span style={{
+                fontFamily:"'Luckiest Guy'", fontSize: 16, color:'var(--yellow)',
+                letterSpacing: 1.5, whiteSpace:'nowrap'
+              }}>МОДЕРАТОР ▸</span>
+              <span>{moderatorLine.text}</span>
+            </div>
+          </div>
+        ) : (
+          <div style={{marginTop:10,fontFamily:"'Luckiest Guy'",fontSize:18,color:'var(--cream-2)',letterSpacing:2}}>РЕЗУЛЬТАТЫ</div>
+        )}
       </div>
 
-      {/* Round card reveal */}
-      <div style={{position:'absolute',top:180,left:0,right:0,display:'flex',justifyContent:'center',gap:30,flexWrap:'wrap',padding:'0 40px'}}>
+      {/* Round card reveal — shift down in party mode so the host-quip
+          ribbon above has breathing room and doesn't collide with the
+          #1 crown on the winner card. */}
+      <div style={{position:'absolute',top: mode === 'party' ? 230 : 180,left:0,right:0,display:'flex',justifyContent:'center',gap:30,flexWrap:'wrap',padding:'0 40px'}}>
         {ranked.map((r, rank) => (
           <div key={r.i} className="pop-in" style={{
             background:'#fff', border:'5px solid var(--ink)', borderRadius:20,
