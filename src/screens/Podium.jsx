@@ -93,27 +93,6 @@ function Podium({ players, scores, onPlayAgain, onQuit, mode='classic', gameCoun
             <span style={{fontFamily:"'Luckiest Guy'",color:'#fff',fontSize:28,letterSpacing:2}}>{playerLabel(champion.p)} ВЫИГРАЛ(А)!</span>
           </div>
         )}
-        {partyRecap && (
-          // Party session recap ribbon — "за вечеринку сыграно N игр" +
-          // colour commentary on the winner's margin. Only surfaces when
-          // mode='party' so the classic 5-round flow keeps its curtain.
-          <div className="pop-in" style={{
-            marginTop: 10, display: 'flex', justifyContent:'center'
-          }}>
-            <div style={{
-              display:'inline-block', background:'rgba(0,0,0,.45)',
-              border:'3px solid var(--cream)', borderRadius: 14,
-              padding:'6px 18px', boxShadow:'0 4px 0 rgba(0,0,0,.25)',
-              fontFamily:"'Fredoka', sans-serif", fontSize: 18, fontWeight: 600,
-              color:'#fff', letterSpacing: .3, animationDelay: '.7s'
-            }}>
-              <span style={{fontFamily:"'Luckiest Guy'",color:'var(--yellow)',letterSpacing:1.5, marginRight: 8}}>
-                ЗА ВЕЧЕРИНКУ ▸
-              </span>
-              сыграно {partyRecap.gameCount} {gamesPlural(partyRecap.gameCount)}, {partyRecap.quip}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Podium bars */}
@@ -152,6 +131,25 @@ function Podium({ players, scores, onPlayAgain, onQuit, mode='classic', gameCoun
       </div>
 
       <div style={{position:'absolute',bottom:14,left:0,right:0,textAlign:'center'}}>
+        {partyRecap && (
+          // Session recap lives above the button row so the tall winner
+          // avatar column on the podium bars has clear vertical space.
+          // Previous spot (under champion badge) collided with the
+          // winner's 170px avatar + medal stack.
+          <div className="pop-in" style={{
+            marginBottom: 10, display:'inline-block',
+            background:'rgba(0,0,0,.45)',
+            border:'3px solid var(--cream)', borderRadius: 14,
+            padding:'6px 18px', boxShadow:'0 4px 0 rgba(0,0,0,.25)',
+            fontFamily:"'Fredoka', sans-serif", fontSize: 18, fontWeight: 600,
+            color:'#fff', letterSpacing: .3, animationDelay: '.7s'
+          }}>
+            <span style={{fontFamily:"'Luckiest Guy'",color:'var(--yellow)',letterSpacing:1.5, marginRight: 8}}>
+              ЗА ВЕЧЕРИНКУ ▸
+            </span>
+            сыграно {partyRecap.gameCount} {gamesPlural(partyRecap.gameCount)}, {partyRecap.quip}
+          </div>
+        )}
         {remoteCount > 0 && (
           <div style={{
             marginBottom:10, display:'inline-block', background:'rgba(0,0,0,.45)',
