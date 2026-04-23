@@ -1,9 +1,41 @@
 // src/screens/Podium.jsx - final podium with fireworks + phone
 // rematch ready-up ribbon.
 
-function Podium({ players, scores, onPlayAgain, onQuit }) {
+// Russian pluralisation for "игра" (1 игра, 2-4 игры, 5-20 игр, ...).
+// Used in the party recap ribbon so the count reads naturally.
+function gamesPlural(n) {
+  const abs = Math.abs(n) % 100;
+  const last = abs % 10;
+  if (abs >= 11 && abs <= 14) return 'игр';
+  if (last === 1) return 'игра';
+  if (last >= 2 && last <= 4) return 'игры';
+  return 'игр';
+}
+
+function Podium({ players, scores, onPlayAgain, onQuit, mode='classic', gameCount=0 }) {
   const ranked = players.map((p,i)=>({p,i,s:scores[i]})).sort((a,b)=>b.s-a.s);
   const champion = ranked[0];
+  const runnerUp = ranked[1];
+
+  // Party session recap quip — derives from the final standings so we
+  // don't need another history table. Classic keeps its terminal silence.
+  const partyRecap = useMemo(() => {
+    if (mode !== 'party' || !champion) return null;
+    const margin = runnerUp ? Math.max(0, champion.s - runnerUp.s) : champion.s;
+    let quip;
+    if (runnerUp && margin === 0) {
+      quip = 'ничья на вершине — такого мы ещё не видели';
+    } else if (runnerUp && margin === 1) {
+      quip = 'разрыв — ровно одна монета. Жёстче не бывает';
+    } else if (!runnerUp || margin >= 2 * (runnerUp ? runnerUp.s : 0)) {
+      quip = 'разгром, остальные еще обдумывают, как такое вышло';
+    } else if (runnerUp && margin >= 5) {
+      quip = `уверенный отрыв в ${margin} монет`;
+    } else {
+      quip = 'победа скорее нервная, чем уверенная';
+    }
+    return { gameCount, quip };
+  }, [mode, champion, runnerUp, gameCount]);
 
   // Rematch ready-up: phones tap TAP FOR REMATCH on their finale splash.
   // When every phone-owned slot has confirmed, auto-invoke onPlayAgain so
@@ -59,6 +91,27 @@ function Podium({ players, scores, onPlayAgain, onQuit }) {
           <div className="pop-in" style={{marginTop:10,display:'inline-flex',alignItems:'center',gap:10,background:'rgba(0,0,0,.35)',border:'4px solid #fff',borderRadius:16,padding:'8px 22px',animationDelay:'.4s'}}>
             <Avatar char={champion.p.char} size={42}/>
             <span style={{fontFamily:"'Luckiest Guy'",color:'#fff',fontSize:28,letterSpacing:2}}>{playerLabel(champion.p)} ВЫИГРАЛ(А)!</span>
+          </div>
+        )}
+        {partyRecap && (
+          // Party session recap ribbon — "за вечеринку сыграно N игр" +
+          // colour commentary on the winner's margin. Only surfaces when
+          // mode='party' so the classic 5-round flow keeps its curtain.
+          <div className="pop-in" style={{
+            marginTop: 10, display: 'flex', justifyContent:'center'
+          }}>
+            <div style={{
+              display:'inline-block', background:'rgba(0,0,0,.45)',
+              border:'3px solid var(--cream)', borderRadius: 14,
+              padding:'6px 18px', boxShadow:'0 4px 0 rgba(0,0,0,.25)',
+              fontFamily:"'Fredoka', sans-serif", fontSize: 18, fontWeight: 600,
+              color:'#fff', letterSpacing: .3, animationDelay: '.7s'
+            }}>
+              <span style={{fontFamily:"'Luckiest Guy'",color:'var(--yellow)',letterSpacing:1.5, marginRight: 8}}>
+                ЗА ВЕЧЕРИНКУ ▸
+              </span>
+              сыграно {partyRecap.gameCount} {gamesPlural(partyRecap.gameCount)}, {partyRecap.quip}
+            </div>
           </div>
         )}
       </div>

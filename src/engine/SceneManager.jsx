@@ -80,6 +80,8 @@
           <Podium
             players={state.players}
             scores={state.scores}
+            mode={state.mode}
+            gameCount={(state.playedGameIds || []).length}
             onPlayAgain={handlers.onStartGame}
             onQuit={() => dispatch({ type: 'GO_TITLE' })}
           />
