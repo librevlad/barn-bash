@@ -67,6 +67,7 @@
             round={state.round}
             totalRounds={state.totalRounds}
             mode={state.mode}
+            modifier={state.modifier}
             lastModeratorKey={state.lastModeratorKey}
             onModeratorPicked={(key) => dispatch({ type: 'SET_MODERATOR_KEY', key })}
             onContinue={handlers.onContinueRound}

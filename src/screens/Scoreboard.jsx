@@ -29,7 +29,7 @@ function CrownSVG({ size = 64 }) {
 // mode = 'classic' | 'party'. In party mode the scoreboard is transient
 // (no final-round finale label, no fixed "РАУНД N / N"); a dedicated
 // "Хватит" control exits the session to Podium — wired in P3.
-function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameName, round, totalRounds, mode='classic', lastModeratorKey=null, onModeratorPicked }) {
+function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameName, round, totalRounds, mode='classic', lastModeratorKey=null, onModeratorPicked, modifier=null }) {
   const ranked = [...players].map((p,i)=>({p,i,s:scores[i],e:earned[i]})).sort((a,b)=>b.e - a.e);
   const leaderboard = [...players].map((p,i)=>({p,i,total: scores[i] + earned[i]})).sort((a,b)=>b.total - a.total);
 
@@ -124,6 +124,26 @@ function Scoreboard({ players, scores, earned, onContinue, onEndParty, minigameN
             {mode === 'party' ? `ИГРА ${round} · ${minigameName.toUpperCase()}` : `РАУНД ${round} · ${minigameName.toUpperCase()}`}
           </span>
         </div>
+        {mode === 'party' && modifier && modifier.text && (
+          // Twist pill under the round plank — keeps the reader's beat
+          // "what game was it? with what weird rule?". Hidden when the
+          // session has no modifier (TWEAKS → Round twists OFF).
+          <div style={{
+            marginTop: 10, display:'flex', justifyContent:'center'
+          }}>
+            <div className="pop-in" style={{
+              display:'inline-flex', alignItems:'center', gap: 8,
+              background:'var(--yellow)', border:'3px solid var(--ink)',
+              borderRadius: 14, padding:'4px 14px',
+              boxShadow:'0 4px 0 var(--ink)',
+              fontFamily:"'Luckiest Guy'", color:'var(--ink)',
+              fontSize: 18, letterSpacing: 1
+            }}>
+              <span style={{fontSize: 22}}>{modifier.emoji || '⚡'}</span>
+              <span>С ПОВОРОТОМ: {String(modifier.text).toUpperCase()}</span>
+            </div>
+          </div>
+        )}
         {mode === 'party' && moderatorLine && moderatorLine.text ? (
           // Party-mode AI-moderator quip replaces the static "РЕЗУЛЬТАТЫ"
           // label — the host is already announcing the beat, no need to
