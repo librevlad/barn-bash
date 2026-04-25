@@ -10,6 +10,9 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
   const [finished, setFinished] = useState(false);
   const [time, setTime] = useState(0);
   const [scores, setScores] = useState(()=>players.map(()=>0));
+  // Catch flash: brief zoomed celebration of the human's catch (gold ring,
+  // big delta number, special label for boot/gold). null when idle.
+  const [catchFlash, setCatchFlash] = useState(null);
   const hookX = useRef(700); // for human; others simulated
   const hookDir = useRef(1);
   const [dropping, setDropping] = useState(null); // { y, startT, player, x, returning }
@@ -25,6 +28,8 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
   useRaf((dt) => {
     if (!started || finished) return;
     setTime(t => { const nt = t + dt; if (nt >= GAME_SEC) setFinished(true); return nt; });
+    // age catch flash; clear after ~0.9s
+    setCatchFlash(cf => cf ? (cf.age + dt > 0.9 ? null : { ...cf, age: cf.age + dt }) : null);
 
     // spawn fish
     spawnT.current -= dt;
@@ -77,6 +82,8 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
             setScores(s => { const ns = s.slice(); ns[dropping.player] += delta; return ns; });
             setFloats(f => [...f, {id: Date.now()+Math.random(), x: dropping.x, y: y, text: delta>0?`+${delta}`:`${delta}`, c: delta>0 ? (hit.kind==='gold'?'#ffc93c':'#6cc24a') : '#e04b3b' }]);
             setDropping(d => d ? { ...d, hit: hit, hitAtY: y } : d);
+            // Catch flash for the human only — pop, scale, label.
+            if (dropping.player === 0) setCatchFlash({ kind: hit.kind, delta, age: 0 });
           }
           return next;
         });
@@ -337,6 +344,43 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
             transform:'translate(-50%,-50%)'
           }}>{f.text}</div>
         ))}
+
+        {/* Catch flash overlay — brief zoom-in of the human's catch with
+            colour-coded ring (gold/green/red). Pop-in 0..0.18s, fade 0.18..0.9s. */}
+        {catchFlash && (() => {
+          const a = catchFlash.age;
+          const popIn = Math.min(1, a / 0.18);
+          const fade = Math.max(0, 1 - a / 0.9);
+          const scale = 0.3 + popIn * 1.4 + (a > 0.18 ? (a - 0.18) * 0.4 : 0);
+          const isPositive = (catchFlash.delta ?? 0) > 0;
+          const isGold = catchFlash.kind === 'gold';
+          const isBoot = catchFlash.kind === 'boot';
+          const ringColor = isGold ? 'rgba(255,201,60,.95)' : isBoot ? 'rgba(224,75,59,.85)' : 'rgba(108,194,74,.85)';
+          return (
+            <div style={{position:'absolute', inset:0, pointerEvents:'none', zIndex:35, display:'grid', placeItems:'center'}}>
+              <div style={{
+                transform:`scale(${scale})`, opacity: fade,
+                background:`radial-gradient(circle, ${ringColor}, transparent 70%)`,
+                width: 480, height: 480, borderRadius:'50%', display:'grid', placeItems:'center'
+              }}>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+                  <div style={{transform:'scale(3.2)'}}>
+                    <FishSVG kind={catchFlash.kind}/>
+                  </div>
+                  <div style={{
+                    marginTop:60,
+                    fontFamily:"'Luckiest Guy'", fontSize: isGold ? 84 : 64,
+                    color: isPositive ? (isGold ? '#ffc93c' : '#fff') : '#fff',
+                    WebkitTextStroke:'4px var(--ink)',
+                    textShadow:'0 6px 0 var(--ink)'
+                  }}>{isPositive ? `+${catchFlash.delta}` : catchFlash.delta}</div>
+                  {isGold && <div style={{fontFamily:"'Luckiest Guy'", fontSize:42, color:'#ffec8a', WebkitTextStroke:'3px var(--ink)'}}>ЗОЛОТО!</div>}
+                  {isBoot && <div style={{fontFamily:"'Luckiest Guy'", fontSize:32, color:'#fff', WebkitTextStroke:'2.5px var(--ink)'}}>УПС — САПОГ!</div>}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Bubbles */}
         {[...Array(10)].map((_,i)=>{

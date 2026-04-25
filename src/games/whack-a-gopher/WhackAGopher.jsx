@@ -17,6 +17,9 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
   // pops[holeIdx] = { kind:'gopher'|'bunny'|'golden', ttl, whackedBy }
   const [pops, setPops] = useState(() => Array(HOLES).fill(null));
   const [hitFX, setHitFX] = useState([]);
+  // Hammer animation: each entry tracks a recent whack at hole `h` with elapsed
+  // time `t`; aged in the main RAF and removed past 0.35s.
+  const [hammers, setHammers] = useState([]);
   const difficulty = state.difficulty;
   const spawnRate = { easy: 1.1, medium: 0.75, hard: 0.5 }[difficulty] || 0.75;
   const spawnTimer = useRef(0);
@@ -48,6 +51,8 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
     }
     // age pops
     setPops(prev => prev.map(p => p ? { ...p, ttl: p.ttl - dt } : null).map(p => p && p.ttl <= 0 ? null : p));
+    // age hammer animations
+    setHammers(hs => hs.map(h => ({ ...h, t: h.t + dt })).filter(h => h.t < 0.35));
 
     // CPU actions
     cpuTimers.current = cpuTimers.current.map((t, pi) => {
@@ -83,6 +88,9 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
 
   const whackFor = (pi, h) => {
     if (!started || finished) return;
+    // Always trigger hammer swing — even on a missed (empty) hole, so the
+    // player gets feedback from their click/tap.
+    setHammers(hs => [...hs, { id: Date.now()+Math.random(), h, t: 0, by: pi }]);
     setPops(prev => {
       const next = prev.slice();
       const p = next[h];
@@ -235,9 +243,34 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
                 )}
               </div>
             )}
-            {/* hover hammer */}
-            {hoverHole === i && (
-              <div style={{position:'absolute', left:'50%', top:-30, transform:'translateX(-50%) rotate(-20deg)', fontSize:48, pointerEvents:'none'}}>🔨</div>
+            {/* swinging hammer animation on a recent whack at this hole.
+                Uses an IIFE so we can pull the latest matching hammer entry
+                from the hammers array and rotate from -60° → +10° over .35s,
+                with a subtle scale bump for impact. */}
+            {(() => {
+              const hit = hammers.find(h => h.h === i);
+              if (!hit) return null;
+              const t = hit.t;
+              const rot = t < 0.15 ? -60 + (t/0.15)*70 : 10 - ((t-0.15)/0.2)*50;
+              const scale = t < 0.18 ? 1 : 1.2;
+              return (
+                <>
+                  <div style={{
+                    position:'absolute', left:'50%', top:-12, transform:`translateX(-50%) rotate(${rot}deg) scale(${scale})`,
+                    pointerEvents:'none', transformOrigin:'50% 80%', fontSize:60,
+                    filter:'drop-shadow(0 4px 0 rgba(0,0,0,.4))', zIndex:5
+                  }}>🔨</div>
+                  {t < 0.2 && pop !== null && (
+                    <div style={{position:'absolute', left:'50%', bottom:36, transform:`translateX(-50%) scale(${1 + t*3})`, opacity: 1 - t*5, pointerEvents:'none'}}>
+                      <div style={{width:110, height:110, borderRadius:'50%', background:'radial-gradient(circle, rgba(255,240,200,.9) 0 30%, rgba(255,200,100,.3) 50%, transparent 70%)'}}/>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+            {/* hover hammer preview — only when no swing is currently animating */}
+            {hoverHole === i && !hammers.some(h => h.h === i) && (
+              <div style={{position:'absolute', left:'50%', top:-20, transform:'translateX(-50%) rotate(-30deg)', fontSize:44, pointerEvents:'none', opacity:.75}}>🔨</div>
             )}
             {/* hotkey */}
             <div style={{position:'absolute', left:10, top:10, background:'#fff', border:'2px solid var(--ink)', borderRadius:8, padding:'2px 8px', fontFamily:"'Luckiest Guy'", fontSize:14}}>{i+1}</div>
