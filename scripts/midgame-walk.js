@@ -26,7 +26,7 @@ const GAMES = [
   { id: 'gopher', title: 'СУСЛИК',              file: 'whack-a-gopher.png', captureAfterMs: 12000 },
   { id: 'egg',    title: 'ГОРЯЧЕЕ ЯЙЦО',        file: 'egg-pass.png',       captureAfterMs: 7500 },
   { id: 'mud',    title: 'ГРЯЗНЫЙ ЗАБЕГ',       file: 'mud-dash.png',       captureAfterMs: 12000 },
-  { id: 'tug',    title: 'КАНАТНЫЙ БЕСПРЕДЕЛ',  file: 'tug-o-war.png',      captureAfterMs: 8000, spamSpace: true  },
+  { id: 'tug',    title: 'КАНАТНЫЙ БЕСПРЕДЕЛ',  file: 'tug-o-war.png',      captureAfterMs: 5000, spamSpace: true  },
   { id: 'fish',   title: 'БЕШЕНАЯ РЫБАЛКА',     file: 'fishing-frenzy.png', captureAfterMs: 12000 },
   { id: 'jump',   title: 'САРАЙНЫЙ ПРЫЖОК',     file: 'barn-jump.png',      captureAfterMs: 5500 }, // wait phase, after splash, before signal
 ];
