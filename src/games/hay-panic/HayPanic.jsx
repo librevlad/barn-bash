@@ -271,6 +271,19 @@ function HayPanic({ state, onFinish, onQuit, game }) {
           );
         })}
 
+        {/* Survivor spotlight — radial glow on the last critter standing */}
+        {started && !finished && alive.filter(Boolean).length === 1 && (() => {
+          const survivorIdx = alive.findIndex(Boolean);
+          const sx = survivorIdx === 0 ? you.x : cpus[survivorIdx-1].x;
+          return (
+            <div style={{position:'absolute', left: sx, top: FIELD_H - 90, transform:'translate(-50%, -50%)', pointerEvents:'none',
+              width: 180, height: 180,
+              background:'radial-gradient(circle, rgba(255,255,200,.55) 0 35%, rgba(255,255,200,0) 70%)',
+              animation:'survivorPulse 0.8s ease-in-out infinite'
+            }}/>
+          );
+        })()}
+
         {/* splats for dead */}
         {players.map((p,i)=>{
           if (alive[i]) return null;
@@ -282,6 +295,8 @@ function HayPanic({ state, onFinish, onQuit, game }) {
           );
         })}
       </div>
+
+      <style>{`@keyframes survivorPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.55}50%{transform:translate(-50%,-50%) scale(1.08);opacity:.85}}`}</style>
 
       {/* Controls hint */}
       <div style={{position:'absolute',bottom:18,left:0,right:0,display:'flex',justifyContent:'center'}}>

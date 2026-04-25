@@ -270,8 +270,12 @@ function AppleAim({ state, onFinish, onQuit, game }) {
           <div key={'gr'+i} style={{position:'absolute', bottom: 44, left: 80 + i*95, width:20, height:10,
             background:'radial-gradient(ellipse at center bottom, #4a8a35 0 60%, transparent 62%)', opacity:.8}}/>
         ))}
-        {/* target */}
-        <div style={{position:'absolute', left: targetX - 70, top: targetY - 70, width:140, height:140}}>
+        {/* target — subtle idle bob via performance.now(); tick state in
+            useRaf already drives re-renders so the animation feels alive */}
+        <div style={{position:'absolute', left: targetX - 70, top: targetY - 70, width:140, height:140,
+          transform: `translateY(${Math.sin(performance.now()/1200)*3}px)`,
+          filter:'drop-shadow(0 6px 0 rgba(0,0,0,.2))'
+        }}>
           {/* pole */}
           <div style={{position:'absolute', left:64, top:70, width:12, height:110, background:'#6b4a2e', border:'2px solid var(--ink)'}}/>
           {[[5,'#ffc93c'],[4,'#4aa3e0'],[3,'#e04b3b'],[2,'#fff'],[1,'#6cc24a']].map(([r,c],i)=>(
