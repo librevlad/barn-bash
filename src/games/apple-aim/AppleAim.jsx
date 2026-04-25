@@ -347,11 +347,26 @@ function AppleAim({ state, onFinish, onQuit, game }) {
       <style>{`@keyframes floatUp{ 0%{transform:translate(-50%,-50%) scale(.5); opacity:0} 20%{transform:translate(-50%,-80%) scale(1.2); opacity:1} 100%{transform:translate(-50%,-200%) scale(1); opacity:0} }`}</style>
 
       {!started && <Countdown onDone={()=>setStarted(true)}/>}
-      {finished && (
-        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.3)',display:'grid',placeItems:'center',zIndex:40}}>
-          <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:120,color:'var(--yellow)',WebkitTextStroke:'6px var(--ink)',textShadow:'0 8px 0 var(--ink)'}}>MATCH END!</div>
-        </div>
-      )}
+      {finished && (() => {
+        const topIdx = scores.map((s,i)=>({s,i})).sort((a,b)=>b.s-a.s)[0].i;
+        const winner = players[topIdx];
+        return (
+          <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at center, rgba(0,0,0,.1) 30%, rgba(0,0,0,.55) 80%)',display:'grid',placeItems:'center',zIndex:40}}>
+            <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:14}}>
+              <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:120,color:'var(--yellow)',WebkitTextStroke:'6px var(--ink)',textShadow:'0 8px 0 var(--ink)'}}>КОНЕЦ МАТЧА!</div>
+              <div className="pop-in" style={{display:'flex',alignItems:'center',gap:14,background:'#fff',border:'5px solid var(--ink)',borderRadius:20,padding:'14px 22px',boxShadow:'0 10px 0 var(--ink)'}}>
+                <span style={{fontSize:44}}>🏆</span>
+                <Avatar char={winner.char} size={70}/>
+                <div>
+                  <div style={{fontFamily:"'Luckiest Guy'",fontSize:16,color:'var(--wood-dk)'}}>СНАЙПЕР</div>
+                  <div style={{fontFamily:"'Luckiest Guy'",fontSize:32,color:'var(--ink)'}}>{playerLabel(winner)}</div>
+                </div>
+                <div style={{fontFamily:"'Luckiest Guy'",fontSize:28,color:'var(--red)',WebkitTextStroke:'1.5px var(--ink)'}}>{scores[topIdx]} оч.</div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

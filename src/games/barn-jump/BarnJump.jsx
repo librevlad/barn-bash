@@ -92,8 +92,8 @@ function BarnJump({ state, onFinish, onQuit, game }) {
   const bg = phase === 'wait' ? 'radial-gradient(circle at 50% 40%, #3a2510 0%, #1a0e08 70%)'
            : phase === 'go'   ? 'radial-gradient(circle at 50% 40%, #a8e084 0%, #3e8a29 70%)'
                               : 'radial-gradient(circle at 50% 40%, #5a3a1c 0%, #2a1a10 70%)';
-  const bigLabel = phase === 'wait' ? 'WAIT FOR IT…' : phase === 'go' ? 'JUMP! 🐑' : 'DONE!';
-  const labelSize = phase === 'go' ? 260 : 96;
+  const bigLabel = phase === 'wait' ? 'ЖДЁМ…' : phase === 'go' ? 'ПРЫГАЙ! 🐑' : 'ГОТОВО!';
+  const labelSize = phase === 'go' ? 220 : 96;
 
   return (
     <div style={{position:'absolute', inset:0, background:bg, overflow:'hidden', transition:'background .08s ease-in'}}>

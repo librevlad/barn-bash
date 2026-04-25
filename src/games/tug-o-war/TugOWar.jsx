@@ -238,9 +238,17 @@ function TugOWar({ state, onFinish, onQuit, game }) {
 
       {!started && <Countdown onDone={()=>setStarted(true)}/>}
       {finished && (
-        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.3)',display:'grid',placeItems:'center',zIndex:40}}>
-          <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:100,color: winner === 'red' ? '#e04b3b' : '#4aa3e0',WebkitTextStroke:'5px var(--ink)',textShadow:'0 8px 0 var(--ink)'}}>
-            {winner === 'red' ? '🔴 RED WINS!' : '🔵 BLUE WINS!'}
+        <div style={{position:'absolute',inset:0,display:'grid',placeItems:'center',zIndex:40,pointerEvents:'none'}}>
+          <div style={{position:'absolute',inset:0,background:`radial-gradient(ellipse at ${winner==='red'?'30%':'70%'} 60%, rgba(255,255,255,.18), rgba(0,0,0,.55))`}}/>
+          <svg style={{position:'absolute',inset:0,width:'100%',height:'100%'}} preserveAspectRatio="none" viewBox="0 0 1600 900">
+            {[...Array(14)].map((_,k)=>{
+              const a = (k/14)*Math.PI*2 + performance.now()/800;
+              const cx = winner==='red' ? 500 : 1100;
+              return <line key={k} x1={cx} y1="450" x2={cx + Math.cos(a)*1200} y2={450 + Math.sin(a)*1200} stroke={winner==='red' ? 'rgba(224,75,59,.25)' : 'rgba(74,163,224,.25)'} strokeWidth="60"/>;
+            })}
+          </svg>
+          <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:110,color: winner === 'red' ? '#e04b3b' : '#4aa3e0',WebkitTextStroke:'6px var(--ink)',textShadow:'0 10px 0 var(--ink)', zIndex:2}}>
+            {winner === 'red' ? '🔴 КРАСНЫЕ ВЗЯЛИ!' : '🔵 СИНИЕ ВЗЯЛИ!'}
           </div>
         </div>
       )}

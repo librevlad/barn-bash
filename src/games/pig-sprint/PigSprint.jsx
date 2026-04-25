@@ -188,11 +188,28 @@ function PigSprint({ state, onFinish, onQuit, game }) {
       </div>
 
       {!started && <Countdown onDone={()=>setStarted(true)}/>}
-      {finished && (
-        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.3)',display:'grid',placeItems:'center',zIndex:40}}>
-          <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:140,color:'var(--yellow)',WebkitTextStroke:'6px var(--ink)',textShadow:'0 8px 0 var(--ink)'}}>FINISH!</div>
-        </div>
-      )}
+      {finished && (() => {
+        const winnerIdx = finishOrder[0];
+        const winner = winnerIdx != null ? players[winnerIdx] : null;
+        return (
+          <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at center, rgba(0,0,0,.15) 30%, rgba(0,0,0,.55) 80%)',display:'grid',placeItems:'center',zIndex:40}}>
+            <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:14}}>
+              <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:140,color:'var(--yellow)',WebkitTextStroke:'6px var(--ink)',textShadow:'0 8px 0 var(--ink)'}}>ФИНИШ!</div>
+              {winner && (
+                <div className="pop-in" style={{display:'flex',alignItems:'center',gap:14,background:'#fff',border:'5px solid var(--ink)',borderRadius:20,padding:'14px 22px',boxShadow:'0 10px 0 var(--ink)'}}>
+                  <span style={{fontSize:50}}>🥇</span>
+                  <Avatar char={winner.char} size={70}/>
+                  <div>
+                    <div style={{fontFamily:"'Luckiest Guy'",fontSize:16,color:'var(--wood-dk)'}}>ПЕРВЫЙ К ФИНИШУ</div>
+                    <div style={{fontFamily:"'Luckiest Guy'",fontSize:32,color:'var(--ink)'}}>{playerLabel(winner)}</div>
+                  </div>
+                  <div style={{fontFamily:"'Luckiest Guy'",fontSize:28,color:'var(--red)',WebkitTextStroke:'1.5px var(--ink)'}}>+5🪙</div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

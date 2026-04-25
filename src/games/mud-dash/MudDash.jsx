@@ -31,7 +31,8 @@ function MudDash({ state, onFinish, onQuit, game }) {
       spawnT.current = 0.7 + Math.random()*0.5;
       const count = 1 + (Math.random() < 0.4 ? 1 : 0);
       const lanes = [0,1,2].sort(()=>Math.random()-.5).slice(0, count);
-      const kind = Math.random() < 0.55 ? 'mud' : 'rope';
+      const r = Math.random();
+      const kind = r < 0.45 ? 'mud' : r < 0.75 ? 'rope' : r < 0.88 ? 'log' : 'haybale';
       setObstacles(o => [
         ...o,
         ...lanes.map(l => ({ id: nextId.current++, lane: l, z: 1000, kind }))
@@ -96,6 +97,8 @@ function MudDash({ state, onFinish, onQuit, game }) {
           const jumping = jumpT > 0.15;
           if (o.kind === 'mud' && !jumping) { hits++; muddy = 0.7; o._hit = true; }
           if (o.kind === 'rope' && !jumping) { hits++; muddy = 0.4; o._hit = true; }
+          if (o.kind === 'log' && !jumping) { hits++; muddy = 0.5; o._hit = true; }
+          if (o.kind === 'haybale' && !jumping) { hits++; muddy = 0.55; o._hit = true; }
         }
       });
       const dist = p.dist + (speed * dt) * (muddy > 0 ? 0.5 : 1);
@@ -293,7 +296,31 @@ function MudDash({ state, onFinish, onQuit, game }) {
               zIndex: Math.round(1000 - o.z),
               pointerEvents:'none',
             }}>
-              {o.kind === 'mud' ? (
+              {o.kind === 'log' ? (
+                <svg width="180" height="80" viewBox="0 0 180 80">
+                  <ellipse cx="90" cy="70" rx="80" ry="6" fill="rgba(0,0,0,.35)"/>
+                  <rect x="10" y="22" width="160" height="34" rx="17" fill="#8f6a3b" stroke="#2a1a10" strokeWidth="3"/>
+                  <ellipse cx="20" cy="39" rx="10" ry="16" fill="#c89a5a" stroke="#2a1a10" strokeWidth="2.5"/>
+                  <ellipse cx="20" cy="39" rx="5" ry="9" fill="#8f6a3b"/>
+                  <ellipse cx="160" cy="39" rx="10" ry="16" fill="#c89a5a" stroke="#2a1a10" strokeWidth="2.5"/>
+                  <ellipse cx="160" cy="39" rx="5" ry="9" fill="#8f6a3b"/>
+                  <path d="M 40 30 Q 70 26 100 30 M 44 50 Q 80 54 110 50" stroke="#5a3a1c" strokeWidth="2" fill="none" opacity=".6"/>
+                </svg>
+              ) : o.kind === 'haybale' ? (
+                <svg width="150" height="110" viewBox="0 0 150 110">
+                  <ellipse cx="75" cy="102" rx="60" ry="6" fill="rgba(0,0,0,.35)"/>
+                  <rect x="10" y="20" width="130" height="78" rx="10" fill="#e8c76c" stroke="#2a1a10" strokeWidth="3"/>
+                  <line x1="22" y1="32" x2="34" y2="36" stroke="#b89340" strokeWidth="1.4"/>
+                  <line x1="48" y1="40" x2="60" y2="44" stroke="#b89340" strokeWidth="1.4"/>
+                  <line x1="80" y1="32" x2="92" y2="38" stroke="#b89340" strokeWidth="1.4"/>
+                  <line x1="106" y1="46" x2="118" y2="50" stroke="#b89340" strokeWidth="1.4"/>
+                  <line x1="30" y1="60" x2="42" y2="64" stroke="#b89340" strokeWidth="1.4"/>
+                  <line x1="64" y1="68" x2="76" y2="72" stroke="#b89340" strokeWidth="1.4"/>
+                  <line x1="94" y1="76" x2="106" y2="80" stroke="#b89340" strokeWidth="1.4"/>
+                  <rect x="24" y="28" width="102" height="4" fill="#a87a20" opacity=".6"/>
+                  <rect x="24" y="88" width="102" height="4" fill="#a87a20" opacity=".6"/>
+                </svg>
+              ) : o.kind === 'mud' ? (
                 <svg width="160" height="90" viewBox="0 0 160 90">
                   <ellipse cx="80" cy="72" rx="12" ry="4" fill="rgba(0,0,0,.35)"/>
                   <ellipse cx="80" cy="56" rx="70" ry="28" fill="#4a2e14" stroke="#2a1a10" strokeWidth="3"/>
@@ -327,9 +354,10 @@ function MudDash({ state, onFinish, onQuit, game }) {
           const y = projectY(z);
           const s = projectScale(z);
           const jump = ps.jumpT > 0 ? Math.sin((1 - ps.jumpT/0.6) * Math.PI) * 80 : 0;
+          const slipping = ps.muddy > 0.4;
           // running bob when moving
           const bob = jump > 0 ? 0 : Math.sin(time * 14 + i) * 4;
-          const tilt = jump > 0 ? -6 : Math.sin(time * 14 + i) * 3;
+          const tilt = jump > 0 ? -6 : slipping ? Math.sin(time * 30 + i) * 18 : Math.sin(time * 14 + i) * 3;
           return (
             <div key={i} style={{
               position:'absolute', left: laneX(ps.lane), top: y - jump,
@@ -371,11 +399,40 @@ function MudDash({ state, onFinish, onQuit, game }) {
       </div>
 
       {!started && <Countdown onDone={()=>setStarted(true)}/>}
-      {finished && (
-        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.3)',display:'grid',placeItems:'center',zIndex:40}}>
-          <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:120,color:'var(--yellow)',WebkitTextStroke:'6px var(--ink)',textShadow:'0 8px 0 var(--ink)'}}>FINISH!</div>
-        </div>
-      )}
+      {finished && (() => {
+        const ranked = pstate.map((p,i)=>({i,h:p.hits,d:p.dist})).sort((a,b)=> a.h - b.h || b.d - a.d);
+        const winner = players[ranked[0].i];
+        return (
+          <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at center, rgba(0,0,0,.2) 30%, rgba(0,0,0,.6) 80%)',display:'grid',placeItems:'center',zIndex:40, overflow:'hidden'}}>
+            {[...Array(12)].map((_,k) => {
+              const colors = ['#ffc93c','#e04b3b','#4aa3e0','#6cc24a','#f28bbd','#ffec8a'];
+              const col = colors[k%colors.length];
+              const fx = 20 + (k*67)%60, fy = 10 + (k*41)%40;
+              return (
+                <div key={k} style={{position:'absolute', left:`${fx}%`, top:`${fy}%`, width:4, height:4, animation:`fw ${1.2 + (k%3)*0.3}s ease-out ${(k%5)*0.2}s infinite`}}>
+                  {[...Array(10)].map((_,j) => {
+                    const a = (j/10)*Math.PI*2;
+                    return <div key={j} style={{position:'absolute', left:0, top:0, width:6, height:6, background:col, borderRadius:'50%',
+                      transform:`translate(${Math.cos(a)*50}px, ${Math.sin(a)*50}px)`, boxShadow:`0 0 8px ${col}`}}/>;
+                  })}
+                </div>
+              );
+            })}
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14, zIndex:2}}>
+              <div className="pop-in" style={{fontFamily:"'Luckiest Guy'",fontSize:120,color:'var(--yellow)',WebkitTextStroke:'6px var(--ink)',textShadow:'0 10px 0 var(--ink)'}}>ФИНИШ!</div>
+              <div className="pop-in" style={{display:'flex',alignItems:'center',gap:14,background:'#fff',border:'5px solid var(--ink)',borderRadius:20,padding:'12px 22px',boxShadow:'0 10px 0 var(--ink)'}}>
+                <span style={{fontSize:40}}>🏆</span>
+                <Avatar char={winner.char} size={70}/>
+                <div>
+                  <div style={{fontFamily:"'Luckiest Guy'",fontSize:16,color:'var(--wood-dk)'}}>МЕНЬШЕ ВСЕГО ГРЯЗИ</div>
+                  <div style={{fontFamily:"'Luckiest Guy'",fontSize:32,color:'var(--ink)'}}>{playerLabel(winner)}</div>
+                </div>
+              </div>
+            </div>
+            <style>{`@keyframes fw{0%{opacity:0;transform:scale(0)}20%{opacity:1}100%{opacity:0;transform:scale(2)}}`}</style>
+          </div>
+        );
+      })()}
     </div>
   );
 }
