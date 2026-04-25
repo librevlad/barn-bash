@@ -337,13 +337,16 @@ function HayPanic({ state, onFinish, onQuit, game }) {
 
 function HayBale({ x, y, rot }) {
   return (
-    <div style={{position:'absolute',left:x,top:y,transform:`translate(-50%,-50%) rotate(${rot}deg)`}}>
-      <svg width="70" height="56" viewBox="0 0 70 56">
-        <ellipse cx="35" cy="28" rx="32" ry="24" fill="#e8c064" stroke="#2a1a10" strokeWidth="3"/>
-        {Array.from({length:6}).map((_,i)=>(
-          <line key={i} x1="8" y1={12+i*7} x2="62" y2={10+i*7} stroke="#b8873a" strokeWidth="2"/>
+    <div style={{position:'absolute',left:x,top:y,transform:`translate(-50%,-50%) rotate(${rot}deg)`,
+      filter:'drop-shadow(0 4px 0 rgba(0,0,0,.15))'}}>
+      <svg width="78" height="62" viewBox="0 0 78 62">
+        <ellipse cx="39" cy="31" rx="36" ry="27" fill="#e8c064" stroke="#2a1a10" strokeWidth="3.5"/>
+        <ellipse cx="39" cy="27" rx="32" ry="22" fill="#edc96e" stroke="none"/>
+        {Array.from({length:7}).map((_,i)=>(
+          <line key={i} x1="8" y1={11+i*7} x2="70" y2={9+i*7} stroke="#b8873a" strokeWidth="2"/>
         ))}
-        <ellipse cx="35" cy="16" rx="28" ry="4" fill="rgba(255,255,255,.3)"/>
+        <ellipse cx="39" cy="14" rx="28" ry="4" fill="rgba(255,255,255,.35)"/>
+        <line x1="14" y1="18" x2="24" y2="22" stroke="#fff5d0" strokeWidth="2" opacity=".7"/>
       </svg>
     </div>
   );

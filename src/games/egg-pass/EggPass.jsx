@@ -188,17 +188,20 @@ function EggPass({ state, onFinish, onQuit, game }) {
         </div>
       </div>
 
-      {/* Timer ring (center) */}
-      <svg style={{position:'absolute', left: CX-90, top: CY-90, pointerEvents:'none'}} width="180" height="180" viewBox="0 0 180 180">
-        <circle cx="90" cy="90" r="78" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth="10"/>
-        <circle cx="90" cy="90" r="78" fill="none"
+      {/* Timer ring (center) — slightly larger with СЕК unit label and a
+          translucent black puck behind the digits for readability over the
+          floorboard pattern. */}
+      <svg style={{position:'absolute', left: CX-100, top: CY-100, pointerEvents:'none'}} width="200" height="200" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="88" fill="rgba(0,0,0,.3)" stroke="rgba(255,255,255,.15)" strokeWidth="10"/>
+        <circle cx="100" cy="100" r="88" fill="none"
           stroke={pct < 0.33 ? '#e04b3b' : pct < 0.6 ? '#ffc93c' : '#6cc24a'}
           strokeWidth="12" strokeLinecap="round"
-          strokeDasharray={`${pct * 490} 490`}
-          transform="rotate(-90 90 90)"/>
-        <text x="90" y="96" textAnchor="middle" fontFamily="Luckiest Guy" fontSize="48" fill="#fff" stroke="#2a1a10" strokeWidth="2">
+          strokeDasharray={`${pct * 553} 553`}
+          transform="rotate(-90 100 100)"/>
+        <text x="100" y="108" textAnchor="middle" fontFamily="Luckiest Guy" fontSize="52" fill="#fff" stroke="#2a1a10" strokeWidth="2">
           {timeLeft.toFixed(1)}
         </text>
+        <text x="100" y="138" textAnchor="middle" fontFamily="Luckiest Guy" fontSize="14" fill="rgba(255,255,255,.7)">СЕК</text>
       </svg>
 
       {/* players around ring */}

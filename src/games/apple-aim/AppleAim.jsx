@@ -312,9 +312,25 @@ function AppleAim({ state, onFinish, onQuit, game }) {
         {/* archer + bow */}
         <div style={{position:'absolute', left: archerX, top: archerY, transform:'translate(-50%, -40%)'}}>
           <Avatar char={currentPlayer.char} size={96}/>
-          {/* bow + aim line */}
+          {/* bow + aim line. Bow arc bends back as power builds in 'power'
+              phase. Bowstring snaps into a V; a nocked arrow rides the
+              draw position so the player can read the shot tension visually. */}
           <svg width="240" height="240" viewBox="-120 -120 240 240" style={{position:'absolute', left:-120 + 40, top:-120 - 20, overflow:'visible', pointerEvents:'none'}}>
-            <path d={`M 20 -20 Q 50 0 20 20`} stroke="#6b4a2e" strokeWidth="5" fill="none" strokeLinecap="round"/>
+            {(() => {
+              const drawAmt = phase === 'power' ? power/100 : 0;
+              return (
+                <>
+                  <path d={`M ${20 - drawAmt*4} -22 Q ${52 + drawAmt*6} 0 ${20 - drawAmt*4} 22`}
+                    stroke="#6b4a2e" strokeWidth="5" fill="none" strokeLinecap="round"/>
+                  <path d={`M ${20 - drawAmt*4} -22 L ${20 - drawAmt*22} 0 L ${20 - drawAmt*4} 22`}
+                    stroke="#f4e0b0" strokeWidth="2" fill="none"/>
+                  {phase === 'power' && (
+                    <line x1={20 - drawAmt*22} y1={0} x2={20 - drawAmt*22 + 50} y2={0}
+                      stroke="#8f6a3b" strokeWidth="3"/>
+                  )}
+                </>
+              );
+            })()}
             {(phase === 'angle' || phase === 'power') && (
               <line x1="0" y1="0"
                 x2={Math.cos(-angle * Math.PI/180) * 180}
