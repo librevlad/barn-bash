@@ -278,13 +278,22 @@ function AppleAim({ state, onFinish, onQuit, game }) {
         }}>
           {/* pole */}
           <div style={{position:'absolute', left:64, top:70, width:12, height:110, background:'#6b4a2e', border:'2px solid var(--ink)'}}/>
-          {[[5,'#ffc93c'],[4,'#4aa3e0'],[3,'#e04b3b'],[2,'#fff'],[1,'#6cc24a']].map(([r,c],i)=>(
-            <div key={i} style={{
-              position:'absolute', inset: 16 * i, borderRadius:'50%',
-              background: c, border: '3px solid var(--ink)',
-              display:'grid', placeItems:'center', fontFamily:"'Luckiest Guy'", color:'var(--ink)', fontSize: i === 4 ? 18 : 0
-            }}>{i === 4 ? r : ''}</div>
-          ))}
+          {[[5,'#ffc93c'],[4,'#4aa3e0'],[3,'#e04b3b'],[2,'#fff'],[1,'#6cc24a']].map(([r,c],i)=>{
+            // Glow the most recent hit's ring while we're still in 'result'
+            // phase (~1.2s before the next shot resets). Keeps the player
+            // visually anchored on where the arrow landed.
+            const lastHit = hits[hits.length - 1];
+            const glowing = phase === 'result' && lastHit && lastHit.ring === r;
+            return (
+              <div key={i} style={{
+                position:'absolute', inset: 16 * i, borderRadius:'50%',
+                background: c, border: '3px solid var(--ink)',
+                display:'grid', placeItems:'center', fontFamily:"'Luckiest Guy'", color:'var(--ink)', fontSize: i === 4 ? 18 : 0,
+                boxShadow: glowing ? '0 0 24px rgba(255,255,100,.95), 0 0 8px rgba(255,255,255,.7)' : 'none',
+                transition: glowing ? 'none' : 'box-shadow .3s ease-out'
+              }}>{i === 4 ? r : ''}</div>
+            );
+          })}
           {/* apple on top */}
           <div style={{position:'absolute', top:-20, left:60, fontSize:36}}>🍎</div>
         </div>

@@ -11,6 +11,9 @@ function HayPanic({ state, onFinish, onQuit, game }) {
   const [time, setTime] = useState(0);
   const survivalTime = useRef(players.map(() => 0));
   const [alive, setAlive] = useState(() => players.map(() => true));
+  // Animated death splats — pushed when a player flips alive→dead. Aged
+  // each frame and removed past 2.2s.
+  const [deathSplats, setDeathSplats] = useState([]);
   // Spread P0 and the CPU lane(s) across the field so 2-player games
   // don't spawn both critters on the exact same pixel (P0 at W/2 clashed
   // with cpu[0] = 1 * W/2 in the old formula).
@@ -130,14 +133,25 @@ function HayPanic({ state, onFinish, onQuit, game }) {
       let next = prev.slice();
       const check = (px, py) => bales.some(b => Math.hypot(b.x - px, b.y - py) < 46);
       // you
-      if (next[0] && check(you.x, FIELD_H - 60)) next[0] = false;
+      if (next[0] && check(you.x, FIELD_H - 60)) {
+        next[0] = false;
+        setDeathSplats(ds => [...ds, { x: you.x, y: FIELD_H - 60, t: 0 }]);
+      }
       cpus.forEach((c, idx) => {
         const pi = idx + 1;
-        if (next[pi] && check(c.x, FIELD_H - 60)) next[pi] = false;
+        if (next[pi] && check(c.x, FIELD_H - 60)) {
+          next[pi] = false;
+          setDeathSplats(ds => [...ds, { x: c.x, y: FIELD_H - 60, t: 0 }]);
+        }
       });
       return next;
     });
   }, [bales, you.x, cpus]);
+
+  // age death splats (always-on so they continue to fade after the round)
+  useRaf((dt) => {
+    setDeathSplats(ds => ds.map(s => ({ ...s, t: s.t + dt })).filter(s => s.t < 2.2));
+  }, true);
 
   // survival clock per player
   useRaf((dt) => {
@@ -284,12 +298,23 @@ function HayPanic({ state, onFinish, onQuit, game }) {
           );
         })()}
 
-        {/* splats for dead */}
+        {/* Recent KO splats — animated grow+fade */}
+        {deathSplats.map((d, i) => (
+          <div key={'ds'+i} style={{
+            position:'absolute', left:d.x, top:d.y,
+            transform:`translate(-50%, -50%) scale(${1 + d.t*0.3})`,
+            opacity: Math.max(0, 1 - d.t/2.2),
+            pointerEvents:'none'
+          }}>
+            <div style={{fontSize:56}}>💥</div>
+          </div>
+        ))}
+        {/* Long-lived dazed star while a player stays out for the round */}
         {players.map((p,i)=>{
           if (alive[i]) return null;
           const x = i === 0 ? you.x : cpus[i-1].x;
           return (
-            <div key={i} style={{position:'absolute', left:x, top:FIELD_H - 60, transform:'translate(-50%,-50%)'}}>
+            <div key={i} style={{position:'absolute', left:x, top:FIELD_H - 60, transform:'translate(-50%,-50%)', opacity:.55}}>
               <div style={{fontSize:46}}>💫</div>
             </div>
           );
