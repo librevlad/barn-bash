@@ -150,12 +150,35 @@ function BarnJump({ state, onFinish, onQuit, game }) {
       </div>
 
       <div style={{position:'absolute', inset:0, display:'grid', placeItems:'center', pointerEvents:'none'}}>
-        <div className={phase === 'go' ? 'pop-in' : ''} style={{
-          fontFamily:"'Luckiest Guy'", fontSize:labelSize, color:'#fff',
-          WebkitTextStroke:'6px var(--ink)', textShadow:'0 12px 0 var(--ink)',
-          textAlign:'center', letterSpacing:2
-        }}>
-          {bigLabel}
+        <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:14}}>
+          <div className={phase === 'go' ? 'pop-in' : ''} style={{
+            fontFamily:"'Luckiest Guy'", fontSize:labelSize, color:'#fff',
+            WebkitTextStroke:'6px var(--ink)', textShadow:'0 12px 0 var(--ink)',
+            textAlign:'center', letterSpacing:2
+          }}>
+            {bigLabel}
+          </div>
+          {/* Winner card on done phase — same shape as V2 overlays. The
+              fastest valid reactor takes the medal. */}
+          {phase === 'done' && (() => {
+            const valid = reactions
+              .map((r, i) => ({ i, r }))
+              .filter(x => x.r != null && x.r !== 'early')
+              .sort((a, b) => a.r - b.r);
+            if (!valid.length) return null;
+            const winner = players[valid[0].i];
+            return (
+              <div className="pop-in" style={{display:'flex',alignItems:'center',gap:14,background:'#fff',border:'5px solid var(--ink)',borderRadius:20,padding:'14px 22px',boxShadow:'0 10px 0 var(--ink)'}}>
+                <span style={{fontSize:44}}>🥇</span>
+                <Avatar char={winner.char} size={70}/>
+                <div>
+                  <div style={{fontFamily:"'Luckiest Guy'",fontSize:16,color:'var(--wood-dk)'}}>БЫСТРЕЕ ВСЕХ</div>
+                  <div style={{fontFamily:"'Luckiest Guy'",fontSize:32,color:'var(--ink)'}}>{playerLabel(winner)}</div>
+                </div>
+                <div style={{fontFamily:"'Luckiest Guy'",fontSize:24,color:'var(--red)',WebkitTextStroke:'1.5px var(--ink)'}}>{Math.round(valid[0].r)}мс</div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
