@@ -51,14 +51,14 @@ function BoardScreen({ state, onPick, onTweaks }) {
 
       {/* Top bar */}
       <div style={{position:'absolute',top:20,left:24,right:24,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div className="plank" style={{padding:'10px 20px'}}>
+        <div className="plank" style={{padding:'10px 20px', whiteSpace:'nowrap'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:22}}>РАУНД {round} / {totalRounds}</span>
         </div>
-        <div className="plank" style={{padding:'10px 24px', transform:'rotate(1.5deg)'}}>
+        <div className="plank" style={{padding:'10px 24px', transform:'rotate(1.5deg)', whiteSpace:'nowrap'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:24}}>ВЫБИРАЙ МИНИ-ИГРУ</span>
         </div>
         <div style={{display:'flex',gap:10}}>
-          <div className="plank" style={{padding:'10px 14px'}}>
+          <div className="plank" style={{padding:'10px 14px', whiteSpace:'nowrap'}}>
             <Coin size={22}/> <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20,marginLeft:6}}>{coins}</span>
           </div>
           <Btn variant="cream" size="sm" onClick={onTweaks}>⚙ НАСТРОЙКИ</Btn>
@@ -87,19 +87,18 @@ function BoardScreen({ state, onPick, onTweaks }) {
       {/* Modifier card */}
       {modifier && (
         <div style={{position:'absolute', top:220, left:'50%', transform:'translateX(-50%) rotate(-2deg)'}}>
-          <Card style={{background:'#ffd8a0', borderColor:'var(--ink)', padding:'12px 24px'}}>
-            <div style={{fontFamily:"'Luckiest Guy'",fontSize:14,color:'#a8291a'}}>⚡ ТВИСТ РАУНДА</div>
-            <div style={{fontFamily:"'Luckiest Guy'",fontSize:22,color:'var(--ink)'}}>{modifier.emoji || '⚡'} {(modifier.text || modifier).toUpperCase()}</div>
+          <Card style={{background:'#ffd8a0', borderColor:'var(--ink)', padding:'10px 26px', whiteSpace:'nowrap', textAlign:'center'}}>
+            <div style={{fontFamily:"'Luckiest Guy'",fontSize:13,color:'#a8291a',letterSpacing:1.5}}>⚡ ТВИСТ РАУНДА</div>
+            <div style={{fontFamily:"'Luckiest Guy'",fontSize:22,color:'var(--ink)',marginTop:2}}>{modifier.emoji || '⚡'} {(modifier.text || modifier).toUpperCase()}</div>
           </Card>
         </div>
       )}
 
-      {/* Minigame cards grid — 5 columns keeps 9-10 tiles (3 rows max) on a
-          1600×900 viewport without letting the last row overflow the stage.
-          Was 4×2 fixed; breaking the 4-col assumption was cheaper than
-          rewriting every tile's minHeight. */}
-      <div style={{position:'absolute', top: 320, left:0, right:0, display:'grid',
-        gridTemplateColumns:'repeat(5, 280px)', gap:22, justifyContent:'center'}}>
+      {/* Minigame cards grid — auto-fit so any registered count (8, 9, 10+)
+          flows cleanly without a hand-tuned column count. minmax floor of
+          240 keeps cards readable on a 1600-wide stage. */}
+      <div style={{position:'absolute', top: 320, left:40, right:40, display:'grid',
+        gridTemplateColumns:'repeat(auto-fit, minmax(240px, 280px))', gap:22, justifyContent:'center'}}>
         {games.map(mg => (
           <MiniCard key={mg.id} mg={mg} onPick={() => onPick(mg.id)}
                     voters={(votes[mg.id] || []).map(pi => players[pi]).filter(Boolean)}/>
@@ -137,15 +136,22 @@ function MiniCard({ mg, onPick, voters = [] }) {
           ))}
         </div>
       )}
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style={{fontFamily:"'Luckiest Guy'", fontSize:26, color:'var(--ink)'}}>{mg.name.toUpperCase()}</div>
-        <div style={{fontSize:40}}>{mg.icon}</div>
+      {/* Title row: gap + min-height + flex-start icon align so 1- and 2-line
+          names land cleanly. Russian names are mostly 12-18 chars and wrap to
+          2 lines at the smaller font tier — that's intentional, ellipsis was
+          worse than wrap for game names that should be fully readable. */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10,minHeight:54}}>
+        <div style={{fontFamily:"'Luckiest Guy'", color:'var(--ink)', lineHeight:1.05, flex:1,
+          fontSize: mg.name.length > 14 ? 20 : mg.name.length > 10 ? 22 : 26,
+          letterSpacing: mg.name.length > 14 ? 0 : .5
+        }}>{mg.name.toUpperCase()}</div>
+        <div style={{fontSize:36, flex:'0 0 auto', lineHeight:1}}>{mg.icon}</div>
       </div>
-      <div style={{background:'#fff', border:'3px solid var(--ink)', borderRadius:12, padding:'8px 12px', marginTop:10, fontWeight:600, minHeight:56}}>
+      <div style={{background:'#fff', border:'3px solid var(--ink)', borderRadius:12, padding:'8px 12px', marginTop:10, fontWeight:600, minHeight:56, fontSize:14, lineHeight:1.3}}>
         {mg.blurb}
       </div>
       <div style={{display:'flex', justifyContent:'space-between', marginTop:12, alignItems:'center'}}>
-        <div style={{display:'flex', alignItems:'center', gap:4, fontFamily:"'Luckiest Guy'", color:'var(--wood-dk)'}}>
+        <div style={{display:'flex', alignItems:'center', gap:6, fontFamily:"'Luckiest Guy'", color:'var(--wood-dk)', fontSize:15, whiteSpace:'nowrap'}}>
           <Coin size={18}/> +5 ЗА ПОБЕДУ
         </div>
         <div style={{
