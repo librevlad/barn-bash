@@ -18,6 +18,7 @@ function AppleAim({ state, onFinish, onQuit, game }) {
   const [powerDir, setPowerDir] = useState(1);
   const [phase, setPhase] = useState('angle'); // 'angle' -> 'power' -> 'fly' -> 'result'
   const [arrow, setArrow] = useState(null); // {x,y,vx,vy}
+  const [trail, setTrail] = useState([]); // ghost samples of arrow flight, last 18
   const [hits, setHits] = useState([]); // [{x,y,ring}]
   const [floatTexts, setFloatTexts] = useState([]);
 
@@ -49,6 +50,7 @@ function AppleAim({ state, onFinish, onQuit, game }) {
     } else if (phase === 'fly' && arrow) {
       setArrow(a => {
         const next = { ...a, x: a.x + a.vx * dt, y: a.y + a.vy * dt, vy: a.vy + 900 * dt, rot: Math.atan2(a.vy + 900 * dt, a.vx) * 180 / Math.PI };
+        setTrail(tr => [...tr, { x: next.x, y: next.y }].slice(-18));
         // check hit target or ground
         const dx = next.x - targetX, dy = next.y - targetY;
         const dist = Math.hypot(dx, dy);
@@ -87,6 +89,7 @@ function AppleAim({ state, onFinish, onQuit, game }) {
       setRound(nextRound);
       setPower(0);
       setAngle(45);
+      setTrail([]);
       setPhase('angle');
     }, 1200);
   };
@@ -316,6 +319,16 @@ function AppleAim({ state, onFinish, onQuit, game }) {
             )}
           </svg>
         </div>
+
+        {/* Arrow flight trail — fading ghost samples (most recent brightest) */}
+        {trail.map((t, i) => (
+          <div key={'tr'+i} style={{
+            position:'absolute', left:t.x, top:t.y, transform:'translate(-50%,-50%)',
+            width: 6, height: 6, borderRadius:'50%',
+            background:`rgba(255,255,255,${(i/trail.length)*0.55})`,
+            pointerEvents:'none'
+          }}/>
+        ))}
 
         {/* arrow in flight */}
         {arrow && (

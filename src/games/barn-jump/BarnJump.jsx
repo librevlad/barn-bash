@@ -18,14 +18,16 @@ function BarnJump({ state, onFinish, onQuit, game }) {
   // tension bar). Active outside of 'done' so the screen feels alive.
   const [tick, setTick] = useState(0);
   useRaf(() => setTick(t => t + 1), true);
+  // Lock waitStart/waitDur once on mount so the tension bar can render.
+  const [waitStart] = useState(() => performance.now());
+  const [waitDur] = useState(() => 2000 + Math.random() * 3000);
 
   const cpuWindow = { easy: [700, 1400], medium: [400, 900], hard: [250, 550] }[state.difficulty] || [400, 900];
 
   // Random 2-5s wait before the JUMP signal. Once it fires, record the
   // exact performance.now() so reaction times measure from signal, not mount.
   useEffect(() => {
-    const delay = 2000 + Math.random() * 3000;
-    const t = setTimeout(() => { setSignalAt(performance.now()); setPhase('go'); }, delay);
+    const t = setTimeout(() => { setSignalAt(performance.now()); setPhase('go'); }, waitDur);
     return () => clearTimeout(t);
   }, []);
 
@@ -98,6 +100,7 @@ function BarnJump({ state, onFinish, onQuit, game }) {
                               : 'radial-gradient(circle at 50% 40%, #5a3a1c 0%, #2a1a10 70%)';
   const bigLabel = phase === 'wait' ? 'ЖДЁМ…' : phase === 'go' ? 'ПРЫГАЙ! 🐑' : 'ГОТОВО!';
   const labelSize = phase === 'go' ? 220 : 96;
+  const tension = phase === 'wait' ? Math.min(0.95, (performance.now() - waitStart) / waitDur) : 1;
 
   return (
     <div style={{position:'absolute', inset:0, background:bg, overflow:'hidden', transition: phase === 'go' ? 'none' : 'background .3s'}}>
@@ -123,6 +126,20 @@ function BarnJump({ state, onFinish, onQuit, game }) {
             return <line key={'ray'+k} x1="800" y1="200" x2={800 + Math.cos(a)*1400} y2={200 + Math.sin(a)*1400} stroke="rgba(255,245,138,.35)" strokeWidth="80"/>;
           })}
         </svg>
+      )}
+      {/* Tension meter during wait — green→yellow→red, glow at the danger end */}
+      {phase === 'wait' && (
+        <div style={{position:'absolute', top:90, left:'50%', transform:'translateX(-50%)', zIndex:25}}>
+          <div style={{fontFamily:"'Luckiest Guy'", color:'#fff', fontSize:14, textAlign:'center', marginBottom:4, letterSpacing:2, opacity:.7}}>НАПРЯЖЕНИЕ</div>
+          <div style={{width:300, height:14, background:'rgba(0,0,0,.5)', border:'3px solid var(--ink)', borderRadius:10, overflow:'hidden', boxShadow:'0 4px 0 var(--ink)'}}>
+            <div style={{
+              width:`${tension*100}%`, height:'100%',
+              background: tension < 0.5 ? '#6cc24a' : tension < 0.8 ? '#ffc93c' : '#e04b3b',
+              transition:'background .2s',
+              boxShadow: tension > 0.8 ? '0 0 10px #e04b3b' : 'none'
+            }}/>
+          </div>
+        </div>
       )}
       <div style={{position:'absolute', top:20, left:20, right:20, display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:20}}>
         <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>

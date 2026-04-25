@@ -33,6 +33,9 @@ function TugOWar({ state, onFinish, onQuit, game }) {
   const [power, setPower] = useState(()=> players.map(()=>0));
   const [tapCounts, setTapCounts] = useState(()=> players.map(()=>0));
   const [lastTap, setLastTap] = useState(()=> players.map(()=>0));
+  // Surface team forces to render so the rope can sag/straighten under load.
+  const [redForce, setRedForce] = useState(0);
+  const [blueForce, setBlueForce] = useState(0);
 
   const difficulty = state.difficulty;
   const cpuRate = { easy: 4.0, medium: 6.0, hard: 8.0 }[difficulty] || 6.0;
@@ -41,10 +44,11 @@ function TugOWar({ state, onFinish, onQuit, game }) {
   useRaf((dt) => {
     if (!started || finished) return;
     // decay power and calculate net pull using refs (stable across RAF)
-    let redForce = 0, blueForce = 0;
-    redTeam.forEach(i => redForce += powerRef.current[i] * handicap(i));
-    blueTeam.forEach(i => blueForce += powerRef.current[i] * handicap(i));
-    const net = (blueForce - redForce) * dt * 60;
+    let rf = 0, bf = 0;
+    redTeam.forEach(i => rf += powerRef.current[i] * handicap(i));
+    blueTeam.forEach(i => bf += powerRef.current[i] * handicap(i));
+    setRedForce(rf); setBlueForce(bf);
+    const net = (bf - rf) * dt * 60;
     setOffset(o => {
       const no = o + net;
       if (no <= -MAX) { setWinner('red'); setFinished(true); return -MAX; }
@@ -124,6 +128,8 @@ function TugOWar({ state, onFinish, onQuit, game }) {
   const FIELD_W = 1400;
   const centerX = FIELD_W / 2;
   const ribbonX = centerX + offset;
+  // Tension straightens the rope as both teams pull harder; idle rope sags.
+  const tension = Math.min(1, (redForce + blueForce) / 6);
 
   return (
     <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #9acfe8 0%, #cce6b0 55%, #8fcc6a 100%)',overflow:'hidden'}}>
@@ -187,15 +193,27 @@ function TugOWar({ state, onFinish, onQuit, game }) {
         <polygon points="0,0 36,10 0,20 6,10" fill="var(--yellow)" stroke="var(--ink)" strokeWidth="2"/>
       </svg>
 
-      {/* Rope */}
-      <svg style={{position:'absolute',bottom:250,left:'50%',transform:'translateX(-50%)',width:FIELD_W,height:60,overflow:'visible'}} viewBox={`0 0 ${FIELD_W} 60`}>
-        <path d={`M 60 40 Q ${ribbonX} 20 ${FIELD_W - 60} 40`} stroke="#c18040" strokeWidth="10" fill="none" strokeLinecap="round"/>
-        {/* ribbon knot */}
-        <g transform={`translate(${ribbonX}, 26)`}>
-          <rect x="-14" y="-10" width="28" height="40" fill="var(--yellow)" stroke="var(--ink)" strokeWidth="3" rx="3"/>
-          <path d="M -14 -10 L -20 -20 L -10 -10 Z" fill="var(--red)" stroke="var(--ink)" strokeWidth="2"/>
-          <path d="M 14 -10 L 20 -20 L 10 -10 Z" fill="var(--red)" stroke="var(--ink)" strokeWidth="2"/>
-        </g>
+      {/* Rope — bends under tension; tighter under simultaneous heavy pull */}
+      <svg style={{position:'absolute',bottom:250,left:'50%',transform:'translateX(-50%)',width:FIELD_W,height:80,overflow:'visible',zIndex:5}} viewBox={`0 0 ${FIELD_W} 80`}>
+        {(() => {
+          const dip = 30 - tension * 20 + Math.sin(performance.now()/120) * 2;
+          const rx = ribbonX;
+          return (
+            <>
+              <path d={`M 60 40 Q ${rx*0.5 + 30} ${dip} ${rx} ${40 + (1-tension)*6}`} stroke="#c18040" strokeWidth="10" fill="none" strokeLinecap="round"/>
+              <path d={`M ${rx} ${40 + (1-tension)*6} Q ${rx*0.5 + FIELD_W/2 + 30} ${dip} ${FIELD_W - 60} 40`} stroke="#c18040" strokeWidth="10" fill="none" strokeLinecap="round"/>
+              {/* rope highlight strand */}
+              <path d={`M 60 37 Q ${rx*0.5 + 30} ${dip-3} ${rx} ${37 + (1-tension)*6}`} stroke="#e0a860" strokeWidth="3" fill="none" strokeLinecap="round" opacity=".7"/>
+              <path d={`M ${rx} ${37 + (1-tension)*6} Q ${rx*0.5 + FIELD_W/2 + 30} ${dip-3} ${FIELD_W - 60} 37`} stroke="#e0a860" strokeWidth="3" fill="none" strokeLinecap="round" opacity=".7"/>
+              <g transform={`translate(${rx}, ${30 + (1-tension)*4})`}>
+                <rect x="-16" y="-12" width="32" height="44" fill="var(--yellow)" stroke="var(--ink)" strokeWidth="3" rx="3"/>
+                <path d="M -16 -12 L -22 -22 L -12 -12 Z" fill="var(--red)" stroke="var(--ink)" strokeWidth="2"/>
+                <path d="M 16 -12 L 22 -22 L 12 -12 Z" fill="var(--red)" stroke="var(--ink)" strokeWidth="2"/>
+                <text y="14" textAnchor="middle" fontFamily="Luckiest Guy" fontSize="16" fill="var(--ink)">★</text>
+              </g>
+            </>
+          );
+        })()}
       </svg>
 
       {/* Players on rope. Red team on left, Blue on right */}

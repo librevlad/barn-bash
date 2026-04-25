@@ -216,14 +216,23 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
               position:'absolute', left:40, right:40, bottom:40, height:40,
               background:'#1a0e08', borderRadius:'50%', border:'3px solid var(--ink)',
             }}/>
-            {/* pop-up critter */}
+            {/* pop-up critter — gold gophers get a pulsing aura halo so the
+                player can spot them out of the corner of an eye. */}
             {pop && (
               <div className="pop-in" style={{
                 position:'absolute', left:'50%', bottom: 30, transform:'translateX(-50%)',
               }}>
                 {pop.kind === 'gopher' && <GopherFace/>}
                 {pop.kind === 'bunny' && <BunnyFace/>}
-                {pop.kind === 'golden' && <GopherFace gold/>}
+                {pop.kind === 'golden' && (
+                  <div style={{position:'relative'}}>
+                    <div style={{position:'absolute', left:'50%', top:'50%',
+                      transform:'translate(-50%,-50%)', width:120, height:120, borderRadius:'50%',
+                      background:'radial-gradient(circle, rgba(255,220,90,.7) 0 35%, transparent 70%)',
+                      animation:'goldAura 0.7s ease-in-out infinite', pointerEvents:'none'}}/>
+                    <GopherFace gold/>
+                  </div>
+                )}
               </div>
             )}
             {/* hover hammer */}
@@ -255,7 +264,8 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
         </div>
       </div>
 
-      <style>{`@keyframes floatUp{ 0%{opacity:0; transform:translateY(0)} 20%{opacity:1; transform:translateY(-10px)} 100%{opacity:0; transform:translateY(-60px)} }`}</style>
+      <style>{`@keyframes floatUp{ 0%{opacity:0; transform:translateY(0)} 20%{opacity:1; transform:translateY(-10px)} 100%{opacity:0; transform:translateY(-60px)} }
+        @keyframes goldAura{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.15);opacity:1}}`}</style>
 
       {!started && <Countdown onDone={()=>setStarted(true)}/>}
       {finished && (() => {

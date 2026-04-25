@@ -253,16 +253,19 @@ function EggPass({ state, onFinish, onQuit, game }) {
         </svg>
       </div>
 
-      {/* Action button (human holder only) */}
+      {/* Action button (human holder only). Yellow→red tint on panic; pressed
+          shadow + warm glow when time runs out so the player feels urgency. */}
       {holder === 0 && alive[0] && !passing && !finished && (
         <div style={{position:'absolute',bottom:20,left:0,right:0,display:'flex',justifyContent:'center',zIndex:20}}>
-          <button onClick={passEgg} className="pulse" style={{
+          <button onClick={passEgg} className={panic ? 'pulse' : ''} style={{
             fontFamily:"'Luckiest Guy'", fontSize:36, padding:'16px 48px',
-            background:'var(--red)', color:'#fff',
+            background: panic ? 'var(--red)' : 'var(--yellow)', color:'#fff',
             WebkitTextStroke:'2px var(--ink)', border:'5px solid var(--ink)', borderRadius:20,
-            boxShadow:'0 10px 0 var(--ink)', cursor:'pointer'
+            boxShadow: `0 ${10 - (panic?4:0)}px 0 var(--ink), 0 0 ${panic?30:0}px rgba(255,100,60,.7)`,
+            transform: panic ? 'translateY(4px)' : 'none',
+            cursor:'pointer', transition:'background .2s, box-shadow .2s, transform .15s'
           }}>
-            🥚 PASS! (SPACE)
+            🥚 ПАСУЙ! (ПРОБЕЛ)
           </button>
         </div>
       )}
