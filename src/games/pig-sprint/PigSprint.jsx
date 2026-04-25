@@ -171,14 +171,25 @@ function PigSprint({ state, onFinish, onQuit, game }) {
               transform: 'translateX(-50%)',
               transition: 'left .08s linear'
             }}>
+              {/* permanent shadow grounds the runner so they don't look pasted on */}
+              <div style={{position:'absolute', left:'50%', top:62, width:60, height:10,
+                background:'rgba(0,0,0,.3)', borderRadius:'50%', transform:'translateX(-50%)', filter:'blur(2px)'}}/>
               <div style={{
                 transform: `translateY(${Math.sin(performance.now()/120 + i) * (started && !finished ? 6 : 0)}px) rotate(${Math.sin(performance.now()/100 + i) * 8}deg)`
               }}>
                 <Avatar char={p.char} size={72}/>
               </div>
-              {/* dust */}
+              {/* twin dust plumes — radial gradients fade out behind the runner
+                  to sell forward motion without depending on a particle ticker */}
               {started && !finished && positions[i] < FINISH && (
-                <div style={{position:'absolute', left:-30, top:55, width:30, height:10, background:'rgba(200,180,140,.6)', borderRadius:10, filter:'blur(2px)'}}/>
+                <>
+                  <div style={{position:'absolute', left:-28, top:50, width:32, height:14,
+                    background:'radial-gradient(ellipse, rgba(210,185,140,.9) 0 40%, transparent 60%)',
+                    filter:'blur(1px)', opacity:.9}}/>
+                  <div style={{position:'absolute', left:-56, top:55, width:40, height:18,
+                    background:'radial-gradient(ellipse, rgba(210,185,140,.55) 0 40%, transparent 60%)',
+                    filter:'blur(2px)', opacity:.6}}/>
+                </>
               )}
             </div>
           </div>

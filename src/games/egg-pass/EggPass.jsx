@@ -229,12 +229,20 @@ function EggPass({ state, onFinish, onQuit, game }) {
               <div style={{fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)', marginTop:4}}>
                 {playerLabel(p)}
               </div>
-              {i === 0 && !p.isCPU && <div style={{fontSize:10,fontFamily:"'Luckiest Guy'",color:'var(--red)'}}>YOU</div>}
+              {i === 0 && !p.isCPU && <div style={{fontSize:10,fontFamily:"'Luckiest Guy'",color: isHolder && panic ? '#ffe96c' : 'var(--red)'}}>YOU</div>}
+              {/* Panic sweat drops on the holder when time is running out */}
+              {isHolder && panic && (
+                <>
+                  <div style={{position:'absolute', top:24, right:-6, fontSize:18, animation:'eggSweat .55s ease-in infinite'}}>💦</div>
+                  <div style={{position:'absolute', top:32, left:-6, fontSize:14, animation:'eggSweat .65s ease-in infinite .1s'}}>💦</div>
+                </>
+              )}
               {isDead && <div style={{position:'absolute',top:-18,left:'50%',transform:'translateX(-50%) rotate(-8deg)',background:'var(--red)',color:'#fff',padding:'2px 10px',border:'3px solid var(--ink)',borderRadius:8,fontFamily:"'Luckiest Guy'"}}>OUT</div>}
             </div>
           </div>
         );
       })}
+      <style>{`@keyframes eggSweat{0%{opacity:0;transform:translateY(-4px)}40%{opacity:1}100%{opacity:0;transform:translateY(20px)}}`}</style>
 
       {/* Egg */}
       <div style={{
