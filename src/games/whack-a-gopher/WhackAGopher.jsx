@@ -148,7 +148,20 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
   ), []);
 
   return (
-    <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #ffd97a 0%, #c88b3c 60%, #7a4920 100%)',overflow:'hidden'}}>
+    <div style={{position:'absolute',inset:0,overflow:'hidden',
+      background:'linear-gradient(180deg, #ffe4a8 0%, #e2b66a 40%, #a87c42 80%, #6a4020 100%)'}}>
+      {/* Sun */}
+      <div style={{position:'absolute', top:40, right:120, width:120, height:120, borderRadius:'50%',
+        background:'radial-gradient(circle, #fff59a 0%, #ffd26b 55%, transparent 80%)', filter:'blur(1px)'}}/>
+      {/* Picket fence */}
+      <svg width="100%" height="70" viewBox="0 0 1600 70" preserveAspectRatio="none"
+        style={{position:'absolute', top:130, left:0}}>
+        {Array.from({length:40}).map((_,i)=>(
+          <polygon key={i} points={`${i*40},20 ${i*40+30},20 ${i*40+30},70 ${i*40},70`} fill="#f6e7c3" stroke="#2a1a10" strokeWidth="2"/>
+        ))}
+        <line x1="0" y1="30" x2="1600" y2="30" stroke="#2a1a10" strokeWidth="2"/>
+        <line x1="0" y1="55" x2="1600" y2="55" stroke="#2a1a10" strokeWidth="2"/>
+      </svg>
       <Clouds count={3}/>
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>

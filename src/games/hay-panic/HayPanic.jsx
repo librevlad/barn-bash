@@ -164,9 +164,38 @@ function HayPanic({ state, onFinish, onQuit, game }) {
   }, [alive, time]);
 
   return (
-    <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #ffd9a0 0%, #f7b366 40%, #cf8a3a 100%)', overflow:'hidden'}}>
-      {/* sky */}
-      <div style={{position:'absolute',top:0,left:0,right:0,height:120, background:'#ffe9b3'}}/>
+    <div style={{position:'absolute',inset:0,overflow:'hidden',
+      background:'linear-gradient(180deg, #ffe4a8 0%, #f3b566 38%, #cf8a3a 100%)'}}>
+      {/* Sun */}
+      <div style={{position:'absolute', top:30, right:80, width:100, height:100, borderRadius:'50%',
+        background:'radial-gradient(circle, #fff59a 0 40%, #ffcd3a 60%, transparent 75%)',
+        boxShadow:'0 0 60px rgba(255,200,90,.5)'}}/>
+      {/* distant hills */}
+      <svg width="100%" height="160" viewBox="0 0 1600 160" preserveAspectRatio="none"
+        style={{position:'absolute', top:80, left:0}}>
+        <path d="M0 160 L240 70 L420 110 L600 60 L820 120 L1000 70 L1200 110 L1400 60 L1600 110 L1600 160 Z" fill="#caa55a" opacity=".6"/>
+      </svg>
+      {/* big red barn */}
+      <div style={{position:'absolute', top:100, left:140, width:220, height:140, filter:'drop-shadow(0 8px 0 rgba(0,0,0,.2))'}}>
+        <svg viewBox="0 0 220 140" width="100%" height="100%">
+          <polygon points="10,60 110,8 210,60 210,140 10,140" fill="#b44532" stroke="#2a1a10" strokeWidth="4"/>
+          <polygon points="0,68 110,6 220,68 210,60 110,18 10,60" fill="#6e2818" stroke="#2a1a10" strokeWidth="4"/>
+          <rect x="88" y="78" width="44" height="62" fill="#3a1f12" stroke="#2a1a10" strokeWidth="3"/>
+          <path d="M88 96 H132 M110 78 V140" stroke="#7a5030" strokeWidth="3"/>
+          <rect x="26" y="76" width="32" height="28" fill="#f4ddaa" stroke="#2a1a10" strokeWidth="3"/>
+          <rect x="162" y="76" width="32" height="28" fill="#f4ddaa" stroke="#2a1a10" strokeWidth="3"/>
+        </svg>
+      </div>
+      {/* silo */}
+      <div style={{position:'absolute', top:90, right:180, width:60, height:150, filter:'drop-shadow(0 8px 0 rgba(0,0,0,.2))'}}>
+        <svg viewBox="0 0 60 150" width="100%" height="100%">
+          <ellipse cx="30" cy="20" rx="28" ry="14" fill="#9aa6b0" stroke="#2a1a10" strokeWidth="3"/>
+          <path d="M2 20 V130 Q30 144 58 130 V20" fill="#c5cfd8" stroke="#2a1a10" strokeWidth="3"/>
+          <line x1="16" y1="30" x2="16" y2="132" stroke="#8090a0" strokeWidth="1.5"/>
+          <line x1="44" y1="30" x2="44" y2="132" stroke="#8090a0" strokeWidth="1.5"/>
+          <ellipse cx="30" cy="8" rx="26" ry="8" fill="#b8c0c8" stroke="#2a1a10" strokeWidth="3"/>
+        </svg>
+      </div>
       <Clouds count={3}/>
 
       {/* HUD */}

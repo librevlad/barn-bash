@@ -227,6 +227,25 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
       }}>
         {/* water surface ripples */}
         <div style={{position:'absolute',top:0,left:0,right:0,height:40,background:'repeating-linear-gradient(90deg, transparent 0 12px, rgba(255,255,255,.3) 12px 14px)'}}/>
+        {/* Lily pads with occasional flowers */}
+        {[{x:140,y:12},{x:480,y:18},{x:820,y:10},{x:1050,y:20}].map((lp,i)=>(
+          <svg key={'lp'+i} style={{position:'absolute', left:lp.x, top:lp.y, pointerEvents:'none'}} width="70" height="34" viewBox="0 0 70 34">
+            <path d="M 5 18 A 30 14 0 1 1 65 18 L 40 18 L 34 8 L 28 18 Z" fill="#6cc24a" stroke="#2a1a10" strokeWidth="2"/>
+            {i % 2 === 0 && (
+              <g transform="translate(30,4)">
+                <circle cx="0" cy="0" r="6" fill="#f28bbd" stroke="#2a1a10" strokeWidth="1.5"/>
+                <circle cx="0" cy="0" r="2" fill="#ffec8a"/>
+              </g>
+            )}
+          </svg>
+        ))}
+        {/* Cattails on the right edge */}
+        <svg style={{position:'absolute',right:10,top:-20,pointerEvents:'none'}} width="60" height="100" viewBox="0 0 60 100">
+          <line x1="18" y1="100" x2="18" y2="30" stroke="#4a7a2a" strokeWidth="3"/>
+          <rect x="14" y="30" width="10" height="26" rx="5" fill="#8f6a3b" stroke="#2a1a10" strokeWidth="2"/>
+          <line x1="38" y1="100" x2="38" y2="44" stroke="#4a7a2a" strokeWidth="3"/>
+          <rect x="34" y="44" width="10" height="22" rx="5" fill="#8f6a3b" stroke="#2a1a10" strokeWidth="2"/>
+        </svg>
 
         {/* Boat (dock) on top-left */}
         <div style={{position:'absolute',top:-30,left:40,width:260,height:70,zIndex:5}}>

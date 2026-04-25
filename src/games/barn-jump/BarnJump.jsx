@@ -14,6 +14,10 @@ function BarnJump({ state, onFinish, onQuit, game }) {
   const [phase, setPhase] = useState('wait'); // wait | go | done
   const [signalAt, setSignalAt] = useState(null);
   const [reactions, setReactions] = useState(() => players.map(() => null)); // ms | 'early' | null
+  // Tick to drive subtle wait/go animations (star twinkle, sun ray rotation,
+  // tension bar). Active outside of 'done' so the screen feels alive.
+  const [tick, setTick] = useState(0);
+  useRaf(() => setTick(t => t + 1), true);
 
   const cpuWindow = { easy: [700, 1400], medium: [400, 900], hard: [250, 550] }[state.difficulty] || [400, 900];
 
@@ -89,14 +93,37 @@ function BarnJump({ state, onFinish, onQuit, game }) {
     return () => clearTimeout(t);
   }, [phase]);
 
-  const bg = phase === 'wait' ? 'radial-gradient(circle at 50% 40%, #3a2510 0%, #1a0e08 70%)'
-           : phase === 'go'   ? 'radial-gradient(circle at 50% 40%, #a8e084 0%, #3e8a29 70%)'
+  const bg = phase === 'wait' ? 'linear-gradient(180deg, #1a2a4a 0%, #0a1428 70%, #08101e 100%)'
+           : phase === 'go'   ? 'linear-gradient(180deg, #ffe68a 0%, #ffc93c 50%, #ff9a3a 100%)'
                               : 'radial-gradient(circle at 50% 40%, #5a3a1c 0%, #2a1a10 70%)';
   const bigLabel = phase === 'wait' ? 'ЖДЁМ…' : phase === 'go' ? 'ПРЫГАЙ! 🐑' : 'ГОТОВО!';
   const labelSize = phase === 'go' ? 220 : 96;
 
   return (
-    <div style={{position:'absolute', inset:0, background:bg, overflow:'hidden', transition:'background .08s ease-in'}}>
+    <div style={{position:'absolute', inset:0, background:bg, overflow:'hidden', transition: phase === 'go' ? 'none' : 'background .3s'}}>
+      {/* Stars during wait — subtle twinkle */}
+      {phase === 'wait' && [...Array(30)].map((_,k) => (
+        <div key={'star'+k} style={{position:'absolute', left:`${(k*37)%100}%`, top:`${(k*17)%50}%`,
+          width:3, height:3, background:'#fff', borderRadius:'50%',
+          opacity: 0.4 + Math.sin(tick/20 + k)*0.3}}/>
+      ))}
+      {/* Moon during wait */}
+      {phase === 'wait' && (
+        <div style={{position:'absolute', top: 60, right: 140, width:80, height:80, borderRadius:'50%',
+          background:'radial-gradient(circle,#fff5e4 50%, #c6b890 100%)', boxShadow:'0 0 40px rgba(255,245,228,.4)'}}>
+          <div style={{position:'absolute',top:18,left:48,width:12,height:12,borderRadius:'50%',background:'#c6b890',opacity:.5}}/>
+          <div style={{position:'absolute',top:42,left:28,width:8,height:8,borderRadius:'50%',background:'#c6b890',opacity:.4}}/>
+        </div>
+      )}
+      {/* Sun rays during go */}
+      {phase === 'go' && (
+        <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none'}} preserveAspectRatio="none" viewBox="0 0 1600 900">
+          {[...Array(18)].map((_,k) => {
+            const a = (k/18)*Math.PI*2 + (signalAt ? (performance.now()-signalAt)/800 : 0);
+            return <line key={'ray'+k} x1="800" y1="200" x2={800 + Math.cos(a)*1400} y2={200 + Math.sin(a)*1400} stroke="rgba(255,245,138,.35)" strokeWidth="80"/>;
+          })}
+        </svg>
+      )}
       <div style={{position:'absolute', top:20, left:20, right:20, display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:20}}>
         <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
         <div className="plank" style={{padding:'8px 22px'}}>

@@ -130,6 +130,21 @@ function TugOWar({ state, onFinish, onQuit, game }) {
       <Clouds count={4}/>
       {/* sun */}
       <div style={{position:'absolute',top:60,right:140,width:120,height:120,borderRadius:'50%',background:'radial-gradient(circle,#fff5a8 30%,#ffc93c 70%,transparent 100%)',filter:'blur(1px)'}}/>
+      {/* Distant barn (red team side) */}
+      <svg style={{position:'absolute',bottom:180,left:60,width:220,height:180,zIndex:1}} viewBox="0 0 220 180">
+        <rect x="20" y="60" width="180" height="110" fill="#c64033" stroke="#2a1a10" strokeWidth="3"/>
+        <polygon points="10,60 110,0 210,60" fill="#8f2a22" stroke="#2a1a10" strokeWidth="3"/>
+        <rect x="88" y="100" width="44" height="70" fill="#5a3a1c" stroke="#2a1a10" strokeWidth="3"/>
+        <rect x="96" y="108" width="28" height="20" fill="#2a1a10"/>
+        <path d="M 20 60 L 200 60 M 20 80 L 200 80" stroke="#8f2a22" strokeWidth="1.5"/>
+      </svg>
+      {/* Distant silo (blue team side) */}
+      <svg style={{position:'absolute',bottom:180,right:80,width:160,height:220,zIndex:1}} viewBox="0 0 160 220">
+        <rect x="40" y="40" width="80" height="180" fill="#d9d0c0" stroke="#2a1a10" strokeWidth="3"/>
+        <ellipse cx="80" cy="40" rx="40" ry="14" fill="#4aa3e0" stroke="#2a1a10" strokeWidth="3"/>
+        <path d="M 50 40 A 30 40 0 0 1 110 40" fill="#4aa3e0" stroke="#2a1a10" strokeWidth="3"/>
+        {[70,110,150].map(y => <line key={y} x1="40" y1={y} x2="120" y2={y} stroke="#2a1a10" strokeWidth="1.5" opacity=".5"/>)}
+      </svg>
 
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
@@ -161,8 +176,16 @@ function TugOWar({ state, onFinish, onQuit, game }) {
 
       {/* Ground */}
       <div style={{position:'absolute',bottom:0,left:0,right:0,height:180,background:'linear-gradient(180deg,#8fcc6a,#6aac4a)',borderTop:'4px solid var(--ink)'}}/>
-      <div style={{position:'absolute',bottom:180,left:'50%',transform:'translateX(-50%)',width:3,height:40,background:'var(--ink)'}}/>
-      <div style={{position:'absolute',bottom:218,left:'50%',transform:'translateX(-50%)',width:60,height:20,background:'#fff5e4',border:'3px solid var(--ink)',borderRadius:4,display:'grid',placeItems:'center',fontFamily:"'Luckiest Guy'",fontSize:12}}>PIT</div>
+      {/* Mud pit at center (replaces white PIT label) */}
+      <div style={{position:'absolute',bottom:180,left:'50%',transform:'translateX(-50%)',width:140,height:40,
+        background:'radial-gradient(ellipse, #4a2e14 40%, #3a1e0a 100%)', border:'4px solid var(--ink)', borderRadius:'50%',
+        boxShadow:'inset 0 6px 12px rgba(0,0,0,.5)'}}/>
+      <div style={{position:'absolute',bottom:214,left:'50%',transform:'translateX(-50%)',fontFamily:"'Luckiest Guy'",fontSize:12,color:'#fff',textShadow:'0 2px 0 var(--ink)'}}>ГРЯЗЬ</div>
+      {/* Center line flag pole */}
+      <div style={{position:'absolute',bottom:215,left:'50%',transform:'translateX(-50%)',width:3,height:80,background:'var(--ink)'}}/>
+      <svg style={{position:'absolute',bottom:285,left:'50%',transform:'translateX(-50%)',width:40,height:26}} viewBox="0 0 40 26">
+        <polygon points="0,0 36,10 0,20 6,10" fill="var(--yellow)" stroke="var(--ink)" strokeWidth="2"/>
+      </svg>
 
       {/* Rope */}
       <svg style={{position:'absolute',bottom:250,left:'50%',transform:'translateX(-50%)',width:FIELD_W,height:60,overflow:'visible'}} viewBox={`0 0 ${FIELD_W} 60`}>

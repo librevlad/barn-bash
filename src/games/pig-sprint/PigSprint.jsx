@@ -104,7 +104,29 @@ function PigSprint({ state, onFinish, onQuit, game }) {
 
   // background clouds
   return (
-    <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #b9e6f7 0%, #d5efcf 70%, #8fcf72 100%)', overflow:'hidden'}}>
+    <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #a2d4f0 0%, #cfe9d4 60%, #8fcf72 100%)', overflow:'hidden'}}>
+      {/* distant mountains (parallax-still) */}
+      <svg width="100%" height="200" viewBox="0 0 1600 200" preserveAspectRatio="none"
+        style={{position:'absolute', top:60, left:0}}>
+        <path d="M0 200 L160 90 L280 140 L420 60 L560 130 L720 80 L880 135 L1040 70 L1200 120 L1360 75 L1520 130 L1600 100 L1600 200 Z"
+          fill="#8aa8c4" opacity=".7"/>
+        <path d="M0 200 L120 130 L280 170 L420 110 L600 160 L780 125 L960 160 L1140 115 L1320 150 L1500 118 L1600 150 L1600 200 Z"
+          fill="#b6cddf" opacity=".8"/>
+      </svg>
+      {/* mid hills */}
+      <svg width="100%" height="220" viewBox="0 0 1600 220" preserveAspectRatio="none"
+        style={{position:'absolute', top:160, left:0}}>
+        <ellipse cx="200" cy="220" rx="340" ry="110" fill="#7bb86a"/>
+        <ellipse cx="650" cy="230" rx="380" ry="120" fill="#8cca78"/>
+        <ellipse cx="1100" cy="225" rx="340" ry="115" fill="#7bb86a"/>
+        <ellipse cx="1500" cy="230" rx="280" ry="100" fill="#8cca78"/>
+      </svg>
+      {/* barn silhouette far-right */}
+      <div style={{position:'absolute', top:210, right: 60, width:90, height:60}}>
+        <div style={{position:'absolute', inset:0, background:'#a84a35', border:'3px solid var(--ink)', borderRadius:4}}/>
+        <div style={{position:'absolute', top:-18, left:-8, right:-8, height:22, background:'#7a3728', transform:'skewY(-4deg)', border:'3px solid var(--ink)', borderRadius:'4px 4px 0 0'}}/>
+        <div style={{position:'absolute', bottom:4, left:'40%', width:16, height:30, background:'#4a2418', border:'2px solid var(--ink)'}}/>
+      </div>
       <Clouds count={5}/>
 
       {/* HUD */}

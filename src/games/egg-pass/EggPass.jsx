@@ -162,11 +162,20 @@ function EggPass({ state, onFinish, onQuit, game }) {
 
   const pct = Math.max(0, timeLeft / baseTime);
 
+  const panic = pct < 0.3;
+
   return (
-    <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at center, #6b4a2e 0%, #3a2510 90%)',overflow:'hidden'}}>
+    <div style={{position:'absolute',inset:0,overflow:'hidden',
+      background:'radial-gradient(ellipse at 50% 30%, #5a3a1c 0%, #3a2410 70%, #1a0e08 100%)'}}>
       {/* floorboards */}
-      <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(90deg, #5a3a1c 0 120px, #4a3018 120px 124px)', opacity:.5}}/>
-      <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,.5) 100%)'}}/>
+      <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(90deg, #5a3a1c 0 120px, #4a3018 120px 124px)', opacity:.4}}/>
+      {/* danger vignette intensifies as time runs out; tints red on panic */}
+      <div style={{position:'absolute',inset:0,
+        background:`radial-gradient(ellipse at center, transparent 30%, rgba(${panic?'180,30,30':'0,0,0'},${0.35 + (1-pct)*0.3}) 100%)`,
+        transition:'background .2s'}}/>
+      {/* lantern glow top */}
+      <div style={{position:'absolute', top: -40, left:'50%', transform:'translateX(-50%)', width: 400, height: 240,
+        background:'radial-gradient(ellipse, rgba(255,200,100,.35) 0%, transparent 60%)'}}/>
 
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>

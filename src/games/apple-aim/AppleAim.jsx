@@ -201,6 +201,12 @@ function AppleAim({ state, onFinish, onQuit, game }) {
       {/* sun */}
       <div style={{position:'absolute', top:80, right:120, width:140, height:140, borderRadius:'50%', background:'radial-gradient(circle, #fff5a8 0%, #ffd26b 70%, transparent 100%)', filter:'blur(2px)'}}/>
       <Clouds count={3}/>
+      {/* distant treeline */}
+      <svg width="100%" height="140" viewBox="0 0 1600 140" preserveAspectRatio="none"
+        style={{position:'absolute', top:90, left:0}}>
+        <path d="M0 140 Q80 80 160 100 T320 95 T480 85 T640 100 T800 90 T960 95 T1120 80 T1280 100 T1440 85 T1600 95 L1600 140 Z"
+          fill="#6b7a4a" opacity=".55"/>
+      </svg>
 
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
@@ -239,8 +245,28 @@ function AppleAim({ state, onFinish, onQuit, game }) {
         border:'5px solid var(--ink)', borderRadius:20, overflow:'hidden',
         boxShadow:'0 10px 0 var(--ink)'
       }}>
-        {/* ground */}
-        <div style={{position:'absolute',bottom:0,left:0,right:0,height:40,background:'#7a4920',borderTop:'3px solid var(--ink)'}}/>
+        {/* Orchard trees in mid-ground */}
+        {[{x:360,y:80,s:.7},{x:640,y:60,s:.8},{x:920,y:100,s:.6},{x:1200,y:70,s:.75}].map((t,i)=>(
+          <div key={'tr'+i} style={{position:'absolute', left:t.x, top:t.y, transform:`scale(${t.s})`, transformOrigin:'50% 100%'}}>
+            <svg width="120" height="140" viewBox="0 0 120 140">
+              <rect x="50" y="70" width="20" height="60" fill="#6b4a2e" stroke="#2a1a10" strokeWidth="3"/>
+              <circle cx="60" cy="50" r="48" fill="#5a9a3a" stroke="#2a1a10" strokeWidth="3"/>
+              <circle cx="40" cy="40" r="8" fill="#e04b3b" stroke="#2a1a10" strokeWidth="2"/>
+              <circle cx="80" cy="48" r="8" fill="#e04b3b" stroke="#2a1a10" strokeWidth="2"/>
+              <circle cx="62" cy="62" r="8" fill="#e04b3b" stroke="#2a1a10" strokeWidth="2"/>
+              <circle cx="30" cy="60" r="6" fill="#e04b3b" stroke="#2a1a10" strokeWidth="2"/>
+            </svg>
+          </div>
+        ))}
+
+        {/* Ground */}
+        <div style={{position:'absolute',bottom:0,left:0,right:0,height:48,
+          background:'linear-gradient(180deg, #7a5028 0%, #5a3018 100%)',borderTop:'3px solid var(--ink)'}}/>
+        {/* grass tufts */}
+        {Array.from({length:14}).map((_,i)=>(
+          <div key={'gr'+i} style={{position:'absolute', bottom: 44, left: 80 + i*95, width:20, height:10,
+            background:'radial-gradient(ellipse at center bottom, #4a8a35 0 60%, transparent 62%)', opacity:.8}}/>
+        ))}
         {/* target */}
         <div style={{position:'absolute', left: targetX - 70, top: targetY - 70, width:140, height:140}}>
           {/* pole */}
