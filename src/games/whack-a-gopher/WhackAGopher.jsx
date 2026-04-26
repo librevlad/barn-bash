@@ -208,8 +208,9 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
         </div>
       </div>
 
-      {/* Score row */}
-      <div style={{position:'absolute',top:82,left:0,right:0,display:'flex',justifyContent:'center',gap:10,zIndex:20}}>
+      {/* Score row — name and score on separate spans so the score reads
+          big-and-red while the name stays compact and dark. */}
+      <div style={{position:'absolute',top:82,left:0,right:0,display:'flex',justifyContent:'center',gap:10,zIndex:20, flexWrap:'wrap', padding:'0 20px'}}>
         {players.map((p,i)=>(
           <div key={i} style={{
             background: i === 0 ? 'var(--yellow)' : '#fff',
@@ -217,9 +218,10 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
             display:'flex', alignItems:'center', gap:6, boxShadow:'0 3px 0 var(--ink)'
           }}>
             <Avatar char={p.char} size={28}/>
-            <span style={{fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)'}}>
-              {playerLabel(p)}: {scores[i]}
+            <span style={{fontFamily:"'Luckiest Guy'", fontSize:14, color:'var(--ink)'}}>
+              {playerLabel(p)}
             </span>
+            <span style={{fontFamily:"'Luckiest Guy'", fontSize:18, color:'var(--red)', WebkitTextStroke:'1px var(--ink)', marginLeft:2}}>{scores[i]}</span>
           </div>
         ))}
       </div>

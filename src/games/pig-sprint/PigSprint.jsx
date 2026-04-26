@@ -11,6 +11,9 @@ function PigSprint({ state, onFinish, onQuit, game }) {
   const [positions, setPositions] = useState(() => players.map(()=>0));
   const [finishOrder, setFinishOrder] = useState([]);
   const tapCooldown = useRef(0);
+  // Tap burst: rises to 1 on each human tap and decays in the main RAF.
+  // Drives the halo + button squish so the player feels the impact.
+  const [tapBurst, setTapBurst] = useState(0);
   const difficulty = state.difficulty; // easy, medium, hard
   const cpuRateByDiff = { easy: 4.2, medium: 5.6, hard: 7.2 };
   const cpuRate = cpuRateByDiff[difficulty] || 5.6;
@@ -47,6 +50,7 @@ function PigSprint({ state, onFinish, onQuit, game }) {
   useRaf((dt) => {
     if (!started || finished) return;
     setTime(t => t + dt);
+    setTapBurst(b => Math.max(0, b - dt * 3.2));
     setPositions(prev => {
       const next = prev.slice();
       for (let i = 0; i < next.length; i++) {
@@ -86,6 +90,7 @@ function PigSprint({ state, onFinish, onQuit, game }) {
     const now = performance.now();
     if (now - tapCooldown.current < 40) return; // cap
     tapCooldown.current = now;
+    setTapBurst(1);
     setPositions(prev => {
       const next = prev.slice();
       next[0] = Math.min(FINISH, next[0] + 22);
@@ -193,6 +198,17 @@ function PigSprint({ state, onFinish, onQuit, game }) {
               }}>
                 <Avatar char={p.char} size={72}/>
               </div>
+              {/* Tap burst halo around the human runner — rises to 1 on each
+                  tap, decays each frame. Yellow ring widens and fades. */}
+              {i === 0 && tapBurst > 0.1 && (
+                <div style={{
+                  position:'absolute', left:'50%', top:'50%',
+                  transform:`translate(-50%,-50%) scale(${1 + tapBurst*0.4})`,
+                  width: 110, height: 110, border:'4px solid #fff',
+                  borderRadius:'50%', opacity: tapBurst * 0.6,
+                  pointerEvents:'none'
+                }}/>
+              )}
               {/* twin dust plumes — radial gradients fade out behind the runner
                   to sell forward motion without depending on a particle ticker */}
               {started && !finished && positions[i] < FINISH && (
