@@ -241,6 +241,10 @@ function TugOWar({ state, onFinish, onQuit, game }) {
               <Avatar char={p.char} size={110}/>
               {/* Red headband — colour-codes the team without a banner */}
               <div style={{position:'absolute', top:6, left:'50%', transform:'translateX(-50%) rotate(-4deg)', width:60, height:10, background:'var(--red)', border:'2px solid var(--ink)', borderRadius:3}}/>
+              {/* Cream arm reaching toward the rope — angle bumps when pulling */}
+              <div style={{position:'absolute', top: 32, right: -6, width: 24, height: 10,
+                background:'#fff5e4', border:'2.5px solid var(--ink)', borderRadius: 6,
+                transform:`rotate(${pulling ? -20 : -10}deg)`, transformOrigin:'left center'}}/>
             </div>
             {/* tap cue */}
             {idx === 0 && <div style={{position:'absolute',top:-30,left:'50%',transform:'translateX(-50%)',background:'var(--yellow)',border:'2px solid var(--ink)',borderRadius:6,padding:'1px 6px',fontFamily:"'Luckiest Guy'",fontSize:11}}>YOU</div>}
@@ -271,6 +275,10 @@ function TugOWar({ state, onFinish, onQuit, game }) {
               <Avatar char={p.char} size={110}/>
               {/* Blue headband */}
               <div style={{position:'absolute', top:6, left:'50%', transform:'translateX(-50%) rotate(-4deg)', width:60, height:10, background:'var(--blue)', border:'2px solid var(--ink)', borderRadius:3}}/>
+              {/* Mirrored arm reaches toward the rope (parent has scaleX(-1)) */}
+              <div style={{position:'absolute', top: 32, right: -6, width: 24, height: 10,
+                background:'#fff5e4', border:'2.5px solid var(--ink)', borderRadius: 6,
+                transform:`rotate(${pulling ? -20 : -10}deg)`, transformOrigin:'left center'}}/>
             </div>
             <div style={{position:'absolute',left:'50%',bottom:-6,transform:'translateX(-50%)',width:90,height:12,background:'rgba(0,0,0,.3)',borderRadius:'50%',filter:'blur(3px)'}}/>
             {pulling && (

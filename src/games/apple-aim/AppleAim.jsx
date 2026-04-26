@@ -243,9 +243,10 @@ function AppleAim({ state, onFinish, onQuit, game }) {
             transition:'all .2s ease'
           }}>
             <Avatar char={p.char} size={32}/>
-            <span style={{fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)'}}>
-              {playerLabel(p)}: {scores[i]}
+            <span style={{fontFamily:"'Luckiest Guy'", fontSize:14, color:'var(--ink)'}}>
+              {playerLabel(p)}
             </span>
+            <span style={{fontFamily:"'Luckiest Guy'", fontSize:18, color:'var(--red)', WebkitTextStroke:'1px var(--ink)', marginLeft:2}}>{scores[i]}</span>
           </div>
         ))}
       </div>
