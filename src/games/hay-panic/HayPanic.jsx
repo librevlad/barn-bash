@@ -235,8 +235,8 @@ function HayPanic({ state, onFinish, onQuit, game }) {
       {/* HUD */}
       <div style={{position:'absolute',top:20,left:20,right:20,display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:20}}>
         <Btn variant="cream" size="sm" onClick={onQuit}>◀ ВЫХОД</Btn>
-        <div className="plank" style={{padding:'8px 22px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🌾 СЕННАЯ ПАНИКА</span>
+        <div className="plank" style={{padding:'8px 22px', whiteSpace:'nowrap'}}>
+          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26, whiteSpace:'nowrap'}}>🌾 СЕННАЯ ПАНИКА</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",

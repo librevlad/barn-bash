@@ -304,8 +304,9 @@ function AppleAim({ state, onFinish, onQuit, game }) {
               }}>{i === 4 ? r : ''}</div>
             );
           })}
-          {/* apple on top */}
-          <div style={{position:'absolute', top:-20, left:60, fontSize:36}}>🍎</div>
+          {/* apple on top — slightly bigger now and with a drop shadow so
+              it reads as a 3D bauble sitting on the bullseye, not flat. */}
+          <div style={{position:'absolute', top:-26, left:54, fontSize:42, filter:'drop-shadow(0 2px 0 rgba(0,0,0,.3))'}}>🍎</div>
         </div>
 
         {/* hits — stuck arrows lean -6° so each one looks individually

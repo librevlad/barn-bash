@@ -306,8 +306,9 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
             {hoverHole === i && !hammers.some(h => h.h === i) && (
               <div style={{position:'absolute', left:'50%', top:-20, transform:'translateX(-50%) rotate(-30deg)', fontSize:44, pointerEvents:'none', opacity:.75}}>🔨</div>
             )}
-            {/* hotkey */}
-            <div style={{position:'absolute', left:10, top:10, background:'#fff', border:'2px solid var(--ink)', borderRadius:8, padding:'2px 8px', fontFamily:"'Luckiest Guy'", fontSize:14}}>{i+1}</div>
+            {/* hotkey badge — dark with cream digits + a soft drop shadow,
+                so it pops as a "press this number" cue against the warm ground */}
+            <div style={{position:'absolute', left:10, top:10, background:'var(--ink)', color:'var(--cream)', borderRadius:8, padding:'2px 8px', fontFamily:"'Luckiest Guy'", fontSize:14, boxShadow:'0 2px 0 rgba(0,0,0,.3)'}}>{i+1}</div>
           </div>
         );
       })}
