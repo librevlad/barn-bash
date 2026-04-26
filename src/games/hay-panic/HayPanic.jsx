@@ -239,7 +239,9 @@ function HayPanic({ state, onFinish, onQuit, game }) {
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🌾 СЕННАЯ ПАНИКА</span>
         </div>
         <div className="plank" style={{padding:'8px 16px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>{Math.max(0,30 - time).toFixed(1)}s</span>
+          <span style={{fontFamily:"'Luckiest Guy'",
+            color: time > 25 ? '#ff6b5a' : 'var(--cream)',
+            fontSize:22, whiteSpace:'nowrap'}}>⏱ {Math.max(0,30 - time).toFixed(1)}s</span>
         </div>
       </div>
 

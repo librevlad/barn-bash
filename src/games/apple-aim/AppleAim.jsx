@@ -355,6 +355,24 @@ function AppleAim({ state, onFinish, onQuit, game }) {
                 y2={Math.sin(-angle * Math.PI/180) * 180}
                 stroke="rgba(255,255,255,.8)" strokeWidth="3" strokeDasharray="6 4"/>
             )}
+            {/* Predicted arc preview — 10 dots tracing where the arrow
+                would land at the current power+angle. During 'power' the
+                preview uses live power; during 'angle' it uses a fixed
+                mid-power so the player can plan the angle first. Yellow
+                when committed (power phase), white for the preview. */}
+            {(phase === 'angle' || phase === 'power') && Array.from({length: 10}).map((_, k) => {
+              const t = k / 9;
+              const pw = phase === 'power' ? power : 55;
+              const sp = 300 + pw * 8;
+              const rad = -angle * Math.PI/180;
+              const tt = t * 1.2;
+              const px = Math.cos(rad) * sp * tt;
+              const py = Math.sin(rad) * sp * tt + 0.5 * 900 * tt * tt;
+              return (
+                <circle key={'arc'+k} cx={px} cy={py} r={3 + (1-t)*2}
+                  fill={phase === 'power' ? `rgba(255,220,80,${0.7 - t*0.6})` : `rgba(255,255,255,${0.5 - t*0.4})`}/>
+              );
+            })}
           </svg>
         </div>
 

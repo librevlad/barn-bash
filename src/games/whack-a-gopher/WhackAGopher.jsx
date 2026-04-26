@@ -323,7 +323,7 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
         </div>
       </div>
 
-      <style>{`@keyframes floatUp{ 0%{opacity:0; transform:translateY(0)} 20%{opacity:1; transform:translateY(-10px)} 100%{opacity:0; transform:translateY(-60px)} }
+      <style>{`@keyframes floatUp{ 0%{opacity:0; transform:translateY(0) scale(.8)} 20%{opacity:1; transform:translateY(-12px) scale(1.1)} 100%{opacity:0; transform:translateY(-70px) scale(1)} }
         @keyframes goldAura{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.15);opacity:1}}`}</style>
 
       {!started && <Countdown onDone={()=>setStarted(true)}/>}
