@@ -280,6 +280,22 @@ function HayPanic({ state, onFinish, onQuit, game }) {
           }}/>
         ))}
 
+        {/* Bale shadow warnings — a dark oval grows on the ground under
+            each falling bale, helping the player read exactly where the
+            impact will land. Darker + wider as the bale descends. */}
+        {bales.map(b => {
+          const falling = Math.max(0, Math.min(1, b.y / (FIELD_H - 40)));
+          return (
+            <div key={'sh'+b.id} style={{
+              position:'absolute', left: b.x, top: FIELD_H - 34,
+              width: 52 + falling*30, height: 16 + falling*6,
+              background:`rgba(0,0,0,${0.18 + falling*0.35})`,
+              borderRadius:'50%', transform:'translate(-50%, -50%)',
+              filter:'blur(2px)', pointerEvents:'none'
+            }}/>
+          );
+        })}
+
         {/* Bale-landing splats — dust ellipse + "БУМ!" text fade out */}
         {baleSplats.map(s => (
           <div key={'bs'+s.id} style={{

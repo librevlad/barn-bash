@@ -307,9 +307,10 @@ function AppleAim({ state, onFinish, onQuit, game }) {
           <div style={{position:'absolute', top:-20, left:60, fontSize:36}}>🍎</div>
         </div>
 
-        {/* hits */}
+        {/* hits — stuck arrows lean -6° so each one looks individually
+            buried in the target rather than perfectly horizontal */}
         {hits.map((h,i)=>(
-          <div key={i} style={{position:'absolute', left:h.x, top:h.y, transform:'translate(-50%,-50%)'}}>
+          <div key={i} style={{position:'absolute', left:h.x, top:h.y, transform:'translate(-50%,-50%) rotate(-6deg)'}}>
             <svg width="60" height="16" viewBox="0 0 60 16">
               <line x1="4" y1="8" x2="48" y2="8" stroke="#8f6a3b" strokeWidth="3"/>
               <polygon points="48,2 58,8 48,14" fill="#e04b3b" stroke="#2a1a10" strokeWidth="1.5"/>

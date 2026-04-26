@@ -169,6 +169,13 @@ function PigSprint({ state, onFinish, onQuit, game }) {
             {/* finish line */}
             <div style={{position:'absolute', right: 20, top: 10, bottom:10, width:8,
               backgroundImage:'repeating-linear-gradient(0deg, #000 0 10px, #fff 10px 20px)', border:'2px solid var(--ink)'}}/>
+            {/* Red glowing ribbon while this lane hasn't been broken yet —
+                fades out the moment the runner crosses the tape. */}
+            {!finishOrder.includes(i) && (
+              <div style={{position:'absolute', right: 30, top: 10, bottom:10, width:4,
+                background:'linear-gradient(90deg, #ff4a4a, #ff8a8a)', borderRadius:2,
+                boxShadow:'0 0 6px rgba(255,100,100,.8)'}}/>
+            )}
 
             {/* Speed lines behind the runner — three blurred white streaks
                 that anchor the eye on forward motion without needing a
