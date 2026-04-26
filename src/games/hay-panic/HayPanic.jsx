@@ -245,14 +245,16 @@ function HayPanic({ state, onFinish, onQuit, game }) {
         </div>
       </div>
 
-      {/* status row */}
-      <div style={{position:'absolute',top:80,left:0,right:0,display:'flex',justifyContent:'center',gap:12,zIndex:20}}>
+      {/* status row — dead players get a grayscale filter and skull icon */}
+      <div style={{position:'absolute',top:80,left:0,right:0,display:'flex',justifyContent:'center',gap:10,zIndex:20, flexWrap:'wrap', padding:'0 20px'}}>
         {players.map((p, i) => (
           <div key={i} style={{
             background:'#fff', border:'3px solid var(--ink)', borderRadius:12,
             padding:'4px 10px', display:'flex', alignItems:'center', gap:6,
-            opacity: alive[i] ? 1 : .5, textDecoration: alive[i] ? 'none':'line-through',
-            transform: i===0 ? 'scale(1.05)' : 'none'
+            opacity: alive[i] ? 1 : .55,
+            filter: alive[i] ? 'none' : 'grayscale(.8)',
+            transform: i===0 ? 'scale(1.05)' : 'none',
+            boxShadow: alive[i] ? '0 3px 0 var(--ink)' : 'none'
           }}>
             <Avatar char={p.char} size={32}/>
             <span style={{fontFamily:"'Luckiest Guy'", fontSize:14, color:'var(--ink)'}}>

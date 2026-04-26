@@ -166,12 +166,21 @@ function TugOWar({ state, onFinish, onQuit, game }) {
         </div>
       </div>
 
-      {/* Team banners */}
+      {/* Team banners — leading team subtly scales up to 1.05 to show
+          who's currently winning the pull. Pure CSS transition. */}
       <div style={{position:'absolute',top:100,left:0,right:0,display:'flex',justifyContent:'space-between',padding:'0 60px',zIndex:20}}>
-        <div style={{background:'var(--red)',border:'4px solid var(--ink)',borderRadius:14,padding:'6px 22px',boxShadow:'0 6px 0 var(--ink)',whiteSpace:'nowrap'}}>
+        <div style={{
+          background:'var(--red)',border:'4px solid var(--ink)',borderRadius:14,padding:'6px 22px',
+          boxShadow:'0 6px 0 var(--ink)', whiteSpace:'nowrap',
+          transform: redForce > blueForce ? 'scale(1.05)' : 'none', transition:'transform .2s'
+        }}>
           <span style={{fontFamily:"'Luckiest Guy'",fontSize:22,color:'#fff',WebkitTextStroke:'1px var(--ink)'}}>🔴 RED · {redTeam.length}</span>
         </div>
-        <div style={{background:'var(--blue)',border:'4px solid var(--ink)',borderRadius:14,padding:'6px 22px',boxShadow:'0 6px 0 var(--ink)',whiteSpace:'nowrap'}}>
+        <div style={{
+          background:'var(--blue)',border:'4px solid var(--ink)',borderRadius:14,padding:'6px 22px',
+          boxShadow:'0 6px 0 var(--ink)', whiteSpace:'nowrap',
+          transform: blueForce > redForce ? 'scale(1.05)' : 'none', transition:'transform .2s'
+        }}>
           <span style={{fontFamily:"'Luckiest Guy'",fontSize:22,color:'#fff',WebkitTextStroke:'1px var(--ink)'}}>{blueTeam.length} · BLUE 🔵</span>
         </div>
       </div>

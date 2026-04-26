@@ -239,7 +239,7 @@ function AppleAim({ state, onFinish, onQuit, game }) {
             border:'3px solid var(--ink)', borderRadius:12, padding:'4px 10px',
             display:'flex', alignItems:'center', gap:6,
             transform: turn === i ? 'translateY(-4px) scale(1.05)':'none',
-            boxShadow: turn === i ? '0 6px 0 var(--ink)' : '0 3px 0 var(--ink)',
+            boxShadow: turn === i ? '0 6px 0 var(--ink), 0 0 20px rgba(255,200,60,.6)' : '0 3px 0 var(--ink)',
             transition:'all .2s ease'
           }}>
             <Avatar char={p.char} size={32}/>
