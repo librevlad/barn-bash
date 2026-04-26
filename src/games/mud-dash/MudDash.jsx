@@ -13,7 +13,10 @@ function MudDash({ state, onFinish, onQuit, game }) {
   // per-player state: lane, jumping (time), distance, hits
   const makeState = () => players.map((_,i) => ({ lane: 1, jumpT: 0, dist: 0, hits: 0, muddy: 0 }));
   const [pstate, setPstate] = useState(makeState);
-  const [obstacles, setObstacles] = useState([]); // {id, lane, z, kind:'mud'|'rope'}
+  const [obstacles, setObstacles] = useState([]); // {id, lane, z, kind:'mud'|'rope'|'log'|'haybale'}
+  // Splash bursts at the player's feet when they slam into an obstacle.
+  // Each {id, lane, t, kind} is aged in the main RAF and removed past 0.6s.
+  const [splashes, setSplashes] = useState([]);
   const spawnT = useRef(0);
   const nextId = useRef(1);
   const youLane = useRef(1);
@@ -40,6 +43,8 @@ function MudDash({ state, onFinish, onQuit, game }) {
     }
     // move obstacles
     setObstacles(o => o.map(x => ({ ...x, z: x.z - speed * dt })).filter(x => x.z > -100));
+    // age splash bursts
+    setSplashes(s => s.map(x => ({ ...x, t: x.t + dt })).filter(x => x.t < 0.6));
 
     // update players
     setPstate(prev => prev.map((p, idx) => {
@@ -99,6 +104,12 @@ function MudDash({ state, onFinish, onQuit, game }) {
           if (o.kind === 'rope' && !jumping) { hits++; muddy = 0.4; o._hit = true; }
           if (o.kind === 'log' && !jumping) { hits++; muddy = 0.5; o._hit = true; }
           if (o.kind === 'haybale' && !jumping) { hits++; muddy = 0.55; o._hit = true; }
+          // Spawn a splash burst at player position so the impact reads
+          // even on small avatars far down the track. Only for the human
+          // (idx === 0) to keep particle count predictable.
+          if (idx === 0 && o._hit) {
+            setSplashes(s => [...s, { id: nextId.current++, lane, t: 0, kind: o.kind }].slice(-8));
+          }
         }
       });
       const dist = p.dist + (speed * dt) * (muddy > 0 ? 0.5 : 1);
@@ -343,6 +354,37 @@ function MudDash({ state, onFinish, onQuit, game }) {
                   <ellipse cx="90" cy="62" rx="16" ry="3" fill="rgba(0,0,0,.3)"/>
                 </svg>
               )}
+            </div>
+          );
+        })}
+
+        {/* Splash bursts at the impact lane — colour matches the obstacle
+            kind (brown for mud/log/haybale, cream for rope). 8 particles
+            radiate outward and fade. */}
+        {splashes.map(s => {
+          const colour = s.kind === 'mud' ? '#4a2e14'
+                       : s.kind === 'haybale' ? '#c79a48'
+                       : s.kind === 'log' ? '#8f6a3b'
+                       : '#fff5e4';
+          return (
+            <div key={'sp'+s.id} style={{
+              position:'absolute', left: laneX(s.lane), top: projectY(20) - 20,
+              transform:'translate(-50%, -50%)', pointerEvents:'none',
+              zIndex: 1200,
+              opacity: Math.max(0, 1 - s.t/0.6)
+            }}>
+              {Array.from({length: 8}).map((_, k) => {
+                const a = (k/8) * Math.PI * 2;
+                const d = 6 + s.t * 80;
+                return (
+                  <div key={k} style={{
+                    position:'absolute', left: Math.cos(a)*d, top: Math.sin(a)*d - s.t*60,
+                    transform:'translate(-50%,-50%)',
+                    width: 6, height: 6, borderRadius:'50%',
+                    background: colour, boxShadow:'0 1px 0 rgba(0,0,0,.3)'
+                  }}/>
+                );
+              })}
             </div>
           );
         })}
