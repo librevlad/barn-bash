@@ -288,15 +288,21 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
 
         {/* fish — FishSVG draws head/mouth on the LEFT, tail on the RIGHT,
             so to render head-forward we flip opposite to the swim direction:
-            dir=+1 (rightward) → scaleX(-1) flips so head points right. */}
-        {fish.map(f => (
-          <div key={f.id} style={{
-            position:'absolute', left:f.x, top:f.y, transform:`translate(-50%,-50%) scaleX(${-f.dir})`,
-            pointerEvents:'none'
-          }}>
-            <FishSVG kind={f.kind}/>
-          </div>
-        ))}
+            dir=+1 (rightward) → scaleX(-1) flips so head points right.
+            Each fish bobs up-and-down on a per-id phase so the school
+            doesn't move in lockstep. */}
+        {fish.map(f => {
+          const wiggle = Math.sin(performance.now()/200 + f.id * 1.7) * 4;
+          return (
+            <div key={f.id} style={{
+              position:'absolute', left:f.x, top:f.y + wiggle,
+              transform:`translate(-50%,-50%) scaleX(${-f.dir}) rotate(${wiggle*0.6}deg)`,
+              pointerEvents:'none'
+            }}>
+              <FishSVG kind={f.kind}/>
+            </div>
+          );
+        })}
 
         {/* Swinging rods — one per player, each tagged with their avatar so
             Max can actually tell which rod is his. Previously the host's rod
