@@ -138,6 +138,31 @@ function BarnJump({ state, onFinish, onQuit, game }) {
           })}
         </svg>
       )}
+      {/* Distant rolling hills along the horizon during go — sells the
+          whole "morning has broken" mood without competing with the sheep. */}
+      {phase === 'go' && (
+        <svg style={{position:'absolute', bottom:0, left:0, width:'100%', height:280, pointerEvents:'none'}} viewBox="0 0 1600 280" preserveAspectRatio="none">
+          <path d="M0 280 Q200 150 380 180 T720 160 T1040 175 T1340 150 T1600 175 L1600 280 Z" fill="#ffd47a" opacity=".55"/>
+          <path d="M0 280 Q160 200 320 215 T620 200 T920 220 T1240 195 T1600 220 L1600 280 Z" fill="#ffb958" opacity=".55"/>
+        </svg>
+      )}
+      {/* Rooster crow burst — scales out from top-left as the JUMP signal
+          lands, fades after 600ms. Pure visual, derived from signalAt. */}
+      {phase === 'go' && signalAt && performance.now() - signalAt < 600 && (() => {
+        const t = (performance.now() - signalAt) / 600;
+        const scale = 0.5 + t * 0.9;
+        const opacity = Math.max(0, 1 - t);
+        return (
+          <div style={{position:'absolute', top:60, left:120, transform:`scale(${scale})`, opacity, pointerEvents:'none', zIndex:18, transformOrigin:'left center'}}>
+            <svg width="260" height="100" viewBox="0 0 260 100">
+              <polygon
+                points="0,50 30,18 50,40 80,8 100,42 130,12 150,50 130,60 150,90 100,68 80,92 50,60 30,82 10,55"
+                fill="#ffec8a" stroke="#2a1a10" strokeWidth="3" strokeLinejoin="round"/>
+              <text x="78" y="58" textAnchor="middle" fontFamily="Luckiest Guy" fontSize="18" fill="#2a1a10">КУ-КА-РЕ-КУ!</text>
+            </svg>
+          </div>
+        );
+      })()}
       {/* Tension meter during wait — green→yellow→red, glow at the danger end */}
       {phase === 'wait' && (
         <div style={{position:'absolute', top:90, left:'50%', transform:'translateX(-50%)', zIndex:25}}>
