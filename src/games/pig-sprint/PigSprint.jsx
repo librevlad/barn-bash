@@ -14,6 +14,10 @@ function PigSprint({ state, onFinish, onQuit, game }) {
   // Tap burst: rises to 1 on each human tap and decays in the main RAF.
   // Drives the halo + button squish so the player feels the impact.
   const [tapBurst, setTapBurst] = useState(0);
+  // TPS (taps per second) — ring buffer of recent tap timestamps, evaluated
+  // each frame against a 1s window. Drives the HUD pill.
+  const tapTimes = useRef([]);
+  const [tps, setTps] = useState(0);
   const difficulty = state.difficulty; // easy, medium, hard
   const cpuRateByDiff = { easy: 4.2, medium: 5.6, hard: 7.2 };
   const cpuRate = cpuRateByDiff[difficulty] || 5.6;
@@ -51,6 +55,10 @@ function PigSprint({ state, onFinish, onQuit, game }) {
     if (!started || finished) return;
     setTime(t => t + dt);
     setTapBurst(b => Math.max(0, b - dt * 3.2));
+    // TPS recompute — keep only taps within the last 1000ms
+    const cutoff = performance.now() - 1000;
+    tapTimes.current = tapTimes.current.filter(t => t > cutoff);
+    setTps(tapTimes.current.length);
     setPositions(prev => {
       const next = prev.slice();
       for (let i = 0; i < next.length; i++) {
@@ -90,6 +98,7 @@ function PigSprint({ state, onFinish, onQuit, game }) {
     const now = performance.now();
     if (now - tapCooldown.current < 40) return; // cap
     tapCooldown.current = now;
+    tapTimes.current.push(now);
     setTapBurst(1);
     setPositions(prev => {
       const next = prev.slice();
@@ -140,10 +149,42 @@ function PigSprint({ state, onFinish, onQuit, game }) {
         <div className="plank" style={{padding:'8px 22px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🏁 ПОРОСЯЧИЙ ЗАБЕГ</span>
         </div>
-        <div className="plank" style={{padding:'8px 16px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>{time.toFixed(1)}s</span>
+        <div style={{display:'flex', gap:10}}>
+          {/* TPS pill — yellow when human is mashing fast (>8/s) */}
+          <div className="plank" style={{padding:'8px 14px', whiteSpace:'nowrap'}}>
+            <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:14, marginRight:4}}>TPS</span>
+            <span style={{fontFamily:"'Luckiest Guy'",color: tps > 8 ? '#ffe96c' : 'var(--cream)', fontSize:22}}>{tps}</span>
+          </div>
+          <div className="plank" style={{padding:'8px 16px'}}>
+            <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>{time.toFixed(1)}s</span>
+          </div>
         </div>
       </div>
+
+      {/* Live mini-leaderboard — top 4 players sorted by progress, with
+          medals for the top three. Lives below the HUD on the left edge so
+          the player can read their standing without losing the track. */}
+      {started && !finished && (() => {
+        const ranks = positions
+          .map((p, i) => ({ i, p }))
+          .sort((a, b) => b.p - a.p)
+          .slice(0, Math.min(players.length, 4));
+        return (
+          <div style={{position:'absolute', top:78, left:20, zIndex:18, display:'flex', flexDirection:'column', gap:4}}>
+            {ranks.map((row, rank) => (
+              <div key={'lb'+row.i} style={{
+                display:'flex', alignItems:'center', gap:8,
+                background:'rgba(255,255,255,.85)', border:'2px solid var(--ink)', borderRadius:10, padding:'3px 8px',
+                fontFamily:"'Luckiest Guy'", fontSize:14
+              }}>
+                <span style={{color: rank === 0 ? '#c89a2a' : 'var(--ink)'}}>{['🥇','🥈','🥉','4️⃣'][rank]}</span>
+                <span style={{color:'var(--ink)'}}>{playerLabel(players[row.i])}</span>
+                <span style={{color:'var(--wood-dk)', marginLeft:'auto'}}>{Math.round(row.p / FINISH * 100)}%</span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Track */}
       <div style={{position:'absolute', left:80, right:80, top:120, bottom:200}}>
