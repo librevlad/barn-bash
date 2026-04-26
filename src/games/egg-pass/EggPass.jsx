@@ -23,6 +23,9 @@ function EggPass({ state, onFinish, onQuit, game }) {
   // the egg blows. Pushed inside explode(); aged each frame; cleared
   // past 1.6s.
   const [explosions, setExplosions] = useState([]);
+  // Fuse sparks — small particles trailing the egg's lit fuse. Spawned
+  // probabilistically while the timer ticks down (denser as panic grows).
+  const [sparks, setSparks] = useState([]);
 
   const difficulty = state.difficulty;
   const cpuReflex = { easy: [0.6, 1.2], medium: [0.3, 0.8], hard: [0.15, 0.4] }[difficulty] || [0.3, 0.8];
@@ -50,6 +53,16 @@ function EggPass({ state, onFinish, onQuit, game }) {
     });
     // age explosion particles
     setExplosions(ex => ex.map(e => ({ ...e, t: e.t + dt })).filter(e => e.t < 1.6));
+    // spawn fuse sparks more often as the timer drops, then age them
+    if (Math.random() < (1 - timeLeft/baseTime) * 0.5 + 0.1) {
+      setSparks(s => [...s, {
+        id: Math.random(), x: eggPos.x + (Math.random()-0.5)*8, y: eggPos.y - 34,
+        vx: (Math.random()-0.5)*40, vy: -40 - Math.random()*50, t: 0
+      }].slice(-40));
+    }
+    setSparks(s => s.map(sp => ({
+      ...sp, x: sp.x + sp.vx*dt, y: sp.y + sp.vy*dt, t: sp.t + dt
+    })).filter(sp => sp.t < 0.7));
   }, started && !finished);
 
   const aliveCount = alive.filter(Boolean).length;
@@ -251,6 +264,19 @@ function EggPass({ state, onFinish, onQuit, game }) {
         );
       })}
       <style>{`@keyframes eggSweat{0%{opacity:0;transform:translateY(-4px)}40%{opacity:1}100%{opacity:0;transform:translateY(20px)}}`}</style>
+
+      {/* Fuse sparks — small glowing dots trailing the lit fuse. Density
+          ramps up as panic grows so the egg feels like it's about to go. */}
+      {sparks.map(sp => (
+        <div key={'sp'+sp.id} style={{
+          position:'absolute', left:`calc(50% - 800px + ${sp.x}px)`, top: sp.y,
+          width: 4, height: 4, borderRadius:'50%',
+          background: sp.t < 0.2 ? '#ffec8a' : '#ff6b3a',
+          opacity: 1 - sp.t/0.7,
+          boxShadow:'0 0 6px #ffb33a',
+          pointerEvents:'none', zIndex: 14
+        }}/>
+      ))}
 
       {/* Explosion bursts — fireball + eggshell debris + POP! text. Each
           entry pops in, then scales outward and fades over 1.6s. */}

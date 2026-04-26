@@ -13,6 +13,8 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
   // Catch flash: brief zoomed celebration of the human's catch (gold ring,
   // big delta number, special label for boot/gold). null when idle.
   const [catchFlash, setCatchFlash] = useState(null);
+  // Ripple rings on the water surface when a hook drops in. {id,x,y,t}.
+  const [ripples, setRipples] = useState([]);
   const hookX = useRef(700); // for human; others simulated
   const hookDir = useRef(1);
   const [dropping, setDropping] = useState(null); // { y, startT, player, x, returning }
@@ -30,6 +32,8 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
     setTime(t => { const nt = t + dt; if (nt >= GAME_SEC) setFinished(true); return nt; });
     // age catch flash; clear after ~0.9s
     setCatchFlash(cf => cf ? (cf.age + dt > 0.9 ? null : { ...cf, age: cf.age + dt }) : null);
+    // age water ripples; clear past 1.2s
+    setRipples(rs => rs.map(r => ({ ...r, t: r.t + dt })).filter(r => r.t < 1.2));
 
     // spawn fish
     spawnT.current -= dt;
@@ -121,6 +125,8 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
   const humanDrop = () => {
     if (!started || finished || dropping) return;
     setDropping({ player: 0, x: hookX.current, startT: performance.now() });
+    // Ripple ring when the hook breaks the water surface
+    setRipples(r => [...r, { id: Math.random(), x: hookX.current, y: 50, t: 0 }]);
   };
   useEffect(() => {
     const d = (e) => { if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); humanDrop(); } };
@@ -234,6 +240,16 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
       }}>
         {/* water surface ripples */}
         <div style={{position:'absolute',top:0,left:0,right:0,height:40,background:'repeating-linear-gradient(90deg, transparent 0 12px, rgba(255,255,255,.3) 12px 14px)'}}/>
+        {/* Hook-drop ripple rings — expand and fade when a hook hits water */}
+        {ripples.map(r => (
+          <div key={'rp'+r.id} style={{
+            position:'absolute', left:r.x, top:r.y, pointerEvents:'none',
+            width: 10 + r.t*120, height: (10 + r.t*120) * 0.35, borderRadius:'50%',
+            border:'3px solid rgba(255,255,255,.8)',
+            opacity: Math.max(0, 1 - r.t/1.2),
+            transform:'translate(-50%,-50%)'
+          }}/>
+        ))}
         {/* Lily pads with occasional flowers */}
         {[{x:140,y:12},{x:480,y:18},{x:820,y:10},{x:1050,y:20}].map((lp,i)=>(
           <svg key={'lp'+i} style={{position:'absolute', left:lp.x, top:lp.y, pointerEvents:'none'}} width="70" height="34" viewBox="0 0 70 34">
