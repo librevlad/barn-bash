@@ -130,6 +130,9 @@ function TugOWar({ state, onFinish, onQuit, game }) {
   const ribbonX = centerX + offset;
   // Tension straightens the rope as both teams pull harder; idle rope sags.
   const tension = Math.min(1, (redForce + blueForce) / 6);
+  // Struggle pct — close to 0 means the knot is near centre, i.e. the
+  // teams are evenly matched. Drives the tension-spark effect.
+  const strugglePct = Math.abs(offset) / MAX;
 
   return (
     <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, #9acfe8 0%, #cce6b0 55%, #8fcc6a 100%)',overflow:'hidden'}}>
@@ -268,6 +271,25 @@ function TugOWar({ state, onFinish, onQuit, game }) {
           </div>
         );
       })}
+
+      {/* Tension sparks orbiting the knot when both teams pull hard AND
+          the knot is near the centre. Reads as visible "stress" on the
+          rope rather than a screen-wide effect. */}
+      {started && !finished && tension > 0.5 && strugglePct < 0.3 && (
+        <div style={{position:'absolute', bottom: 268, left:`calc(50% + ${offset}px - 10px)`, width:20, height:20, pointerEvents:'none', zIndex:6}}>
+          {[...Array(6)].map((_,k)=>{
+            const a = (k/6)*Math.PI*2 + performance.now()/200;
+            return (
+              <div key={k} style={{
+                position:'absolute',
+                left: 10 + Math.cos(a)*14, top: 10 + Math.sin(a)*14,
+                width:5, height:5, background:'#ffec8a', borderRadius:'50%',
+                boxShadow:'0 0 6px #ffc93c'
+              }}/>
+            );
+          })}
+        </div>
+      )}
 
       {/* Big mash button */}
       {started && !finished && (

@@ -20,6 +20,10 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
   // Hammer animation: each entry tracks a recent whack at hole `h` with elapsed
   // time `t`; aged in the main RAF and removed past 0.35s.
   const [hammers, setHammers] = useState([]);
+  // Human combo state. Increments on consecutive positive whacks within
+  // 900ms of each other; resets on miss/negative or stale gap.
+  const [combo, setCombo] = useState(0);
+  const lastHitAtRef = useRef(0);
   const difficulty = state.difficulty;
   const spawnRate = { easy: 1.1, medium: 0.75, hard: 0.5 }[difficulty] || 0.75;
   const spawnTimer = useRef(0);
@@ -94,7 +98,11 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
     setPops(prev => {
       const next = prev.slice();
       const p = next[h];
-      if (!p) return next;
+      if (!p) {
+        // whiff on empty: human combo breaks
+        if (pi === 0) setCombo(0);
+        return next;
+      }
       let delta = 0;
       if (p.kind === 'gopher') delta = 1;
       else if (p.kind === 'golden') delta = 3;
@@ -102,6 +110,16 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
       setScores(s => { const ns = s.slice(); ns[pi] += delta; return ns; });
       const c = delta > 0 ? '#6cc24a' : '#e04b3b';
       setHitFX(fx => [...fx, { id: Date.now()+Math.random(), h, text: delta > 0 ? `+${delta}` : `${delta}`, c, by: pi }]);
+      // Human-only combo tracking: positive hit within 900ms extends; else reset.
+      if (pi === 0) {
+        if (delta > 0) {
+          const now = performance.now();
+          setCombo(c => (now - lastHitAtRef.current < 900 ? c + 1 : 1));
+          lastHitAtRef.current = now;
+        } else {
+          setCombo(0);
+        }
+      }
       next[h] = null;
       return next;
     });
@@ -177,8 +195,16 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
         <div className="plank" style={{padding:'8px 22px'}}>
           <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:26}}>🔨 СУСЛИК, ПОШЁЛ ВОН</span>
         </div>
-        <div className="plank" style={{padding:'8px 16px'}}>
-          <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>{Math.max(0,GAME_SEC - time).toFixed(1)}s</span>
+        <div style={{display:'flex', gap:10}}>
+          {/* Combo pill — only when human is on a roll (2+ in a row) */}
+          {combo >= 2 && (
+            <div className="plank" style={{padding:'8px 14px', background:'var(--red)'}}>
+              <span style={{fontFamily:"'Luckiest Guy'", color:'#fff', fontSize:20, WebkitTextStroke:'1.5px var(--ink)', whiteSpace:'nowrap'}}>x{combo} КОМБО!</span>
+            </div>
+          )}
+          <div className="plank" style={{padding:'8px 16px'}}>
+            <span style={{fontFamily:"'Luckiest Guy'",color:'var(--cream)',fontSize:20}}>{Math.max(0,GAME_SEC - time).toFixed(1)}s</span>
+          </div>
         </div>
       </div>
 
