@@ -321,12 +321,15 @@ function AppleAim({ state, onFinish, onQuit, game }) {
           </div>
         ))}
 
-        {/* float texts */}
+        {/* float texts — BULLSEYE! gets a bigger, nowrap-pinned typesetting
+            so the celebration reads from across the table */}
         {floatTexts.map(f=>(
           <div key={f.id} style={{
             position:'absolute', left:f.x, top:f.y, transform:'translate(-50%,-50%)',
-            fontFamily:"'Luckiest Guy'", fontSize:36, color:f.c, WebkitTextStroke:'2px var(--ink)',
-            animation:'floatUp 1s ease-out forwards', pointerEvents:'none', zIndex:10
+            fontFamily:"'Luckiest Guy'", fontSize: f.text === 'BULLSEYE!' ? 48 : 36,
+            color:f.c, WebkitTextStroke:'2px var(--ink)',
+            animation:'floatUp 1s ease-out forwards', pointerEvents:'none', zIndex:10,
+            whiteSpace:'nowrap'
           }}>{f.text}</div>
         ))}
 

@@ -189,7 +189,7 @@ function TugOWar({ state, onFinish, onQuit, game }) {
       <div style={{position:'absolute',top:170,left:'50%',transform:'translateX(-50%)',width:900,height:20,background:'#fff',border:'3px solid var(--ink)',borderRadius:10,overflow:'hidden',boxShadow:'0 4px 0 var(--ink)'}}>
         <div style={{position:'absolute',left:0,top:0,bottom:0,width:'50%',background:'rgba(224,75,59,.3)'}}/>
         <div style={{position:'absolute',right:0,top:0,bottom:0,width:'50%',background:'rgba(74,163,224,.3)'}}/>
-        <div style={{position:'absolute',left:`calc(50% + ${(offset/MAX)*50}% - 4px)`,top:-4,width:8,height:28,background:'var(--yellow)',border:'2px solid var(--ink)',borderRadius:4}}/>
+        <div style={{position:'absolute',left:`calc(50% + ${(offset/MAX)*50}% - 4px)`,top:-4,width:8,height:28,background:'var(--yellow)',border:'2px solid var(--ink)',borderRadius:4, boxShadow:'0 0 8px rgba(255,201,60,.9)'}}/>
       </div>
 
       {/* Ground */}

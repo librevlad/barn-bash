@@ -325,10 +325,14 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
         );
       })}
 
-      {/* hints */}
+      {/* hints — legend split into flex items with colour-coded values
+          (green +1, gold +3, red -1) so the rules read at a glance */}
       <div style={{position:'absolute',bottom:20,left:0,right:0,display:'flex',justifyContent:'center',gap:12}}>
-        <div style={{background:'#fff',border:'3px solid var(--ink)',borderRadius:14,padding:'8px 16px',fontFamily:"'Luckiest Guy'",fontSize:16}}>
-          CLICK holes or press 1–6 · 🐹 +1 · ✨🐹 +3 · 🐰 −1!
+        <div style={{background:'#fff',border:'3px solid var(--ink)',borderRadius:14,padding:'10px 18px',fontFamily:"'Luckiest Guy'",fontSize:15, boxShadow:'0 4px 0 var(--ink)', display:'flex', gap:18, alignItems:'center', flexWrap:'wrap'}}>
+          <span>ТЫК или <b style={{color:'var(--red)'}}>1–6</b></span>
+          <span style={{color:'var(--ink)'}}>🐹 <b style={{color:'#4aa35a'}}>+1</b></span>
+          <span style={{color:'var(--ink)'}}>✨🐹 <b style={{color:'#c89a2a'}}>+3</b></span>
+          <span style={{color:'var(--ink)'}}>🐰 <b style={{color:'var(--red)'}}>−1</b></span>
         </div>
       </div>
 
