@@ -234,10 +234,13 @@ function TugOWar({ state, onFinish, onQuit, game }) {
         const x = 180 + k * 140 - offset * 0.6;
         const pulling = power[idx] > 0.4;
         const pullT = performance.now()/80 + k * 0.5;
+        const losing = finished && winner === 'blue';
         return (
           <div key={'r'+idx} style={{position:'absolute', left:`calc(50% - ${FIELD_W/2}px + ${x}px)`, bottom: 220, transform:'translate(-50%, 0)'}}>
-            <div style={{transform: pulling ? `translateX(${Math.sin(pullT)*6}px) rotate(${-8 - Math.sin(pullT)*4}deg)` : 'rotate(-6deg)', transition:'transform .05s'}}>
+            <div style={{transform: pulling ? `translateX(${Math.sin(pullT)*6}px) rotate(${-8 - Math.sin(pullT)*4}deg)` : 'rotate(-6deg)', transition:'transform .05s', filter: losing ? 'saturate(.5) brightness(.85)' : 'none', position:'relative'}}>
               <Avatar char={p.char} size={110}/>
+              {/* Red headband — colour-codes the team without a banner */}
+              <div style={{position:'absolute', top:6, left:'50%', transform:'translateX(-50%) rotate(-4deg)', width:60, height:10, background:'var(--red)', border:'2px solid var(--ink)', borderRadius:3}}/>
             </div>
             {/* tap cue */}
             {idx === 0 && <div style={{position:'absolute',top:-30,left:'50%',transform:'translateX(-50%)',background:'var(--yellow)',border:'2px solid var(--ink)',borderRadius:6,padding:'1px 6px',fontFamily:"'Luckiest Guy'",fontSize:11}}>YOU</div>}
@@ -261,10 +264,13 @@ function TugOWar({ state, onFinish, onQuit, game }) {
         const x = FIELD_W - 180 - k * 140 - offset * 0.6;
         const pulling = power[idx] > 0.4;
         const pullT = performance.now()/80 + k * 0.5;
+        const losing = finished && winner === 'red';
         return (
           <div key={'b'+idx} style={{position:'absolute', left:`calc(50% - ${FIELD_W/2}px + ${x}px)`, bottom: 220, transform:'translate(-50%, 0) scaleX(-1)'}}>
-            <div style={{transform: pulling ? `translateX(${Math.sin(pullT)*6}px) rotate(${-8 - Math.sin(pullT)*4}deg)` : 'rotate(-6deg)', transition:'transform .05s'}}>
+            <div style={{transform: pulling ? `translateX(${Math.sin(pullT)*6}px) rotate(${-8 - Math.sin(pullT)*4}deg)` : 'rotate(-6deg)', transition:'transform .05s', filter: losing ? 'saturate(.5) brightness(.85)' : 'none', position:'relative'}}>
               <Avatar char={p.char} size={110}/>
+              {/* Blue headband */}
+              <div style={{position:'absolute', top:6, left:'50%', transform:'translateX(-50%) rotate(-4deg)', width:60, height:10, background:'var(--blue)', border:'2px solid var(--ink)', borderRadius:3}}/>
             </div>
             <div style={{position:'absolute',left:'50%',bottom:-6,transform:'translateX(-50%)',width:90,height:12,background:'rgba(0,0,0,.3)',borderRadius:'50%',filter:'blur(3px)'}}/>
             {pulling && (
