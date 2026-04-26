@@ -318,10 +318,13 @@ function EggPass({ state, onFinish, onQuit, game }) {
         );
       })}
 
-      {/* Egg */}
+      {/* Egg — scales 1.3x while passing through the air (sells the throw),
+          and bloats slightly (1 + 8% of remaining tension) as the timer
+          drops, so the egg visibly "swells with pressure" before exploding. */}
       <div style={{
         position:'absolute', left: `calc(50% - 800px + ${eggPos.x}px)`, top: eggPos.y,
-        transform:`translate(-50%,-50%) ${shake?'rotate('+((Math.sin(performance.now()/30))*10)+'deg)':''}`,
+        transform:`translate(-50%,-50%) ${shake?'rotate('+((Math.sin(performance.now()/30))*10)+'deg)':''} scale(${passing ? 1.3 : 1 + (1-pct)*0.08})`,
+        transition: passing ? 'none' : 'transform .08s',
         zIndex: 15,
         pointerEvents:'none',
       }}>

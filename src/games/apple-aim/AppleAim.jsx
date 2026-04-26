@@ -286,8 +286,11 @@ function AppleAim({ state, onFinish, onQuit, game }) {
           transform: `translateY(${Math.sin(performance.now()/1200)*3}px)`,
           filter:'drop-shadow(0 6px 0 rgba(0,0,0,.2))'
         }}>
-          {/* pole */}
-          <div style={{position:'absolute', left:64, top:70, width:12, height:110, background:'#6b4a2e', border:'2px solid var(--ink)'}}/>
+          {/* pole + base mount — shorter pole that emerges from a flat
+              wedge sitting on the ground, instead of a tall brown bar
+              floating in mid-air. Reads as a real archery butt. */}
+          <div style={{position:'absolute', left:64, top:130, width:12, height:80, background:'#6b4a2e', border:'2px solid var(--ink)', borderTopWidth:0}}/>
+          <div style={{position:'absolute', left:40, top:198, width:60, height:14, background:'#6b4a2e', border:'2px solid var(--ink)', borderRadius:3}}/>
           {[[5,'#ffc93c'],[4,'#4aa3e0'],[3,'#e04b3b'],[2,'#fff'],[1,'#6cc24a']].map(([r,c],i)=>{
             // Glow the most recent hit's ring while we're still in 'result'
             // phase (~1.2s before the next shot resets). Keeps the player
