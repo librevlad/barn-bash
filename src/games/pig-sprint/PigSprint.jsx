@@ -165,6 +165,20 @@ function PigSprint({ state, onFinish, onQuit, game }) {
             <div style={{position:'absolute', right: 20, top: 10, bottom:10, width:8,
               backgroundImage:'repeating-linear-gradient(0deg, #000 0 10px, #fff 10px 20px)', border:'2px solid var(--ink)'}}/>
 
+            {/* Speed lines behind the runner — three blurred white streaks
+                that anchor the eye on forward motion without needing a
+                particle ticker. Only when actively running. */}
+            {started && !finished && positions[i] < FINISH && (
+              <>
+                <div style={{position:'absolute', top: 36, left: `calc(${8 + (positions[i] / FINISH) * (100 - 12)}% - 70px)`,
+                  width:60, height:3, background:'rgba(255,255,255,.7)', borderRadius:3, filter:'blur(1px)'}}/>
+                <div style={{position:'absolute', top: 52, left: `calc(${8 + (positions[i] / FINISH) * (100 - 12)}% - 60px)`,
+                  width:42, height:3, background:'rgba(255,255,255,.5)', borderRadius:3, filter:'blur(1px)'}}/>
+                <div style={{position:'absolute', top: 70, left: `calc(${8 + (positions[i] / FINISH) * (100 - 12)}% - 65px)`,
+                  width:50, height:3, background:'rgba(255,255,255,.6)', borderRadius:3, filter:'blur(1px)'}}/>
+              </>
+            )}
+
             {/* runner */}
             <div style={{
               position:'absolute', top: 18, left: `${8 + (positions[i] / FINISH) * (100 - 12)}%`,

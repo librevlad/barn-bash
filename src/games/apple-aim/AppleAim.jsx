@@ -21,6 +21,10 @@ function AppleAim({ state, onFinish, onQuit, game }) {
   const [trail, setTrail] = useState([]); // ghost samples of arrow flight, last 18
   const [hits, setHits] = useState([]); // [{x,y,ring}]
   const [floatTexts, setFloatTexts] = useState([]);
+  // Bullseye splash: 8 apple particles burst outward from the target on
+  // a ring=5 hit. Each entry has its own elapsed time `t` and is aged
+  // every frame in the main RAF, removed past 1.2s.
+  const [splashes, setSplashes] = useState([]);
 
   const difficulty = state.difficulty;
   const targetX = FIELD_W - 180;
@@ -33,6 +37,8 @@ function AppleAim({ state, onFinish, onQuit, game }) {
   // oscillate angle
   useRaf((dt) => {
     if (!started || finished) return;
+    // age bullseye splashes; clear past 1.2s
+    setSplashes(s => s.map(x => ({ ...x, t: x.t + dt })).filter(x => x.t < 1.2));
     if (phase === 'angle') {
       setAngle(a => {
         let next = a + angleDir * 70 * dt;
@@ -76,6 +82,9 @@ function AppleAim({ state, onFinish, onQuit, game }) {
       return next;
     });
     if (x != null) setHits(h => [...h, { x, y, ring, turn }]);
+    if (ring === 5) {
+      setSplashes(s => [...s, { id: Date.now()+Math.random(), x: x||targetX, y: (y||targetY)-20, t: 0 }]);
+    }
     setFloatTexts(f => [...f, { id: Date.now()+Math.random(), x: x||targetX, y: y||targetY, text: ring === 5 ? 'BULLSEYE!' : ring > 0 ? `+${ring}` : 'MISS', c: ring === 5 ? '#ffc93c' : ring > 0 ? '#6cc24a' : '#e04b3b' }]);
     setPhase('result');
     setTimeout(() => {
@@ -348,6 +357,31 @@ function AppleAim({ state, onFinish, onQuit, game }) {
             )}
           </svg>
         </div>
+
+        {/* Bullseye splash — 8 apple particles burst outward + warm glow ring.
+            Triggered only on ring=5 hits. */}
+        {splashes.map(s => (
+          <div key={s.id} style={{
+            position:'absolute', left:s.x, top:s.y,
+            transform:`translate(-50%,-50%) scale(${1 + s.t*1.5})`,
+            opacity: Math.max(0, 1 - s.t*0.9),
+            pointerEvents:'none', zIndex:11
+          }}>
+            {Array.from({length: 8}).map((_, k) => {
+              const a = (k/8) * Math.PI * 2;
+              return (
+                <div key={k} style={{
+                  position:'absolute', left: Math.cos(a)*40, top: Math.sin(a)*40,
+                  transform:'translate(-50%,-50%)',
+                  fontSize: 22, filter:'drop-shadow(0 1px 0 rgba(0,0,0,.3))'
+                }}>🍎</div>
+              );
+            })}
+            <div style={{width:100, height:100,
+              background:'radial-gradient(circle, rgba(255,200,80,.6) 0 30%, transparent 60%)',
+              borderRadius:'50%', transform:'translate(-50%,-50%)', position:'absolute', left:'50%', top:'50%'}}/>
+          </div>
+        ))}
 
         {/* Arrow flight trail — fading ghost samples (most recent brightest) */}
         {trail.map((t, i) => (
