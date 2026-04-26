@@ -24,6 +24,17 @@ function BarnJump({ state, onFinish, onQuit, game }) {
 
   const cpuWindow = { easy: [700, 1400], medium: [400, 900], hard: [250, 550] }[state.difficulty] || [400, 900];
 
+  // Per-player jump arc — drives the on-stage sheep hop. Returns a Y
+  // offset (px upward) that tracks the player's first valid reaction
+  // (excluding 'early') for ~1.2s, then settles back to ground.
+  const playerJumpY = (idx) => {
+    const r = reactions[idx];
+    if (r == null || r === 'early' || signalAt == null) return 0;
+    const since = (performance.now() - signalAt - r) / 1000;
+    if (since < 0 || since > 1.2) return 0;
+    return Math.sin(since * Math.PI / 1.2) * 130;
+  };
+
   // Random 2-5s wait before the JUMP signal. Once it fires, record the
   // exact performance.now() so reaction times measure from signal, not mount.
   useEffect(() => {
@@ -149,6 +160,42 @@ function BarnJump({ state, onFinish, onQuit, game }) {
         <div style={{width:110}}/>
       </div>
 
+      {/* Sheep stage — one cartoon sheep per player on a fence-line. Each
+          sheep hops along their reaction arc (or topples sideways on
+          'early'). Renders behind the bigLabel so it doesn't block read
+          of WAIT/JUMP/DONE. */}
+      <div style={{position:'absolute', top: 280, left:0, right:0, display:'flex', justifyContent:'center', gap: Math.max(20, Math.min(120, 800 / players.length)), padding:'0 60px', zIndex:10, pointerEvents:'none'}}>
+        {players.map((p, i) => {
+          const r = reactions[i];
+          const early = r === 'early';
+          const jumpY = playerJumpY(i);
+          return (
+            <div key={'sheep'+i} style={{position:'relative', width:80, height:120, transform: `translateY(${-jumpY}px)`, transition: 'transform .04s'}}>
+              {/* shadow scales with jump height */}
+              <div style={{position:'absolute', bottom: -2, left:'50%', transform:`translateX(-50%) scale(${jumpY > 0 ? 1 - jumpY/200 : 1})`,
+                width: 60, height: 10, background:'rgba(0,0,0,.4)', borderRadius:'50%', filter:'blur(2px)'}}/>
+              <div style={{
+                position:'absolute', bottom: 6, left:'50%',
+                transform: `translateX(-50%) ${early ? 'rotate(78deg) translateY(8px)' : ''}`,
+                filter: phase === 'wait' ? 'brightness(.7)' : 'none'
+              }}>
+                <SheepSVG char={p.char}/>
+              </div>
+              {early && (
+                <div style={{position:'absolute', top:-4, left:'50%', transform:'translateX(-50%)', fontSize:24}}>💫</div>
+              )}
+              {/* Per-sheep name tag — readable from anywhere on the stage */}
+              <div style={{position:'absolute', top:-26, left:'50%', transform:'translateX(-50%)',
+                background: i === 0 && !p.isCPU ? 'var(--yellow)' : '#fff',
+                border:'2px solid var(--ink)', borderRadius:6, padding:'1px 6px',
+                fontFamily:"'Luckiest Guy'", fontSize:11, whiteSpace:'nowrap', color:'var(--ink)'}}>
+                {playerLabel(p)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <div style={{position:'absolute', inset:0, display:'grid', placeItems:'center', pointerEvents:'none'}}>
         <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:14}}>
           <div className={phase === 'go' ? 'pop-in' : ''} style={{
@@ -229,7 +276,30 @@ function BarnJump({ state, onFinish, onQuit, game }) {
   );
 }
 
-Object.assign(window, { BarnJump });
+// Cartoon sheep — fluffy cloud-body, dark face, two ears, and a small
+// tuft on top tinted with the character's colour so each player's
+// sheep is visually distinct.
+function SheepSVG({ char }) {
+  return (
+    <svg width="80" height="70" viewBox="0 0 80 70" style={{filter:'drop-shadow(0 3px 0 rgba(0,0,0,.25))'}}>
+      <rect x="18" y="52" width="6" height="16" fill="#2a1a10"/>
+      <rect x="56" y="52" width="6" height="16" fill="#2a1a10"/>
+      <circle cx="26" cy="42" r="14" fill="#fff5e4" stroke="#2a1a10" strokeWidth="2.5"/>
+      <circle cx="42" cy="36" r="16" fill="#fff5e4" stroke="#2a1a10" strokeWidth="2.5"/>
+      <circle cx="58" cy="42" r="14" fill="#fff5e4" stroke="#2a1a10" strokeWidth="2.5"/>
+      <circle cx="48" cy="50" r="10" fill="#fff5e4" stroke="#2a1a10" strokeWidth="2.5"/>
+      <circle cx="30" cy="50" r="10" fill="#fff5e4" stroke="#2a1a10" strokeWidth="2.5"/>
+      <ellipse cx="14" cy="36" rx="10" ry="9" fill="#3a352e" stroke="#2a1a10" strokeWidth="2.5"/>
+      <ellipse cx="10" cy="30" rx="4" ry="5" fill="#3a352e" stroke="#2a1a10" strokeWidth="2"/>
+      <ellipse cx="18" cy="28" rx="4" ry="5" fill="#3a352e" stroke="#2a1a10" strokeWidth="2"/>
+      <circle cx="12" cy="34" r="1.8" fill="#fff"/>
+      <circle cx="12" cy="34" r="0.9" fill="#2a1a10"/>
+      <circle cx="42" cy="22" r="4" fill={char.color || '#fff'} stroke="#2a1a10" strokeWidth="2"/>
+    </svg>
+  );
+}
+
+Object.assign(window, { BarnJump, SheepSVG });
 
 window.BB.games.register({
   id: 'jump',
