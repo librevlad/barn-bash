@@ -239,12 +239,12 @@ function EggPass({ state, onFinish, onQuit, game }) {
             transition:'all .4s ease',
           }}>
             <div style={{
-              background: isHolder ? 'var(--yellow)' : '#fff',
+              background: isHolder ? (panic ? 'var(--red)' : 'var(--yellow)') : '#fff',
               border:'4px solid var(--ink)', borderRadius:14, padding:10,
-              boxShadow: isHolder ? '0 8px 0 var(--ink), 0 0 30px rgba(255,201,60,.8)' : '0 4px 0 var(--ink)',
-              display:'flex', flexDirection:'column', alignItems:'center',
-              transform: isHolder ? 'scale(1.15)' : 'scale(1)',
-              transition:'all .3s ease',
+              boxShadow: isHolder ? `0 8px 0 var(--ink), 0 0 ${30 + (1-pct)*20}px rgba(255,201,60,${0.8})` : '0 4px 0 var(--ink)',
+              display:'flex', flexDirection:'column', alignItems:'center', position:'relative',
+              transform: isHolder ? `scale(${1.15 + (panic ? Math.sin(performance.now()/50)*0.03 : 0)})` : 'scale(1)',
+              transition:'background .2s, box-shadow .2s',
             }}>
               <Avatar char={p.char} size={80} bob={isHolder}/>
               <div style={{fontFamily:"'Luckiest Guy'", fontSize:16, color:'var(--ink)', marginTop:4}}>

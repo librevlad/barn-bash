@@ -314,18 +314,28 @@ function TugOWar({ state, onFinish, onQuit, game }) {
         </div>
       )}
 
-      {/* Big mash button */}
-      {started && !finished && (
-        <div style={{position:'absolute',bottom:28,left:0,right:0,display:'flex',justifyContent:'center',zIndex:30}}>
-          <button onMouseDown={doTap} onTouchStart={doTap} className="pulse" style={{
-            fontFamily:"'Luckiest Guy'", fontSize:40, padding:'18px 60px',
-            background:'var(--red)', color:'#fff', WebkitTextStroke:'2px var(--ink)',
-            border:'6px solid var(--ink)', borderRadius:22, boxShadow:'0 10px 0 var(--ink)', cursor:'pointer'
-          }}>
-            💪 PULL! (SPACE)
-          </button>
-        </div>
-      )}
+      {/* Big mash button — visually depresses each time the human taps,
+          driven by power[0] (which spikes on tap and decays in the RAF).
+          Shadow shrinks + translateY pushes the button down for a press
+          feel; glow halo blooms on hard taps. */}
+      {started && !finished && (() => {
+        const press = Math.min(1, (power[0] || 0) / 1.5);
+        return (
+          <div style={{position:'absolute',bottom:28,left:0,right:0,display:'flex',justifyContent:'center',zIndex:30}}>
+            <button onMouseDown={doTap} onTouchStart={doTap} className="pulse" style={{
+              fontFamily:"'Luckiest Guy'", fontSize:40, padding:'18px 60px',
+              background:'var(--red)', color:'#fff', WebkitTextStroke:'2px var(--ink)',
+              border:'6px solid var(--ink)', borderRadius:22,
+              boxShadow:`0 ${10 - press*6}px 0 var(--ink), 0 0 ${press*24}px rgba(255,150,80,${press*0.7})`,
+              transform:`translateY(${press*4}px) scale(${1 + press*0.02})`,
+              transition:'transform .05s, box-shadow .05s',
+              cursor:'pointer'
+            }}>
+              💪 PULL! (SPACE)
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Tap counters */}
       <div style={{position:'absolute',top:210,left:0,right:0,display:'flex',justifyContent:'space-around',padding:'0 100px',zIndex:20}}>
