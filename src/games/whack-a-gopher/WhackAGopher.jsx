@@ -239,6 +239,12 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
               width: 220, height: 150,
               cursor: 'pointer',
             }}>
+            {/* Grass tufts and dirt flecks dressing the mound — break up the
+                solid brown blob and tie the holes to the picket-fence vibe. */}
+            <div style={{position:'absolute', left:8, bottom:74, width:20, height:14, background:'radial-gradient(ellipse at 50% 100%, #4a8a35 0 60%, transparent 62%)'}}/>
+            <div style={{position:'absolute', right:8, bottom:78, width:22, height:15, background:'radial-gradient(ellipse at 50% 100%, #4a8a35 0 60%, transparent 62%)'}}/>
+            <div style={{position:'absolute', left:'50%', bottom:90, width:26, height:14, transform:'translateX(-50%)', background:'radial-gradient(ellipse at 50% 100%, #5aa040 0 60%, transparent 62%)', opacity:.9}}/>
+
             {/* hole mound */}
             <div style={{
               position:'absolute', left:0, right:0, bottom:0, height:90,

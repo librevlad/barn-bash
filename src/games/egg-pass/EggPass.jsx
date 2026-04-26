@@ -328,9 +328,12 @@ function EggPass({ state, onFinish, onQuit, game }) {
         <svg width="90" height="110" viewBox="0 0 90 110" style={{filter:'drop-shadow(0 6px 0 rgba(0,0,0,.4))'}}>
           <ellipse cx="45" cy="58" rx="38" ry="48" fill="#fff5e4" stroke="#2a1a10" strokeWidth="4"/>
           <ellipse cx="32" cy="38" rx="12" ry="16" fill="#fff" opacity=".6"/>
-          {/* danger cracks */}
-          {pct < 0.5 && <path d="M 45 20 L 48 36 L 40 42 L 50 52" stroke="#2a1a10" strokeWidth="2" fill="none"/>}
-          {pct < 0.25 && <path d="M 30 50 L 38 60 L 32 68 L 42 78" stroke="#2a1a10" strokeWidth="2" fill="none"/>}
+          {/* Danger cracks — three stages: hairline shows up around half-time,
+              a left branch in the second half, then a right branch in the
+              final third. Visual countdown of how cooked the egg is. */}
+          {pct < 0.6 && <path d="M 45 20 L 48 36 L 40 42 L 50 52" stroke="#2a1a10" strokeWidth="2" fill="none"/>}
+          {pct < 0.4 && <path d="M 30 50 L 38 60 L 32 68 L 42 78" stroke="#2a1a10" strokeWidth="2" fill="none"/>}
+          {pct < 0.25 && <path d="M 60 50 L 56 60 L 64 68 L 56 78" stroke="#2a1a10" strokeWidth="2" fill="none"/>}
           {/* fuse */}
           <path d="M 45 12 Q 55 4 62 8" stroke="#2a1a10" strokeWidth="3" fill="none"/>
           <circle cx="63" cy="8" r={pct < 0.5 ? 7 : 5} fill={pct < 0.3 ? '#e04b3b' : '#ffc93c'}/>
