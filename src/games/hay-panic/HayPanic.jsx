@@ -27,6 +27,8 @@ function HayPanic({ state, onFinish, onQuit, game }) {
   // each frame in the main RAF; cleared past 1.6s. Drives the dust puff
   // + "БУМ!" text at the impact point.
   const [baleSplats, setBaleSplats] = useState([]);
+  // Brief warm flash at the moment a bale lands — fades over ~0.25s.
+  const [bangTime, setBangTime] = useState(0);
   const keys = useRef({ left:false, right:false });
   const difficulty = state.difficulty;
   const spawnByDiff = { easy: 0.45, medium: 0.28, hard: 0.18 };
@@ -91,11 +93,16 @@ function HayPanic({ state, onFinish, onQuit, game }) {
           out.push({ ...b, y: ny, rot: b.rot + b.vr * dt });
         }
       }
-      if (newSplats.length) setBaleSplats(s => [...s, ...newSplats].slice(-12));
+      if (newSplats.length) {
+        setBaleSplats(s => [...s, ...newSplats].slice(-12));
+        setBangTime(1);
+      }
       return out;
     });
     // age bale splats
     setBaleSplats(s => s.map(x => ({ ...x, t: x.t + dt })).filter(x => x.t < 1.6));
+    // decay landing flash
+    setBangTime(t => Math.max(0, t - dt * 4));
 
     // move you (P0): CPU-fallback if the slot is flagged isCPU (dropped
     // phone), otherwise keyboard OR phone steer if the slot has a remoteId.
@@ -279,6 +286,13 @@ function HayPanic({ state, onFinish, onQuit, game }) {
             width:2, background:'rgba(0,0,0,.08)'
           }}/>
         ))}
+
+        {/* Brief warm flash whenever a bale lands — sells the impact
+            without forcing screen shake on a survival round */}
+        {bangTime > 0 && (
+          <div style={{position:'absolute',inset:0,pointerEvents:'none',
+            background:`rgba(255,240,200,${bangTime*0.22})`, transition:'background .12s'}}/>
+        )}
 
         {/* Bale shadow warnings — a dark oval grows on the ground under
             each falling bale, helping the player read exactly where the

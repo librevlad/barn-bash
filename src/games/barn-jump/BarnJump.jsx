@@ -146,6 +146,29 @@ function BarnJump({ state, onFinish, onQuit, game }) {
           <path d="M0 280 Q160 200 320 215 T620 200 T920 220 T1240 195 T1600 220 L1600 280 Z" fill="#ffb958" opacity=".55"/>
         </svg>
       )}
+      {/* Distant barn silhouette during go — pays off the САРАЙНЫЙ
+          ПРЫЖОК title with the actual sarai. Sits on the right edge so
+          it doesn't compete with the rooster + hills + sheep. */}
+      {phase === 'go' && (
+        <svg style={{position:'absolute', bottom: 80, right: 80, width: 200, height: 160, pointerEvents:'none', filter:'drop-shadow(0 6px 0 rgba(0,0,0,.2))'}} viewBox="0 0 200 160">
+          {/* body */}
+          <rect x="20" y="60" width="160" height="100" fill="#c64033" stroke="#2a1a10" strokeWidth="3"/>
+          {/* roof */}
+          <polygon points="10,60 100,8 190,60" fill="#8f2a22" stroke="#2a1a10" strokeWidth="3"/>
+          {/* hayloft window */}
+          <rect x="86" y="36" width="28" height="28" fill="#3a1f12" stroke="#2a1a10" strokeWidth="2.5"/>
+          <line x1="100" y1="36" x2="100" y2="64" stroke="#7a5030" strokeWidth="2"/>
+          <line x1="86" y1="50" x2="114" y2="50" stroke="#7a5030" strokeWidth="2"/>
+          {/* door */}
+          <rect x="80" y="100" width="40" height="60" fill="#5a3a1c" stroke="#2a1a10" strokeWidth="3"/>
+          <line x1="100" y1="100" x2="100" y2="160" stroke="#3a240c" strokeWidth="2"/>
+          {/* white trim along the eaves */}
+          <path d="M 20 60 L 100 8 L 180 60" stroke="#fff5e4" strokeWidth="4" fill="none"/>
+          {/* weather vane */}
+          <line x1="100" y1="8" x2="100" y2="-12" stroke="#2a1a10" strokeWidth="2.5"/>
+          <polygon points="92,-12 110,-8 92,-4" fill="#ffc93c" stroke="#2a1a10" strokeWidth="2"/>
+        </svg>
+      )}
       {/* Rooster crow burst — scales out from top-left as the JUMP signal
           lands, fades after 600ms. Pure visual, derived from signalAt. */}
       {phase === 'go' && signalAt && performance.now() - signalAt < 600 && (() => {
