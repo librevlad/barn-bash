@@ -275,9 +275,10 @@ function HayPanic({ state, onFinish, onQuit, game }) {
       {/* Field */}
       <div style={{
         position:'absolute', left:'50%', transform:'translateX(-50%)', top:140,
-        width:FIELD_W, height:FIELD_H, background:'#6cc24a',
+        width:FIELD_W, height:FIELD_H,
+        background:'linear-gradient(180deg, #7fd058 0%, #5caa3e 100%)',
         border:'5px solid var(--ink)', borderRadius:20, overflow:'hidden',
-        boxShadow:'inset 0 8px 0 rgba(0,0,0,.1), 0 10px 0 var(--ink)'
+        boxShadow:'inset 0 8px 0 rgba(0,0,0,.15), 0 10px 0 var(--ink)'
       }}>
         {/* grass stripes */}
         {Array.from({length:7}).map((_,i)=>(
