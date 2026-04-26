@@ -19,6 +19,10 @@ function EggPass({ state, onFinish, onQuit, game }) {
   const [eliminated, setEliminated] = useState([]); // order eliminated
   const [eggPos, setEggPos] = useState({ x: 0, y: 0 });
   const [passing, setPassing] = useState(false);
+  // Explosion state — fireball + eggshell debris radiating outward when
+  // the egg blows. Pushed inside explode(); aged each frame; cleared
+  // past 1.6s.
+  const [explosions, setExplosions] = useState([]);
 
   const difficulty = state.difficulty;
   const cpuReflex = { easy: [0.6, 1.2], medium: [0.3, 0.8], hard: [0.15, 0.4] }[difficulty] || [0.3, 0.8];
@@ -44,6 +48,8 @@ function EggPass({ state, onFinish, onQuit, game }) {
       if (nt < 1) setShake(true);
       return nt;
     });
+    // age explosion particles
+    setExplosions(ex => ex.map(e => ({ ...e, t: e.t + dt })).filter(e => e.t < 1.6));
   }, started && !finished);
 
   const aliveCount = alive.filter(Boolean).length;
@@ -79,6 +85,8 @@ function EggPass({ state, onFinish, onQuit, game }) {
   };
 
   const explode = () => {
+    const p = slotPos(holder);
+    setExplosions(ex => [...ex, { id: Math.random(), x: p.x, y: p.y, t: 0 }]);
     setAlive(prev => { const next = prev.slice(); next[holder] = false; return next; });
     setEliminated(prev => [...prev, holder]);
     // pick next alive holder
@@ -243,6 +251,46 @@ function EggPass({ state, onFinish, onQuit, game }) {
         );
       })}
       <style>{`@keyframes eggSweat{0%{opacity:0;transform:translateY(-4px)}40%{opacity:1}100%{opacity:0;transform:translateY(20px)}}`}</style>
+
+      {/* Explosion bursts — fireball + eggshell debris + POP! text. Each
+          entry pops in, then scales outward and fades over 1.6s. */}
+      {explosions.map(ex => {
+        const scale = 1 + ex.t * 3;
+        const opacity = Math.max(0, 1 - ex.t/1.6);
+        return (
+          <div key={ex.id} style={{
+            position:'absolute', left:`calc(50% - 800px + ${ex.x}px)`, top: ex.y,
+            transform:`translate(-50%,-50%) scale(${scale})`,
+            opacity, pointerEvents:'none', zIndex: 20,
+          }}>
+            <div style={{width:180, height:180, borderRadius:'50%',
+              background:'radial-gradient(circle, #fff59a 0 15%, #ffa03a 35%, #ff4a2a 55%, rgba(100,30,10,0) 75%)',
+              filter: ex.t < 0.3 ? 'blur(0px)' : 'blur(2px)'
+            }}/>
+            {Array.from({length: 12}).map((_, k) => {
+              const a = (k/12) * Math.PI * 2;
+              const d = 30 + ex.t*140;
+              return (
+                <div key={k} style={{
+                  position:'absolute', left: '50%', top:'50%',
+                  transform:`translate(-50%,-50%) translate(${Math.cos(a)*d}px, ${Math.sin(a)*d + ex.t*80}px) rotate(${a*180/Math.PI + ex.t*360}deg)`,
+                }}>
+                  <svg width="16" height="12" viewBox="0 0 16 12">
+                    <path d="M 1 6 Q 4 1 8 2 Q 13 3 15 7 Q 10 11 6 10 Q 2 9 1 6 Z" fill="#fff5e4" stroke="#2a1a10" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+              );
+            })}
+            {ex.t < 0.5 && (
+              <div style={{position:'absolute', left:'50%', top:'50%',
+                transform:`translate(-50%,-50%) scale(${1/scale})`,
+                fontFamily:"'Luckiest Guy'", fontSize:56, color:'#ffe96c',
+                WebkitTextStroke:'4px var(--ink)', textShadow:'0 4px 0 var(--ink)'
+              }}>БУМ!</div>
+            )}
+          </div>
+        );
+      })}
 
       {/* Egg */}
       <div style={{

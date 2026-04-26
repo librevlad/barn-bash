@@ -23,6 +23,10 @@ function HayPanic({ state, onFinish, onQuit, game }) {
     vx: 0, dir: Math.random() > .5 ? 1 : -1, nextTurn: 0.5
   })));
   const [bales, setBales] = useState([]);
+  // Splat state — pushed when a bale crosses the ground threshold; aged
+  // each frame in the main RAF; cleared past 1.6s. Drives the dust puff
+  // + "БУМ!" text at the impact point.
+  const [baleSplats, setBaleSplats] = useState([]);
   const keys = useRef({ left:false, right:false });
   const difficulty = state.difficulty;
   const spawnByDiff = { easy: 0.45, medium: 0.28, hard: 0.18 };
@@ -72,10 +76,26 @@ function HayPanic({ state, onFinish, onQuit, game }) {
         rot: 0, vr: randBetween(-120, 120)
       }]);
     }
-    // move bales
-    setBales(prev => prev.map(b => ({
-      ...b, y: b.y + b.vy * dt, rot: b.rot + b.vr * dt
-    })).filter(b => b.y < FIELD_H + 80));
+    // move bales; spawn a splat when one crosses the ground threshold
+    setBales(prev => {
+      const out = [];
+      const newSplats = [];
+      for (const b of prev) {
+        const ny = b.y + b.vy * dt;
+        const wasAbove = b.y < FIELD_H - 40;
+        const nowBelow = ny >= FIELD_H - 40;
+        if (wasAbove && nowBelow) {
+          newSplats.push({ id: b.id, x: b.x, y: FIELD_H - 40, t: 0 });
+        }
+        if (ny < FIELD_H + 80) {
+          out.push({ ...b, y: ny, rot: b.rot + b.vr * dt });
+        }
+      }
+      if (newSplats.length) setBaleSplats(s => [...s, ...newSplats].slice(-12));
+      return out;
+    });
+    // age bale splats
+    setBaleSplats(s => s.map(x => ({ ...x, t: x.t + dt })).filter(x => x.t < 1.6));
 
     // move you (P0): CPU-fallback if the slot is flagged isCPU (dropped
     // phone), otherwise keyboard OR phone steer if the slot has a remoteId.
@@ -254,6 +274,24 @@ function HayPanic({ state, onFinish, onQuit, game }) {
             position:'absolute',top:0,bottom:0,left:`${(i+1)*FIELD_W/8}px`,
             width:2, background:'rgba(0,0,0,.08)'
           }}/>
+        ))}
+
+        {/* Bale-landing splats — dust ellipse + "БУМ!" text fade out */}
+        {baleSplats.map(s => (
+          <div key={'bs'+s.id} style={{
+            position:'absolute', left:s.x, top:s.y,
+            transform:`translate(-50%, -50%) scale(${1 - s.t*0.4})`,
+            opacity: Math.max(0, 1 - s.t/1.6),
+            pointerEvents:'none'
+          }}>
+            <div style={{width: 90, height: 28,
+              background:'radial-gradient(ellipse, #c79a48 0 40%, rgba(199,154,72,0) 70%)',
+              borderRadius:'50%'}}/>
+            <div style={{position:'absolute', left:'50%', top:'50%',
+              transform:'translate(-50%,-50%)',
+              fontFamily:"'Luckiest Guy'", fontSize:22, color:'#5a3a18',
+              WebkitTextStroke:'1.5px #2a1a10'}}>БУМ!</div>
+          </div>
         ))}
 
         {/* falling bales */}
