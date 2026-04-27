@@ -404,12 +404,22 @@ function FishingFrenzy({ state, onFinish, onQuit, game }) {
           );
         })()}
 
-        {/* Bubbles */}
-        {[...Array(10)].map((_,i)=>{
-          const x = (i*127 + time * 30) % POND_W;
+        {/* Bubbles — varied sizes + drift left-right via per-id phase so
+            the pond looks alive instead of bubbles climbing in lockstep */}
+        {[...Array(14)].map((_,i)=>{
+          const xBase = (i*127 + time * 30) % POND_W;
+          const driftX = Math.sin(time * 1.5 + i*2.1) * 8;
+          const x = xBase + driftX;
           const y = POND_H - 30 - ((time * 40 + i*80) % POND_H);
+          const size = 4 + (i % 3) * 2;
+          const opacity = 0.25 + (i % 3) * 0.15;
           return (
-            <div key={i} style={{position:'absolute',left:x,top:y,width:6,height:6,borderRadius:'50%',background:'rgba(255,255,255,.35)',border:'1px solid rgba(255,255,255,.6)'}}/>
+            <div key={i} style={{position:'absolute',left:x,top:y,
+              width:size, height:size, borderRadius:'50%',
+              background:`rgba(255,255,255,${opacity})`,
+              border:'1px solid rgba(255,255,255,.55)',
+              boxShadow:'inset 1px 1px 1px rgba(255,255,255,.7)'
+            }}/>
           );
         })}
       </div>

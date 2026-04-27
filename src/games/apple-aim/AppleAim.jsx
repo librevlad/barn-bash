@@ -336,9 +336,12 @@ function AppleAim({ state, onFinish, onQuit, game }) {
           }}>{f.text}</div>
         ))}
 
-        {/* archer + bow */}
+        {/* archer + bow — subtle breathing scale on the avatar so they
+            don't read as a static cardboard cutout while aiming */}
         <div style={{position:'absolute', left: archerX, top: archerY, transform:'translate(-50%, -40%)'}}>
-          <Avatar char={currentPlayer.char} size={96}/>
+          <div style={{transform:`scale(${1 + Math.sin(performance.now()/600)*0.012}) translateY(${Math.sin(performance.now()/600)*1.5}px)`, transformOrigin:'50% 100%'}}>
+            <Avatar char={currentPlayer.char} size={96}/>
+          </div>
           {/* bow + aim line. Bow arc bends back as power builds in 'power'
               phase. Bowstring snaps into a V; a nocked arrow rides the
               draw position so the player can read the shot tension visually. */}
