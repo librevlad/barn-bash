@@ -26,6 +26,8 @@ function EggPass({ state, onFinish, onQuit, game }) {
   // Fuse sparks — small particles trailing the egg's lit fuse. Spawned
   // probabilistically while the timer ticks down (denser as panic grows).
   const [sparks, setSparks] = useState([]);
+  // Pass trail — fading echo of the egg as it flies between holders.
+  const [passTrail, setPassTrail] = useState([]);
 
   const difficulty = state.difficulty;
   const cpuReflex = { easy: [0.6, 1.2], medium: [0.3, 0.8], hard: [0.15, 0.4] }[difficulty] || [0.3, 0.8];
@@ -63,6 +65,8 @@ function EggPass({ state, onFinish, onQuit, game }) {
     setSparks(s => s.map(sp => ({
       ...sp, x: sp.x + sp.vx*dt, y: sp.y + sp.vy*dt, t: sp.t + dt
     })).filter(sp => sp.t < 0.7));
+    // age pass trail particles
+    setPassTrail(tr => tr.map(p => ({ ...p, t: p.t + dt })).filter(p => p.t < 0.5));
   }, started && !finished);
 
   const aliveCount = alive.filter(Boolean).length;
@@ -85,7 +89,12 @@ function EggPass({ state, onFinish, onQuit, game }) {
     const step = () => {
       const e = Math.min(1, (performance.now() - startT) / dur);
       const ease = 1 - Math.pow(1-e, 3);
-      setEggPos({ x: from.x + (to.x - from.x) * ease, y: from.y + (to.y - from.y) * ease - Math.sin(ease * Math.PI) * 60 });
+      const px = from.x + (to.x - from.x) * ease;
+      const py = from.y + (to.y - from.y) * ease - Math.sin(ease * Math.PI) * 60;
+      setEggPos({ x: px, y: py });
+      // Drop a trail particle every few frames so the egg leaves a fading
+      // echo of itself in flight.
+      setPassTrail(tr => [...tr, { id: Math.random(), x: px, y: py, t: 0 }].slice(-16));
       if (e < 1) requestAnimationFrame(step);
       else {
         setHolder(next);
@@ -317,6 +326,18 @@ function EggPass({ state, onFinish, onQuit, game }) {
           </div>
         );
       })}
+
+      {/* Egg trail — fading echoes left behind during a pass animation */}
+      {passTrail.map(p => (
+        <div key={'pt'+p.id} style={{
+          position:'absolute', left:`calc(50% - 800px + ${p.x}px)`, top: p.y,
+          transform:`translate(-50%,-50%) scale(${1 - p.t * 0.6})`,
+          width: 30, height: 38, borderRadius:'50%',
+          background:'radial-gradient(ellipse, rgba(255,245,228,.7) 0 50%, transparent 70%)',
+          opacity: Math.max(0, 1 - p.t/0.5),
+          pointerEvents:'none', zIndex: 14
+        }}/>
+      ))}
 
       {/* Egg — scales 1.3x while passing through the air (sells the throw),
           and bloats slightly (1 + 8% of remaining tension) as the timer

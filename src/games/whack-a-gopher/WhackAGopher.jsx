@@ -20,6 +20,9 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
   // Hammer animation: each entry tracks a recent whack at hole `h` with elapsed
   // time `t`; aged in the main RAF and removed past 0.35s.
   const [hammers, setHammers] = useState([]);
+  // Emerge-dirt — small puffs of dust at each hole when something pops up.
+  // Aged in the main RAF; cleared past 0.5s.
+  const [emerges, setEmerges] = useState([]);
   // Human combo state. Increments on consecutive positive whacks within
   // 900ms of each other; resets on miss/negative or stale gap.
   const [combo, setCombo] = useState(0);
@@ -49,6 +52,8 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
           const r = Math.random();
           const kind = r < 0.1 ? 'golden' : r < 0.28 ? 'bunny' : 'gopher';
           next[h] = { kind, ttl: kind === 'golden' ? 0.8 : 1.4, whackedBy: null };
+          // dirt puff at the spawn hole so the player's eye snaps to it
+          setEmerges(es => [...es, { id: Date.now()+Math.random(), h, t: 0 }].slice(-6));
         }
         return next;
       });
@@ -57,6 +62,8 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
     setPops(prev => prev.map(p => p ? { ...p, ttl: p.ttl - dt } : null).map(p => p && p.ttl <= 0 ? null : p));
     // age hammer animations
     setHammers(hs => hs.map(h => ({ ...h, t: h.t + dt })).filter(h => h.t < 0.35));
+    // age emerge-dirt puffs
+    setEmerges(es => es.map(e => ({ ...e, t: e.t + dt })).filter(e => e.t < 0.5));
 
     // CPU actions
     cpuTimers.current = cpuTimers.current.map((t, pi) => {
@@ -260,6 +267,28 @@ function WhackAGopher({ state, onFinish, onQuit, game }) {
             }}/>
             {/* pop-up critter — gold gophers get a pulsing aura halo so the
                 player can spot them out of the corner of an eye. */}
+            {/* Emerge-dirt puff — 6 small particles bursting up from the
+                hole as something pops up. */}
+            {(() => {
+              const em = emerges.find(e => e.h === i);
+              if (!em) return null;
+              return (
+                <div style={{position:'absolute', left:'50%', bottom: 50, transform:'translate(-50%,-50%)', pointerEvents:'none', zIndex:4,
+                  opacity: Math.max(0, 1 - em.t/0.5)}}>
+                  {Array.from({length:6}).map((_,k) => {
+                    const a = (k/6) * Math.PI * 2;
+                    const d = 8 + em.t * 38;
+                    return (
+                      <div key={k} style={{
+                        position:'absolute', left: Math.cos(a)*d, top: Math.sin(a)*d - em.t*16,
+                        transform:'translate(-50%,-50%)',
+                        width:5, height:5, borderRadius:'50%', background:'#8a6a3a'
+                      }}/>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             {pop && (
               <div className="pop-in" style={{
                 position:'absolute', left:'50%', bottom: 30, transform:'translateX(-50%)',
