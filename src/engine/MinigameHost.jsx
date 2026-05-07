@@ -31,6 +31,10 @@
     // hand-off to phones until the rules countdown ends, so both TV and
     // phone land on the play contract at the same moment.
     const [rulesDone, setRulesDone] = useState(false);
+    // RulesSplash's countdown effect re-runs whenever onSkip identity
+    // changes; an inline arrow restarted the timer on every MinigameHost
+    // re-render and the countdown could never reach 0. Stable callback.
+    const handleRulesDone = useCallback(() => setRulesDone(true), []);
 
     // Broadcast the start/end of this mini-game exactly once per mount,
     // AFTER the rules splash dismisses. Games no longer duplicate this
@@ -124,7 +128,7 @@
     }, [game]);
 
     if (!rulesDone) {
-      return <RulesSplash def={def} onSkip={() => setRulesDone(true)} />;
+      return <RulesSplash def={def} onSkip={handleRulesDone} />;
     }
 
     const G = def.component;
