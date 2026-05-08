@@ -5,7 +5,7 @@
 // onPlay = primary CTA (Party Mode post-pivot — the MVP flow).
 // onClassicPlay = secondary button for the pre-pivot 5-round classic loop;
 // kept while we prove Party Mode on live playtests.
-function TitleScreen({ onPlay, onClassicPlay, onCustomize, onSettings, remotePlayers=[] }) {
+function TitleScreen({ onPlay, onClassicPlay, onCustomize, onSettings, remotePlayers=[], totalRounds=5 }) {
   const { onInput } = window.BB.mp.useMultiplayer();
   // Ready-up: phones tap LET'S GO on their lobby once they're in. When every
   // named, critter-picked phone has confirmed, auto-invoke onPlay so the
@@ -162,7 +162,7 @@ function TitleScreen({ onPlay, onClassicPlay, onCustomize, onSettings, remotePla
           }>ВЕЧЕРИНКА</Btn>
           {onClassicPlay && (
             <Btn variant="yellow" size="sm" onClick={onClassicPlay}>
-              5 РАУНДОВ
+              {totalRounds} РАУНДОВ
             </Btn>
           )}
           <Btn variant="green" size="xl" onClick={onCustomize} icon={

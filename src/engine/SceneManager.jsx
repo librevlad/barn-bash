@@ -18,6 +18,7 @@
               onCustomize={handlers.onStartGame}
               onSettings={() => onTweaks(true)}
               remotePlayers={mp.remotePlayers}
+              totalRounds={tweaks.totalRounds}
             />
             <BB.mp.MultiplayerHUD corner="top-left"/>
           </>
